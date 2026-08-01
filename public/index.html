@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MD BUSCAS - Consulta CNPJ</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        body { 
+            background-color: #030712; 
+            color: #00ffcc; 
+            min-height: 100vh; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        #hackerCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            opacity: 0.25;
+            pointer-events: none;
+        }
+
+        /* TELA DE CARREGAMENTO INICIAL (5 SEGUNDOS) */
+        #introOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #030712;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 1s ease;
+        }
+
+        .intro-logo {
+            width: 130px;
+            height: auto;
+            filter: drop-shadow(0 0 15px #00ffcc);
+            animation: pulseLogo 1.5s infinite alternate;
+        }
+
+        @keyframes pulseLogo {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            100% { transform: scale(1.05); opacity: 1; filter: drop-shadow(0 0 25px #00ffcc); }
+        }
+
+        .intro-title {
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: #fff;
+            margin-top: 15px;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px #00ffcc;
+        }
+
+        .intro-loader {
+            margin-top: 20px;
+            width: 200px;
+            height: 4px;
+            background: #161b22;
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid #00ffcc;
+        }
+
+        .intro-bar {
+            width: 0%;
+            height: 100%;
+            background: #00ffcc;
+            box-shadow: 0 0 10px #00ffcc;
+            animation: loadBar 5s linear forwards;
+        }
+
+        @keyframes loadBar {
+            0% { width: 0%; }
+            100% { width: 100%; }
+        }
+
+        /* PAINEL PRINCIPAL */
+        .main-container {
+            position: relative;
+            z-index: 10;
+            width: 92%;
+            max-width: 650px;
+            background: rgba(13, 17, 23, 0.9);
+            backdrop-filter: blur(12px);
+            border: 1px solid #00ffcc;
+            border-radius: 16px;
+            padding: 30px 22px;
+            box-shadow: 0 0 25px rgba(0, 255, 204, 0.25);
+            display: none;
+        }
+
+        .logo-container {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .logo-text {
+            font-size: 2.2rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+            color: #fff;
+            text-shadow: 0 0 10px #00ffcc, 0 0 20px #00ffcc;
+        }
+
+        .logo-sub {
+            font-size: 0.85rem;
+            color: #8b949e;
+            letter-spacing: 1px;
+            margin-top: 5px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+            color: #00ffcc;
+            text-transform: uppercase;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 14px 16px;
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1.1rem;
+            outline: none;
+            margin-bottom: 15px;
+        }
+
+        .input-field:focus { border-color: #00ffcc; box-shadow: 0 0 10px rgba(0,255,204,0.4); }
+
+        .btn-action {
+            width: 100%;
+            background: linear-gradient(135deg, #00ffcc, #0284c7);
+            color: #000;
+            border: none;
+            padding: 15px;
+            font-weight: bold;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        /* PIX E WHATSAPP */
+        #pixSection { display: none; text-align: center; }
+        .pix-box {
+            background: #161b22;
+            border: 1px dashed #00ffcc;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            color: #00ffcc;
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .btn-copy {
+            background: #21262d;
+            color: #00ffcc;
+            border: 1px solid #00ffcc;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-bottom: 15px;
+            width: 100%;
+        }
+
+        .btn-whatsapp {
+            background: #25D366;
+            color: #fff;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-weight: bold;
+            text-decoration: none;
+            display: block;
+            margin-top: 10px;
+            font-size: 0.95rem;
+        }
+
+        /* RESULTADOS DAS DUAS APIS */
+        #resultadoSection { display: none; }
+        .api-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .api-title {
+            color: #00ffcc;
+            font-size: 1rem;
+            font-weight: bold;
+            border-bottom: 1px solid #30363d;
+            padding-bottom: 6px;
+            margin-bottom: 10px;
+        }
+        .res-row { font-size: 0.85rem; margin-bottom: 6px; color: #fff; }
+        .res-label { color: #8b949e; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <canvas id="hackerCanvas"></canvas>
+
+    <!-- ANIMAÇÃO DE ABERTURA COM LOGO PNG (5 SEGUNDOS) -->
+    <div id="introOverlay">
+        <img src="/logo.png" class="intro-logo" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1055/1055687.png'" alt="Logo MD Buscas">
+        <div class="intro-title">🎭 MD BUSCAS</div>
+        <p style="color:#8b949e; margin-top:5px; font-size:0.85rem;">INICIALIZANDO SISTEMA HACKER...</p>
+        <div class="intro-loader">
+            <div class="intro-bar"></div>
+        </div>
+    </div>
+
+    <div class="main-container" id="mainContainer">
+        <div class="logo-container">
+            <div class="logo-text">🎭 MD BUSCAS</div>
+            <div class="logo-sub">Consulta Inteligente de CNPJ Dual-API</div>
+        </div>
+
+        <div id="searchForm">
+            <div class="input-group">
+                <label>CNPJ para Busca Completa:</label>
+                <input type="text" id="cnpjInput" class="input-field" placeholder="00.000.000/0000-00" maxlength="18">
+            </div>
+            <button class="btn-action" onclick="solicitarConsulta()">🔍 CONSULTAR (R$ 10,00)</button>
+        </div>
+
+        <div id="pixSection">
+            <h3 style="color:#ffb703;">⏳ AGUARDANDO PAGAMENTO PIX</h3>
+            <p style="color:#fff; font-size:0.9rem; margin-top:8px;">Empresa: <strong id="empresaNome" style="color:#00ffcc;">-</strong></p>
+            
+            <div class="pix-box" id="chavePixTexto">mdbuscas@gmail.com</div>
+            <button class="btn-copy" onclick="copiarPix()">📋 COPIAR CHAVE PIX</button>
+
+            <a id="btnWhats" href="#" target="_blank" class="btn-whatsapp">📲 ENVIAR COMPROVANTE NO WHATSAPP</a>
+            <p style="color:#8b949e; font-size:0.8rem; margin-top:12px;">A consulta será liberada automaticamente assim que aprovada.</p>
+        </div>
+
+        <div id="resultadoSection">
+            <h2 style="color:#3fb950; text-align:center; margin-bottom:15px; font-size:1.2rem;">✔ CONSULTA DUPLA LIBERADA</h2>
+            <div id="duploContainer"></div>
+            <button class="btn-action" style="margin-top:10px;" onclick="location.reload()">NOVA CONSULTA</button>
+        </div>
+    </div>
+
+    <script>
+        // CRONÔMETRO DA INTRO HACKER (5 SEGUNDOS)
+        setTimeout(() => {
+            const intro = document.getElementById('introOverlay');
+            intro.style.opacity = '0';
+            setTimeout(() => {
+                intro.style.display = 'none';
+                document.getElementById('mainContainer').style.display = 'block';
+            }, 1000);
+        }, 5000);
+
+        // MATRIX CANVAS BACKGROUND
+        const canvas = document.getElementById('hackerCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const chars = '01ABCDEFGHIJKLMNOPQRSTUVWXYZ🎭#$&*';
+        const fontSize = 14;
+        const drops = Array(Math.floor(canvas.width / fontSize)).fill(1);
+
+        function drawHacker() {
+            ctx.fillStyle = 'rgba(3, 7, 18, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#00ffcc';
+            ctx.font = fontSize + 'px monospace';
+            for (let i = 0; i < drops.length; i++) {
+                const text = chars.charAt(Math.floor(Math.random() * chars.length));
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        setInterval(drawHacker, 33);
+
+        // MÁSCARA CNPJ
+        document.getElementById('cnpjInput').addEventListener('input', function(e) {
+            let x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,3})(\d{0,3})(\d{0,4})(\d{0,2})/);
+            e.target.value = !x[2] ? x[1] : x[1] + '.' + x[2] + '.' + x[3] + '/' + x[4] + (x[5] ? '-' + x[5] : '');
+        });
+
+        function copiarPix() {
+            navigator.clipboard.writeText("mdbuscas@gmail.com");
+            alert("Chave PIX copiada: mdbuscas@gmail.com");
+        }
+
+        let intervalId = null;
+
+        async function solicitarConsulta() {
+            const cnpj = document.getElementById('cnpjInput').value;
+            if(!cnpj || cnpj.length < 14) return alert('Digite um CNPJ válido!');
+
+            const res = await fetch('/api/consulta/solicitar', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ cnpj })
+            });
+
+            const data = await res.json();
+            if(data.error) return alert(data.error);
+
+            document.getElementById('searchForm').style.display = 'none';
+            document.getElementById('pixSection').style.display = 'block';
+            document.getElementById('empresaNome').innerText = data.razao;
+
+            // Link WhatsApp com mensagem personalizada
+            const msg = encodeURIComponent(`Olá! Fiz o pagamento de R$ 10,00 para a consulta do pedido ${data.idPedido} (${data.razao}). Segue meu comprovante!`);
+            document.getElementById('btnWhats').href = `https://wa.me/5585992864097?text=${msg}`;
+
+            intervalId = setInterval(() => checarStatus(data.idPedido), 2000);
+        }
+
+        async function checarStatus(idPedido) {
+            const res = await fetch(`/api/consulta/status/${idPedido}`);
+            const data = await res.json();
+
+            if(data.status === 'aprovado') {
+                clearInterval(intervalId);
+                document.getElementById('pixSection').style.display = 'none';
+                document.getElementById('resultadoSection').style.display = 'block';
+
+                const b = data.dadosBrasil;
+                const w = data.dadosWS;
+
+                document.getElementById('duploContainer').innerHTML = `
+                    <div class="api-card">
+                        <div class="api-title">🌐 DADOS RETORNADOS: BRASIL API</div>
+                        <div class="res-row"><span class="res-label">Razão Social:</span> ${b.razao_social || 'N/A'}</div>
+                        <div class="res-row"><span class="res-label">Nome Fantasia:</span> ${b.nome_fantasia || 'N/A'}</div>
+                        <div class="res-row"><span class="res-label">Situação:</span> ${b.descricao_situacao_cadastral || 'N/A'}</div>
+                        <div class="res-row"><span class="res-label">Capital Social:</span> R$ ${b.capital_social || 'N/A'}</div>
+                        <div class="res-row"><span class="res-label">Abertura:</span> ${b.data_inicio_atividade || 'N/A'}</div>
+                        <div class="res-row"><span class="res-label">Endereço:</span> ${b.logradouro || ''}, ${b.numero || ''} - ${b.bairro || ''}, ${b.municipio || ''}/${b.uf || ''}</div>
+                    </div>
+
+                    <div class="api-card">
+                        <div class="api-title">📊 DADOS RETORNADOS: RECEITA WS</div>
+                        <div class="res-row"><span class="res-label">Razão Social:</span> ${w.nome || 'N/A'}</div>
+                        <div class="res-row"><span class="res-label">Fantasia:</span> ${w.fantasia || 'N/A'}</div>
+                        <div class="res-row"><span class="res-label">Situação:</span> ${w.situacao || 'N/A'}</div>
+                        <div class="res-row"><span class="res-label">Capital Social:</span> R$ ${w.capital_social || 'N/A'}</div>
+                        <div class="res-row"><span class="res-label">Abertura:</span> ${w.abertura || 'N/A'}</div>
+                        <div class="res-row"><span class="res-label">Endereço:</span> ${w.logradouro || ''}, ${w.numero || ''} - ${w.bairro || ''}, ${w.municipio || ''}/${w.uf || ''}</div>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MD BUSCAS - Painel Admin</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: sans-serif; }
+        body { background-color: #030712; color: #00ffcc; padding: 20px; min-height: 100vh; position: relative; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #00ffcc; padding-bottom: 15px; margin-bottom: 20px; }
+        .cards-grid { display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; }
+        .card-metric { flex: 1; min-width: 200px; background: #0d1117; border: 1px solid #1f293d; padding: 15px; border-radius: 6px; }
+        .metric-num { font-size: 2rem; font-weight: bold; margin-top: 5px; color: #fff; }
+        .pedido-item { background: #0d1117; border: 1px solid #1f293d; border-radius: 6px; padding: 20px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .pedido-item.pendente { border-color: #ffb703; }
+        .btn-aprovar-pix { background: #238636; color: #fff; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 1rem; }
+        .sound-banner { background: #1f293d; color: #00ffcc; padding: 10px; border-radius: 6px; text-align: center; margin-bottom: 15px; cursor: pointer; font-size: 0.85rem; }
+
+        #whatsappNotif {
+            position: fixed;
+            top: -120px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 400px;
+            background: #128C7E;
+            color: #fff;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 9999;
+            transition: top 0.5s ease-in-out;
+            border: 1px solid #25D366;
+        }
+        #whatsappNotif.show { top: 15px; }
+        .wa-icon { background: #25D366; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+        .wa-body { flex: 1; }
+        .wa-title { font-size: 0.85rem; font-weight: bold; color: #25D366; display: flex; justify-content: space-between; }
+        .wa-text { font-size: 0.95rem; font-weight: bold; margin-top: 2px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 230px; }
+        .wa-sub { font-size: 0.8rem; color: #e0e0e0; }
+    </style>
+</head>
+<body>
+
+    <div id="whatsappNotif">
+        <div class="wa-icon">💬</div>
+        <div class="wa-body">
+            <div class="wa-title"><span>MD BUSCAS - NOVO PEDIDO</span> <small id="waTime">agora</small></div>
+            <div class="wa-text" id="waRazao">Nome da Empresa</div>
+            <div class="wa-sub">Pagamento de R$ 10,00 pendente!</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="sound-banner" onclick="ativarAudio()">🔔 CLIQUE AQUI PARA ATIVAR SOM DE NOTIFICACAO</div>
+
+        <header>
+            <h2>MD BUSCAS - PAINEL ADMIN</h2>
+            <span style="color:#238636; font-weight:bold;">● ON-LINE</span>
+        </header>
+
+        <div class="cards-grid">
+            <div class="card-metric">
+                <div style="color:#8b949e; font-size:0.85rem;">Total de Pedidos</div>
+                <div class="metric-num" id="totalNum">0</div>
+            </div>
+            <div class="card-metric">
+                <div style="color:#8b949e; font-size:0.85rem;">Aguardando PIX</div>
+                <div class="metric-num" style="color:#ffb703;" id="pendentesNum">0</div>
+            </div>
+            <div class="card-metric">
+                <div style="color:#8b949e; font-size:0.85rem;">Consultas Liberadas</div>
+                <div class="metric-num" style="color:#3fb950;" id="aprovadosNum">0</div>
+            </div>
+        </div>
+
+        <h3 style="color:#fff; margin-bottom:15px;">Solicitacoes de Clientes</h3>
+        <div id="pedidosContainer">Carregando...</div>
+    </div>
+
+    <script>
+        let audioAutorizado = false;
+        let totalPendentesAnterior = 0;
+
+        function ativarAudio() {
+            audioAutorizado = true;
+            tocarBeep();
+            document.querySelector('.sound-banner').innerText = '✓ SOM E NOTIFICACOES ATIVADOS!';
+            document.querySelector('.sound-banner').style.background = '#238636';
+            document.querySelector('.sound-banner').style.color = '#fff';
+        }
+
+        function tocarBeep() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, ctx.currentTime);
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.4);
+            } catch(e) {}
+        }
+
+        function dispararWhatsappPopUp(razao, dataHora) {
+            document.getElementById('waRazao').innerText = razao;
+            document.getElementById('waTime').innerText = dataHora;
+            const notif = document.getElementById('whatsappNotif');
+            
+            notif.classList.add('show');
+            setTimeout(() => {
+                notif.classList.remove('show');
+            }, 6000);
+        }
+
+        async function atualizarDados() {
+            try {
+                const resposta = await fetch('/api/admin/pedidos');
+                const lista = await resposta.json();
+                
+                const pendentes = lista.filter(p => p.status === 'pendente');
+                const aprovados = lista.filter(p => p.status === 'aprovado');
+
+                document.getElementById('totalNum').innerText = lista.length;
+                document.getElementById('pendentesNum').innerText = pendentes.length;
+                document.getElementById('aprovadosNum').innerText = aprovados.length;
+
+                if (pendentes.length > totalPendentesAnterior) {
+                    if (audioAutorizado) tocarBeep();
+                    const ultimoPedido = pendentes[0];
+                    dispararWhatsappPopUp(ultimoPedido.razao, ultimoPedido.dataHora);
+                    document.title = `💬 (1) NOVO PEDIDO PIX!`;
+                } else if (pendentes.length === 0) {
+                    document.title = "MD BUSCAS - Painel Admin";
+                }
+
+                totalPendentesAnterior = pendentes.length;
+
+                const container = document.getElementById('pedidosContainer');
+                if (lista.length === 0) {
+                    container.innerHTML = '<p style="color:#8b949e; text-align:center; padding:40px; background:#0d1117; border-radius:6px;">Nenhum pedido registrado no momento.</p>';
+                    return;
+                }
+
+                container.innerHTML = lista.map(p => `
+                    <div class="pedido-item ${p.status}">
+                        <div>
+                            <strong style="color:${p.status === 'pendente' ? '#ffb703' : '#3fb950'}">[${p.status.toUpperCase()}]</strong>
+                            <span style="color:#8b949e; font-size:0.8rem; margin-left:10px;">${p.dataHora}</span>
+                            <h3 style="color:#fff; margin-top:5px; font-size:1.1rem;">${p.razao}</h3>
+                            <p style="color:#00ffcc; font-size:0.85rem; margin-top:3px;">ID: ${p.idPedido} | CNPJ: ${p.cnpj}</p>
+                        </div>
+                        <div>
+                            ${p.status === 'pendente' 
+                                ? `<button class="btn-aprovar-pix" onclick="aprovarPix('${p.idPedido}')">CONFIRMAR PIX (R$ 10)</button>` 
+                                : '<span style="color:#3fb950; font-weight:bold;">CONSULTA ENTREGUE</span>'}
+                        </div>
+                    </div>
+                `).join('');
+            } catch(e) {}
+        }
+
+        async function aprovarPix(idPedido) {
+            await fetch('/api/admin/aprovar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idPedido })
+            });
+            atualizarDados();
+        }
+
+        atualizarDados();
+        setInterval(atualizarDados, 2000);
+    </script>
+</body>
+</html>
