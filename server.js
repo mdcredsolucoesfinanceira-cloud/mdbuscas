@@ -3,9 +3,8 @@ const axios = require('axios');
 
 const app = express();
 app.use(express.json());
-app.use(express.static('public')); // Serve seus arquivos do front-end da pasta public
+app.use(express.static('public'));
 
-// Guardamos os pedidos em memória
 const pedidos = {};
 
 // 1. ROTA PARA GERAR O PIX
@@ -17,14 +16,13 @@ app.post('/api/gerar-pix', async (req, res) => {
   }
 
   try {
-    // Substitua 'SEU_TOKEN_DOMINIPAY' pelo token copiado da Domini Pay
-    const response = await axios.post('https://admin.dominipay.com.br/api/v1/pix', {
-      amount: 5.00, // Valor em reais
+    const response = await axios.post('https://public-api-prod.dominipay.com.br/api-public/payments', {
+      amount: 5.00,
       description: `Consulta CNPJ: ${cnpj}`,
       metadata: { cnpjBuscado: cnpj }
     }, {
       headers: {
-        'Authorization': `Bearer SEU_TOKEN_DOMINIPAY`,
+        'Authorization': 'Bearer COLE_SEU_TOKEN_DOMINIPAY_AQUI',
         'Content-Type': 'application/json'
       }
     });
@@ -44,17 +42,15 @@ app.post('/api/gerar-pix', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Erro ao gerar Pix:', error.message);
+    console.error('Erro ao gerar Pix:', error.response ? error.response.data : error.message);
     res.status(500).json({ error: 'Falha ao gerar cobrança Pix' });
   }
 });
 
-// 2. ROTA WEBHOOK (Domini Pay avisa aqui)
+// 2. ROTA WEBHOOK
 app.post('/webhook/dominipay', async (req, res) => {
   const { status, transactionId, id } = req.body;
   const tId = transactionId || id;
-
-  console.log(`Webhook recebido para transação ${tId}: status ${status}`);
 
   if (status === 'PAID' || status === 'CONFIRMED' || status === 'PAID_OUT') {
     const pedido = pedidos[tId];
@@ -66,8 +62,6 @@ app.post('/webhook/dominipay', async (req, res) => {
 
         pedido.status = 'PAGO';
         pedido.dadosConsulta = apiRes.data;
-
-        console.log(`CNPJ ${pedido.cnpj} consultado com sucesso!`);
       } catch (err) {
         console.error('Erro na Brasil API:', err.message);
       }
@@ -77,7 +71,7 @@ app.post('/webhook/dominipay', async (req, res) => {
   res.status(200).send('OK');
 });
 
-// 3. ROTA PARA CHECAR SE O PIX FOI PAGO
+// 3. ROTA DE STATUS
 app.get('/api/status-pedido/:id', (req, res) => {
   const pedido = pedidos[req.params.id];
 
