@@ -1,86 +1,96 @@
 const express = require('express');
 const axios = require('axios');
-const path = require('path');
+
 const app = express();
-const PORT = 8080;
-
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static('public')); // Serve seus arquivos do front-end da pasta public
 
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
-});
-
+// Guardamos os pedidos em memória
 const pedidos = {};
 
-// CONSULTA DUPLA COMPLETA: RECEITA WS + BRASIL API
-app.post('/api/consulta/solicitar', async (req, res) => {
-    const { cnpj } = req.body;
-    if (!cnpj) return res.status(400).json({ error: 'CNPJ e obrigatorio.' });
+// 1. ROTA PARA GERAR O PIX
+app.post('/api/gerar-pix', async (req, res) => {
+  const { cnpj } = req.body;
 
-    const cleanCnpj = cnpj.replace(/\D/g, '');
-    if (cleanCnpj.length !== 14) return res.status(400).json({ error: 'CNPJ invalido.' });
+  if (!cnpj) {
+    return res.status(400).json({ error: 'CNPJ é obrigatório' });
+  }
 
-    try {
-        const [resBrasilAPI, resReceitaWS] = await Promise.allSettled([
-            axios.get(`https://brasilapi.com.br/api/cnpj/v1/${cleanCnpj}`),
-            axios.get(`https://receitaws.com.br/v1/cnpj/${cleanCnpj}`)
-        ]);
+  try {
+    // Substitua 'SEU_TOKEN_DOMINIPAY' pelo token copiado da Domini Pay
+    const response = await axios.post('https://admin.dominipay.com.br/api/v1/pix', {
+      amount: 5.00, // Valor em reais
+      description: `Consulta CNPJ: ${cnpj}`,
+      metadata: { cnpjBuscado: cnpj }
+    }, {
+      headers: {
+        'Authorization': `Bearer SEU_TOKEN_DOMINIPAY`,
+        'Content-Type': 'application/json'
+      }
+    });
 
-        const dadosBrasil = resBrasilAPI.status === 'fulfilled' ? resBrasilAPI.value.data : null;
-        const dadosWS = resReceitaWS.status === 'fulfilled' && resReceitaWS.value.data.status !== 'ERROR' ? resReceitaWS.value.data : null;
+    const transactionId = response.data.id || response.data.transactionId;
 
-        if (!dadosBrasil && !dadosWS) {
-            return res.status(400).json({ error: 'CNPJ nao encontrado em nenhuma das bases.' });
-        }
+    pedidos[transactionId] = {
+      cnpj: cnpj,
+      status: 'PENDENTE',
+      dadosConsulta: null
+    };
 
-        const idPedido = 'REQ-' + Math.floor(100000 + Math.random() * 900000);
-        const razaoNome = (dadosBrasil && dadosBrasil.razao_social) || (dadosWS && dadosWS.nome) || 'Empresa Consultada';
+    res.json({
+      transactionId: transactionId,
+      qrCode: response.data.qrCode || response.data.qrcode,
+      pixCopiaECola: response.data.pixCopiaECola || response.data.copyPaste
+    });
 
-        pedidos[idPedido] = {
-            idPedido,
-            cnpj: cleanCnpj,
-            razao: razaoNome,
-            status: 'pendente',
-            dadosBrasil: dadosBrasil || { erro: 'Dados indisponiveis na Brasil API' },
-            dadosWS: dadosWS || { erro: 'Dados indisponiveis na Receita WS' },
-            dataHora: new Date().toLocaleTimeString('pt-BR')
-        };
+  } catch (error) {
+    console.error('Erro ao gerar Pix:', error.message);
+    res.status(500).json({ error: 'Falha ao gerar cobrança Pix' });
+  }
+});
 
-        res.json({ idPedido, razao: pedidos[idPedido].razao });
-    } catch (error) {
-        res.status(500).json({ error: 'Erro ao processar as consultas.' });
+// 2. ROTA WEBHOOK (Domini Pay avisa aqui)
+app.post('/webhook/dominipay', async (req, res) => {
+  const { status, transactionId, id } = req.body;
+  const tId = transactionId || id;
+
+  console.log(`Webhook recebido para transação ${tId}: status ${status}`);
+
+  if (status === 'PAID' || status === 'CONFIRMED' || status === 'PAID_OUT') {
+    const pedido = pedidos[tId];
+
+    if (pedido) {
+      try {
+        const cnpjLimpo = pedido.cnpj.replace(/\D/g, '');
+        const apiRes = await axios.get(`https://brasilapi.com.br/api/cnpj/v1/${cnpjLimpo}`);
+
+        pedido.status = 'PAGO';
+        pedido.dadosConsulta = apiRes.data;
+
+        console.log(`CNPJ ${pedido.cnpj} consultado com sucesso!`);
+      } catch (err) {
+        console.error('Erro na Brasil API:', err.message);
+      }
     }
+  }
+
+  res.status(200).send('OK');
 });
 
-app.get('/api/consulta/status/:id', (req, res) => {
-    const pedido = pedidos[req.params.id];
-    if (!pedido) return res.status(404).json({ error: 'Pedido nao encontrado.' });
-    
-    if (pedido.status === 'aprovado') {
-        res.json({ status: 'aprovado', dadosBrasil: pedido.dadosBrasil, dadosWS: pedido.dadosWS });
-    } else {
-        res.json({ status: 'pendente' });
-    }
+// 3. ROTA PARA CHECAR SE O PIX FOI PAGO
+app.get('/api/status-pedido/:id', (req, res) => {
+  const pedido = pedidos[req.params.id];
+
+  if (!pedido) {
+    return res.status(404).json({ error: 'Pedido não encontrado' });
+  }
+
+  res.json({
+    status: pedido.status,
+    dados: pedido.status === 'PAGO' ? pedido.dadosConsulta : null
+  });
 });
 
-app.get('/api/admin/pedidos', (req, res) => {
-    res.json(Object.values(pedidos).reverse());
-});
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
 
-app.post('/api/admin/aprovar', (req, res) => {
-    const { idPedido } = req.body;
-    if (pedidos[idPedido]) {
-        pedidos[idPedido].status = 'aprovado';
-        return res.json({ success: true });
-    }
-    res.status(404).json({ error: 'Pedido nao encontrado.' });
-});
-
-app.listen(PORT, '0.0.0.0', () => {
-    console.log('--- SERVIDOR ATUALIZADO (ANONYMOUS + DADOS DUPLOS) ---');
-});
