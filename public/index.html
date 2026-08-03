@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MD BUSCAS - Consulta CNPJ</title>
+    <!-- Biblioteca para gerar o QR Code no Navegador -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: sans-serif; }
         body { background-color: #030712; color: #00ffcc; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
@@ -13,7 +15,13 @@
         input { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #00ffcc; background: #030712; color: #fff; font-size: 1rem; text-align: center; margin-bottom: 15px; outline: none; }
         button { width: 100%; padding: 12px; border-radius: 6px; border: none; background: #00ffcc; color: #030712; font-weight: bold; font-size: 1rem; cursor: pointer; transition: 0.2s; }
         button:hover { background: #00cca3; }
+        
         #pixArea { display: none; margin-top: 20px; border-top: 1px solid #1e293b; padding-top: 15px; }
+        
+        /* Área do QR Code */
+        #qrcode-container { background: #fff; padding: 10px; border-radius: 8px; display: inline-block; margin-bottom: 15px; }
+        #qrcode img { display: block; margin: 0 auto; }
+
         .pix-box { background: #030712; border: 1px dashed #00ffcc; padding: 10px; word-break: break-all; font-family: monospace; font-size: 0.8rem; color: #fff; margin: 10px 0; border-radius: 6px; max-height: 100px; overflow-y: auto; }
         .btn-copy { background: #22c55e; color: #fff; margin-top: 5px; }
     </style>
@@ -30,59 +38,83 @@
     </div>
 
     <div id="pixArea">
-        <h3 style="color: #ffb703;">⌛ PAGAMENTO PIX GOATPAY</h3>
-        <p style="color: #fff; margin-top: 5px;">Copie o código abaixo para pagar no seu banco:</p>
+        <h3 style="color: #ffb703;">⌛ PAGAMENTO PIX</h3>
+        <p style="color: #fff; margin-top: 5px;">Escaneie o QR Code ou copie o código:</p>
         
-        <div class="pix-box" id="chavePixTexto">Carregando Pix...</div>
+        <!-- Contêiner do QR Code (começa invisível) -->
+        <div id="qrcode-container">
+            <div id="qrcode"></div>
+        </div>
+        
+        <!-- Caixa de Texto do Copia e Cola -->
+        <div class="pix-box" id="chavePixTexto">Gerando código...</div>
         
         <button class="btn-copy" onclick="copiarPix()">📋 COPIAR CÓDIGO PIX</button>
     </div>
 </div>
 
 <script>
-async function gerarPixGoat() {
-    const cnpj = document.getElementById('cnpjInput').value;
-    if (!cnpj || cnpj.length < 14) {
-        return alert('Por favor, digite um CNPJ válido!');
-    }
-
-    const btn = document.getElementById('btnConsultar');
-    btn.innerText = "GERANDO PIX NA GOATPAY...";
-    btn.disabled = true;
-
-    try {
-        const res = await fetch('/api/gerar-pix', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ cnpj: cnpj })
-        });
-
-        const data = await res.json();
-
-        if (data.error) {
-            alert('Erro da GoatPay: ' + JSON.stringify(data.detalhes));
-            btn.innerText = "🔍 CONSULTAR (R$ 10,00)";
-            btn.disabled = false;
-            return;
+    async function gerarPixGoat() {
+        const cnpj = document.getElementById('cnpjInput').value;
+        if (!cnpj || cnpj.length < 14) {
+            return alert('Por favor, digite um CNPJ válido!');
         }
 
-        // Sucesso: Mostra o Pix da GoatPay
-        document.getElementById('formArea').style.display = 'none';
-        document.getElementById('pixArea').style.display = 'block';
-        document.getElementById('chavePixTexto').innerText = data.pix_code;
+        const btn = document.getElementById('btnConsultar');
+        btn.innerText = "GERANDO PAGAMENTO...";
+        btn.disabled = true;
 
-    } catch (err) {
-        alert('Erro ao conectar com o servidor!');
-        btn.innerText = "🔍 CONSULTAR (R$ 10,00)";
-        btn.disabled = false;
+        try {
+            const res = await fetch('/api/gerar-pix', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cnpj: cnpj })
+            });
+
+            const data = await res.json();
+
+            if (data.error) {
+                alert('Erro da GoatPay: ' + JSON.stringify(data.detalhes || data.error));
+                btn.innerText = "🔍 CONSULTAR (R$ 10,00)";
+                btn.disabled = false;
+                return;
+            }
+
+            // --- SUCESSO ---
+
+            // 1. Esconde o form e mostra o Pix
+            document.getElementById('formArea').style.display = 'none';
+            document.getElementById('pixArea').style.display = 'block';
+
+            // 2. Preenche o texto Copia e Cola
+            const pixCode = data.pix_code;
+            document.getElementById('chavePixTexto').innerText = pixCode;
+
+            // 3. GERA O QR CODE NA TELA
+            // Limpa QR Codes anteriores se houver
+            document.getElementById('qrcode').innerHTML = "";
+            // Desenha o novo QR Code baseado no texto recebido
+            new QRCode(document.getElementById("qrcode"), {
+                text: pixCode,
+                width: 180,
+                height: 180,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+
+        } catch (err) {
+            alert('Erro de conexão ao servidor!');
+            btn.innerText = "🔍 CONSULTAR (R$ 10,00)";
+            btn.disabled = false;
+        }
     }
-}
 
-function copiarPix() {
-    const texto = document.getElementById('chavePixTexto').innerText;
-    navigator.clipboard.writeText(texto);
-    alert('Código Pix da GoatPay copiado com sucesso!');
-}
+    function copiarPix() {
+        const texto = document.getElementById('chavePixTexto').innerText;
+        navigator.clipboard.writeText(texto);
+        alert('Código Pix copiado com sucesso! Pague no seu banco.');
+    }
 </script>
 
 </body>
