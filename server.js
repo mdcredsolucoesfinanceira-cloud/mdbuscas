@@ -4,11 +4,16 @@ const axios = require('axios');
 const app = express();
 app.use(express.json());
 
-// Permite requisições de outros locais (CORS sem biblioteca externa)
+// Permite requisições de outros locais (CORS)
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
     next();
+});
+
+// Página inicial (para evitar o erro "Cannot GET /")
+app.get('/', (req, res) => {
+    res.send('API MDBuscas rodando com sucesso!');
 });
 
 // Rota para gerar Pix via GoatPay
