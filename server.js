@@ -1,5 +1,6 @@
 const express = require('express');
 const axios = require('axios');
+const path = require('path');
 
 const app = express();
 app.use(express.json());
@@ -11,10 +12,8 @@ app.use((req, res, next) => {
     next();
 });
 
-// Página inicial (para evitar o erro "Cannot GET /")
-app.get('/', (req, res) => {
-    res.send('API MDBuscas rodando com sucesso!');
-});
+// Serve os arquivos visuais do seu site (HTML, CSS, JS) da pasta public
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Rota para gerar Pix via GoatPay
 app.post('/api/gerar-pix', async (req, res) => {
@@ -46,6 +45,11 @@ app.post('/webhook/goatpay', (req, res) => {
     }
 
     res.status(200).send('OK');
+});
+
+// Se tentar acessar qualquer outra rota, abre o index.html da pasta public
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Porta do servidor
