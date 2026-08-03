@@ -5,83 +5,63 @@ const path = require('path');
 const app = express();
 app.use(express.json());
 
-// CORS
+// Permite conexões do frontend
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
     next();
 });
 
-// Serve os arquivos estáticos da pasta public
+// Serve a pasta de arquivos estáticos
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Rota solicitada pelo botão de consulta
-app.post('/api/consulta/solicitar', async (req, res) => {
+// Rota de criação do PIX na GoatPay
+app.post('/api/gerar-pix', async (req, res) => {
     try {
-        const cnpjLimpo = req.body.cnpj ? req.body.cnpj.replace(/\D/g, '') : '';
+        const { cnpj } = req.body;
+        const cnpjLimpo = cnpj ? cnpj.replace(/\D/g, '') : '00000000000000';
 
-        if (!cnpjLimpo || cnpjLimpo.length < 14) {
-            return res.status(400).json({ error: 'CNPJ inválido' });
-        }
+        console.log('Gerando PIX GoatPay para CNPJ:', cnpjLimpo);
 
-        let nomeEncontrado = 'Empresa Localizada';
-
-        // 1. Busca nome da Empresa (BrasilAPI / ReceitaWS)
-        try {
-            const resp = await axios.get(`https://brasilapi.com.br/api/cnpj/v1/${cnpjLimpo}`);
-            nomeEncontrado = resp.data.razao_social || resp.data.nome_fantasia || nomeEncontrado;
-        } catch (e1) {
-            try {
-                const resp2 = await axios.get(`https://receitaws.com.br/v1/cnpj/${cnpjLimpo}`);
-                nomeEncontrado = resp2.data.nome || resp2.data.fantasia || nomeEncontrado;
-            } catch (e2) {
-                console.log('Não foi possível obter o nome nas APIs externas.');
+        // Requisição oficial GoatPay
+        const response = await axios.post('https://api.goatpay.com.br/v1/payment-pix/create', {
+            amount: 10.00,
+            description: `Consulta CNPJ ${cnpjLimpo}`,
+            postback_url: 'https://mdbuscas.onrender.com/webhook/goatpay'
+        }, {
+            headers: {
+                'X-API-Key': 'gp_live_cbfa686e8e5d23369160b58d83a08af10b39b59c8d9d02ee',
+                'Content-Type': 'application/json'
             }
-        }
-
-        // 2. Chama a API da GoatPay para gerar o Pix de R$ 10,00
-        let codigoPix = 'mdbuscas@gmail.com';
-        try {
-            const respGoat = await axios.post('https://api.goatpay.com.br/v1/payment-pix/create', {
-                amount: 10.00,
-                description: `Consulta CNPJ - ${cnpjLimpo}`,
-                postback_url: 'https://mdbuscas.onrender.com/webhook/goatpay'
-            }, {
-                headers: {
-                    'X-API-Key': 'gp_live_3687750306c17cf64e48',
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            // Extrai a chave/copia e cola se retornado pela GoatPay
-            codigoPix = respGoat.data?.pix_copy_paste || respGoat.data?.qr_code || respGoat.data?.point_of_interaction?.transaction_data?.qr_code || codigoPix;
-        } catch (errGoat) {
-            console.error('Erro GoatPay:', errGoat.response?.data || errGoat.message);
-        }
-
-        // Retorna todos os nomes possíveis para o frontend preencher "empresaNome" sem falhar
-        res.json({
-            empresaNome: nomeEncontrado,
-            nome: nomeEncontrado,
-            razao_social: nomeEncontrado,
-            razaoSocial: nomeEncontrado,
-            empresa: nomeEncontrado,
-            pix: codigoPix,
-            chavePixTexto: codigoPix
         });
 
+        console.log('Resposta GoatPay:', response.data);
+
+        // Pega o código Pix Copia e Cola
+        const pixCode = response.data?.pix_copy_paste || 
+                        response.data?.qr_code || 
+                        response.data?.pix_code || 
+                        response.data?.point_of_interaction?.transaction_data?.qr_code;
+
+        if (!pixCode) {
+            return res.status(400).json({ error: 'GoatPay não retornou o código PIX', detalhes: response.data });
+        }
+
+        return res.json({ pix_code: pixCode });
+
     } catch (error) {
-        console.error('Erro na requisição:', error);
-        res.status(500).json({ error: 'Erro ao processar consulta' });
+        const errData = error.response?.data || error.message;
+        console.error('ERRO GOATPAY:', errData);
+        return res.status(500).json({ error: 'Erro na GoatPay', detalhes: errData });
     }
 });
 
-// Webhook GoatPay
+// Webhook
 app.post('/webhook/goatpay', (req, res) => {
     res.status(200).send('OK');
 });
 
-// Rota coringa para carregar o index.html
+// Rota principal
 app.get(/(.*)/, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
