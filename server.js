@@ -12,8 +12,26 @@ app.use((req, res, next) => {
     next();
 });
 
-// Serve os arquivos visuais do seu site (HTML, CSS, JS) da pasta public
+// Serve os arquivos visuais da pasta public
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Rota de consulta do CNPJ (BrasilAPI com fallback para ReceitaWS)
+app.get('/api/consulta/:cnpj', async (req, res) => {
+    const cnpj = req.params.cnpj.replace(/\D/g, '');
+    try {
+        // Tenta primeiro a BrasilAPI
+        const response = await axios.get(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`);
+        return res.json(response.data);
+    } catch (err1) {
+        try {
+            // Se falhar, tenta a ReceitaWS
+            const response2 = await axios.get(`https://receitaws.com.br/v1/cnpj/${cnpj}`);
+            return res.json(response2.data);
+        } catch (err2) {
+            return res.status(400).json({ error: 'Erro ao consultar CNPJ nas bases de dados.' });
+        }
+    }
+});
 
 // Rota para gerar Pix via GoatPay
 app.post('/api/gerar-pix', async (req, res) => {
@@ -32,11 +50,11 @@ app.post('/api/gerar-pix', async (req, res) => {
         res.json(response.data);
     } catch (error) {
         console.error('Erro na GoatPay:', error.response?.data || error.message);
-        res.status(500).json({ error: 'Erro ao gerar Pix' });
+        res.status(500).json({ error: 'Erro ao gerar Pix na GoatPay' });
     }
 });
 
-// Rota do Webhook para receber a confirmação de pagamento da GoatPay
+// Rota do Webhook para receber a confirmação de pagamento
 app.post('/webhook/goatpay', (req, res) => {
     const evento = req.body;
     
@@ -47,7 +65,7 @@ app.post('/webhook/goatpay', (req, res) => {
     res.status(200).send('OK');
 });
 
-// Redireciona qualquer outra rota para o index.html (Sintaxe compatível Express 5+)
+// Redireciona qualquer outra rota para o index.html
 app.get(/(.*)/, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
