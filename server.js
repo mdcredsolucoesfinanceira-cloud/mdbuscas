@@ -5,17 +5,14 @@ const path = require('path');
 const app = express();
 app.use(express.json());
 
-// Permite conexões do frontend
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
     next();
 });
 
-// Serve a pasta de arquivos estáticos
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Rota de criação do PIX na GoatPay (Sem o campo postback_url)
 app.post('/api/gerar-pix', async (req, res) => {
     try {
         const { cnpj } = req.body;
@@ -23,7 +20,6 @@ app.post('/api/gerar-pix', async (req, res) => {
 
         console.log('Gerando PIX GoatPay para CNPJ:', cnpjLimpo);
 
-        // Requisição oficial GoatPay ajustada
         const response = await axios.post('https://api.goatpay.com.br/v1/payment-pix/create', {
             amount: 10.00,
             description: `Consulta CNPJ ${cnpjLimpo}`
@@ -36,11 +32,12 @@ app.post('/api/gerar-pix', async (req, res) => {
 
         console.log('Resposta GoatPay:', response.data);
 
-        // Pega o código Pix Copia e Cola
-        const pixCode = response.data?.pix_copy_paste || 
-                        response.data?.qr_code || 
-                        response.data?.pix_code || 
-                        response.data?.point_of_interaction?.transaction_data?.qr_code;
+        // Extrai o Pix Copia e Cola exato retornado pela GoatPay (data.copyPaste)
+        const pixCode = response.data?.data?.copyPaste || 
+                        response.data?.copyPaste || 
+                        response.data?.data?.pix_copy_paste || 
+                        response.data?.pix_copy_paste || 
+                        response.data?.data?.qr_code;
 
         if (!pixCode) {
             return res.status(400).json({ error: 'GoatPay não retornou o código PIX', detalhes: response.data });
@@ -55,12 +52,10 @@ app.post('/api/gerar-pix', async (req, res) => {
     }
 });
 
-// Webhook
 app.post('/webhook/goatpay', (req, res) => {
     res.status(200).send('OK');
 });
 
-// Rota principal
 app.get(/(.*)/, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
