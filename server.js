@@ -47,8 +47,8 @@ app.post('/webhook/goatpay', (req, res) => {
     res.status(200).send('OK');
 });
 
-// Se tentar acessar qualquer outra rota, abre o index.html da pasta public
-app.get('*', (req, res) => {
+// Redireciona qualquer outra rota para o index.html (Sintaxe compatível Express 5+)
+app.get(/(.*)/, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
