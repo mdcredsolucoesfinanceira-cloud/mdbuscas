@@ -5,17 +5,17 @@ const path = require('path');
 const app = express();
 app.use(express.json());
 
-// Permite requisições de outros locais (CORS)
+// CORS
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
     next();
 });
 
-// Serve os arquivos visuais da pasta public
+// Serve os arquivos estáticos da pasta public
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Rota exata que o seu frontend chama no botão
+// Rota solicitada pelo botão de consulta
 app.post('/api/consulta/solicitar', async (req, res) => {
     try {
         const cnpjLimpo = req.body.cnpj ? req.body.cnpj.replace(/\D/g, '') : '';
@@ -24,23 +24,23 @@ app.post('/api/consulta/solicitar', async (req, res) => {
             return res.status(400).json({ error: 'CNPJ inválido' });
         }
 
-        let nomeEmpresa = 'Empresa Localizada';
+        let nomeEncontrado = 'Empresa Localizada';
 
-        // Tenta buscar o nome da empresa na BrasilAPI ou ReceitaWS
+        // 1. Busca nome da Empresa (BrasilAPI / ReceitaWS)
         try {
             const resp = await axios.get(`https://brasilapi.com.br/api/cnpj/v1/${cnpjLimpo}`);
-            nomeEmpresa = resp.data.razao_social || resp.data.nome_fantasia || nomeEmpresa;
-        } catch (e) {
+            nomeEncontrado = resp.data.razao_social || resp.data.nome_fantasia || nomeEncontrado;
+        } catch (e1) {
             try {
                 const resp2 = await axios.get(`https://receitaws.com.br/v1/cnpj/${cnpjLimpo}`);
-                nomeEmpresa = resp2.data.nome || resp2.data.fantasia || nomeEmpresa;
-            } catch (err) {
-                console.log('Falha ao consultar APIs externas, usando nome padrao.');
+                nomeEncontrado = resp2.data.nome || resp2.data.fantasia || nomeEncontrado;
+            } catch (e2) {
+                console.log('Não foi possível obter o nome nas APIs externas.');
             }
         }
 
-        // Tenta gerar cobrança dinamica na GoatPay (se falhar, não quebra a tela)
-        let pixInfo = {};
+        // 2. Chama a API da GoatPay para gerar o Pix de R$ 10,00
+        let codigoPix = 'mdbuscas@gmail.com';
         try {
             const respGoat = await axios.post('https://api.goatpay.com.br/v1/payment-pix/create', {
                 amount: 10.00,
@@ -52,27 +52,31 @@ app.post('/api/consulta/solicitar', async (req, res) => {
                     'Content-Type': 'application/json'
                 }
             });
-            pixInfo = respGoat.data || {};
-        } catch (eGoat) {
-            console.log('Erro GoatPay, prosseguindo com resposta padrao.');
+
+            // Extrai a chave/copia e cola se retornado pela GoatPay
+            codigoPix = respGoat.data?.pix_copy_paste || respGoat.data?.qr_code || respGoat.data?.point_of_interaction?.transaction_data?.qr_code || codigoPix;
+        } catch (errGoat) {
+            console.error('Erro GoatPay:', errGoat.response?.data || errGoat.message);
         }
 
-        // Retorna a estrutura perfeita para o seu index.html
+        // Retorna todos os nomes possíveis para o frontend preencher "empresaNome" sem falhar
         res.json({
-            nome: nomeEmpresa,
-            razao_social: nomeEmpresa,
-            empresa: nomeEmpresa,
-            pix: pixInfo.qr_code || pixInfo.pix_copy_paste || 'mdbuscas@gmail.com',
-            ...pixInfo
+            empresaNome: nomeEncontrado,
+            nome: nomeEncontrado,
+            razao_social: nomeEncontrado,
+            razaoSocial: nomeEncontrado,
+            empresa: nomeEncontrado,
+            pix: codigoPix,
+            chavePixTexto: codigoPix
         });
 
     } catch (error) {
-        console.error('Erro geral:', error);
-        res.status(500).json({ error: 'Erro interno ao consultar CNPJ' });
+        console.error('Erro na requisição:', error);
+        res.status(500).json({ error: 'Erro ao processar consulta' });
     }
 });
 
-// Webhook da GoatPay
+// Webhook GoatPay
 app.post('/webhook/goatpay', (req, res) => {
     res.status(200).send('OK');
 });
