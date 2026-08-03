@@ -15,7 +15,7 @@ app.use((req, res, next) => {
 // Serve a pasta de arquivos estáticos
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Rota de criação do PIX na GoatPay
+// Rota de criação do PIX na GoatPay (Sem o campo postback_url)
 app.post('/api/gerar-pix', async (req, res) => {
     try {
         const { cnpj } = req.body;
@@ -23,11 +23,10 @@ app.post('/api/gerar-pix', async (req, res) => {
 
         console.log('Gerando PIX GoatPay para CNPJ:', cnpjLimpo);
 
-        // Requisição oficial GoatPay
+        // Requisição oficial GoatPay ajustada
         const response = await axios.post('https://api.goatpay.com.br/v1/payment-pix/create', {
             amount: 10.00,
-            description: `Consulta CNPJ ${cnpjLimpo}`,
-            postback_url: 'https://mdbuscas.onrender.com/webhook/goatpay'
+            description: `Consulta CNPJ ${cnpjLimpo}`
         }, {
             headers: {
                 'X-API-Key': 'gp_live_cbfa686e8e5d23369160b58d83a08af10b39b59c8d9d02ee',
