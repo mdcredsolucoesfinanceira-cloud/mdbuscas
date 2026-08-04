@@ -9,10 +9,10 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // =========================================================================
-// 🔑 CONFIGURAÇÃO DA API GOATPAY (Chave inserida com sucesso)
+// 🔑 CONFIGURAÇÃO DA API GOATPAY
 // =========================================================================
 const GOATPAY_API_KEY = "gp_live_e7df14ea590e46a58a6b41c42986e29fdbcf500d1644ca5d";
-const GOATPAY_ENDPOINT = "https://api.goatpay.com.br/v1/pix"; // Ou o endpoint oficial da Goatpay
+const GOATPAY_ENDPOINT = "https://api.goatpay.com.br/v1/pix";
 
 // Banco de dados em memória para as solicitações do Admin
 let pedidosPendentes = [];
@@ -44,80 +44,10 @@ app.post('/api/pagamento/pix', async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Erro ao comunicar com a Goatpay:", error.response ? error.response.data : error.message);
+        console.error("ERRO COMPLETO DA GOATPAY:", error.response ? error.response.data : error.message);
         res.status(500).json({ 
             sucesso: false, 
-            erro: "Erro ao gerar cobrança na Goatpay." 
+            erro: error.response && error.response.data ? JSON.stringify(error.response.data) : "Erro ao gerar cobrança na Goatpay." 
         });
     }
-});
-
-// 2. ROTA NOTIFICAR WHATSAPP (Aparece no admin.html)
-app.post('/api/notificar-whatsapp', (req, res) => {
-    const { txid, modulo, alvo } = req.body;
-    
-    const existe = pedidosPendentes.find(p => p.txid === txid);
-    if (!existe && txid) {
-        pedidosPendentes.push({
-            txid: txid,
-            modulo: modulo || 'CONSULTA',
-            alvo: alvo || 'Não informado',
-            status: 'pendente',
-            data: new Date().toLocaleTimeString()
-        });
-    }
-    res.json({ sucesso: true });
-});
-
-// 3. ROTA PAINEL ADMIN - LISTAR PEDIDOS
-app.get('/api/admin/pedidos', (req, res) => {
-    res.json(pedidosPendentes);
-});
-
-// 4. ROTA PAINEL ADMIN - LIBERAR CLIENTE
-app.post('/api/admin/liberar', (req, res) => {
-    const { txid } = req.body;
-    const pedido = pedidosPendentes.find(p => p.txid === txid);
-    if (pedido) {
-        pedido.status = 'aprovado';
-        res.json({ sucesso: true });
-    } else {
-        res.json({ sucesso: false, erro: "Pedido não encontrado" });
-    }
-});
-
-// 5. CHECAR SE O ADMIN APROVOU
-app.get('/api/pagamento/status/:txid', (req, res) => {
-    const { txid } = req.params;
-    const pedido = pedidosPendentes.find(p => p.txid === txid);
-    if (pedido && pedido.status === 'aprovado') {
-        res.json({ pago: true, liberadoAdmin: true });
-    } else {
-        res.json({ pago: false, liberadoAdmin: false });
-    }
-});
-
-// 6. ROTAS DAS CONSULTAS (CNPJ / CEP)
-app.get('/api/consulta/cnpj/:cnpj', async (req, res) => {
-    const cnpj = req.params.cnpj.replace(/\D/g, '');
-    try {
-        const response = await axios.get(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`);
-        res.json({ sucesso: true, dados: response.data });
-    } catch (e) {
-        res.json({ sucesso: false, erro: "CNPJ não encontrado ou inválido." });
-    }
-});
-
-app.get('/api/consulta/cep/:cep', async (req, res) => {
-    const cep = req.params.cep.replace(/\D/g, '');
-    try {
-        const response = await axios.get(`https://brasilapi.com.br/api/cep/v1/${cep}`);
-        res.json({ sucesso: true, dados: response.data });
-    } catch (e) {
-        res.json({ sucesso: false, erro: "CEP não encontrado ou inválido." });
-    }
-});
-
-app.listen(PORT, () => {
-    console.log(`Servidor MD BUSCAS ativo na porta ${PORT}`);
 });
