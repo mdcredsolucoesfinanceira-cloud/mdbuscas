@@ -81,7 +81,7 @@
                     💬 Já fiz o pagamento? Enviar Comprovante
                 </a>
 
-                <p id="statusTextoPix" style="color: #ffaa00; font-size: 0.85rem; margin-top: 10px; font-weight: bold;">⏳ Aguardando pagamento ou liberação do suporte...</p>
+                <p id="statusTextoPix" style="color: #ffaa00; font-size: 0.85rem; margin-top: 10px; font-weight: bold;">⏳ Aguardando pagamento...</p>
                 <p id="debugTxid" style="color: #556677; font-size: 0.7rem; margin-top: 3px;"></p>
             </div>
 
@@ -130,7 +130,7 @@
             document.getElementById('btnConsultarModulo').innerText = "Gerando cobrança...";
 
             try {
-                let res = await fetch('/api/pagamento/pix', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ modulo, alvo }) });
+                let res = await fetch('/api/pagamento/pix', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
                 let data = await res.json();
 
                 if(data.sucesso && data.qrcode) {
@@ -143,8 +143,7 @@
                     document.getElementById('statusTextoPix').innerText = '⏳ Aguardando pagamento...';
                     document.getElementById('debugTxid').innerText = 'ID: ' + txidAtual;
 
-                    // Checa periodicamente se o admin liberou manualmente ou se a API pagou
-                    intervalChecagem = setInterval(checarStatusLiberacao, 3000);
+                    intervalChecagem = setInterval(checarPagamentoAutomatico, 3000);
                 } else {
                     alert('Erro ao gerar Pix na Goatpay.');
                     document.getElementById('btnConsultarModulo').innerText = 'Gerar PIX R$ 10,00';
@@ -163,18 +162,18 @@
             alert('✅ Código Pix copiado com sucesso!');
         }
 
-        async function checarStatusLiberacao() {
+        async function checarPagamentoAutomatico() {
             if (!txidAtual) return;
             try {
                 let res = await fetch(`/api/pagamento/status/${txidAtual}`);
                 let data = await res.json();
 
-                if(data.pago || data.liberadoAdmin) {
+                if(data.pago) {
                     clearInterval(intervalChecagem);
                     liberarConsultaFinal();
                 }
             } catch(err) {
-                console.log("Verificando status...");
+                console.log("Checando pagamento...");
             }
         }
 
