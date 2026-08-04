@@ -3,158 +3,160 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MD BUSCAS - Painel de Consultas</title>
+    <title>MD BUSCAS - Central de Inteligência</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #050b14; color: #fff; padding: 15px; }
-        
-        .header { text-align: center; margin-bottom: 25px; padding-top: 10px; }
-        /* Estilo da Logo MD Buscas (Estilo Hacker/Celular) */
-        .logo-container { display: inline-block; background: rgba(0,255,204,0.1); border: 1px solid #00ffcc; padding: 10px 25px; border-radius: 12px; box-shadow: 0 0 15px rgba(0,255,204,0.3); margin-bottom: 10px; }
-        .logo-text { color: #00ffcc; font-size: 1.8rem; font-weight: bold; text-shadow: 0 0 10px rgba(0,255,204,0.5); letter-spacing: 2px; }
+        body { background-color: #050b14; color: #fff; overflow-x: hidden; }
+
+        #loading-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
+            background-color: #03070c; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 9999; transition: opacity 0.8s ease;
+        }
+        .loading-logo {
+            width: 180px; height: 180px; border-radius: 20px; object-fit: cover;
+            box-shadow: 0 0 30px rgba(0, 255, 204, 0.6); border: 2px solid #00ffcc;
+            animation: pulseLogo 1.5s infinite alternate; margin-bottom: 25px;
+        }
+        @keyframes pulseLogo {
+            0% { transform: scale(1); box-shadow: 0 0 20px rgba(0,255,204,0.4); }
+            100% { transform: scale(1.05); box-shadow: 0 0 40px rgba(0,255,204,0.8); }
+        }
+        .hacker-text { color: #00ffcc; font-family: monospace; font-size: 1rem; letter-spacing: 2px; margin-bottom: 15px; }
+        .progress-bar-container { width: 260px; height: 6px; background: #101c2e; border-radius: 10px; overflow: hidden; border: 1px solid rgba(0,255,204,0.3); }
+        .progress-bar { width: 0%; height: 100%; background: #00ffcc; box-shadow: 0 0 10px #00ffcc; transition: width 0.1s linear; }
+
+        #main-content { display: none; padding: 20px; max-width: 1050px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 30px; padding-top: 15px; }
+        .site-logo { width: 120px; height: 120px; border-radius: 16px; object-fit: cover; border: 2px solid #00ffcc; box-shadow: 0 0 20px rgba(0,255,204,0.4); margin-bottom: 10px; }
+        .header h1 { color: #00ffcc; font-size: 1.6rem; text-shadow: 0 0 10px rgba(0,255,204,0.4); }
         .header p { color: #8a99ad; font-size: 0.85rem; }
 
-        .grid-modules { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; max-width: 1050px; margin: 0 auto; }
-        
+        .grid-modules { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; }
         .card-module {
-            background: linear-gradient(135deg, #1b365d, #284b7a);
-            border-radius: 12px;
-            padding: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
-            border: 1px solid rgba(0,255,204,0.15);
+            background: linear-gradient(135deg, #101c2e, #1a2d4a); border-radius: 12px; padding: 16px;
+            display: flex; align-items: center; justify-content: space-between; box-shadow: 0 6px 20px rgba(0,0,0,0.5); border: 1px solid rgba(0,255,204,0.2);
         }
         .card-left { display: flex; align-items: center; gap: 14px; }
-        .card-icon { font-size: 2rem; background: rgba(0,0,0,0.25); padding: 10px; border-radius: 10px; display: flex; align-items: center; justify-content: center; width: 55px; height: 55px; }
+        .card-icon { font-size: 1.8rem; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 10px; display: flex; align-items: center; justify-content: center; width: 50px; height: 50px; }
         .card-title { font-weight: bold; font-size: 0.95rem; color: #fff; }
-        
-        .card-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
         .badge-status { background: #00b894; color: #fff; font-size: 0.65rem; padding: 3px 8px; border-radius: 6px; font-weight: bold; }
         .btn-consultar { background: #00ffcc; color: #050b14; border: none; padding: 6px 14px; border-radius: 6px; font-weight: bold; font-size: 0.75rem; cursor: pointer; }
-        .btn-consultar:hover { background: #00cca3; }
 
         /* Modal */
         .modal { display: none; position: fixed; z-index: 10; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); backdrop-filter: blur(5px); justify-content: center; align-items: center; }
-        .modal-content { background: #0f1c2e; border: 1px solid #00ffcc; padding: 25px; border-radius: 12px; width: 90%; max-width: 450px; box-shadow: 0 0 25px rgba(0,255,204,0.3); text-align: center; max-height: 85vh; overflow-y: auto; }
-        .modal-content h3 { color: #00ffcc; margin-bottom: 15px; font-size: 1.2rem; }
-        .modal-content input { width: 100%; padding: 12px; background: #050b14; border: 1px solid #284b7a; color: #fff; border-radius: 8px; margin-bottom: 15px; font-size: 1rem; outline: none; text-align: center; }
-        .resultado-box { background: #050b14; border: 1px solid rgba(0,255,204,0.3); padding: 12px; border-radius: 8px; text-align: left; font-size: 0.85rem; color: #00ffcc; margin-bottom: 15px; max-height: 200px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
-        .modal-buttons { display: flex; gap: 10px; justify-content: center; }
-        .btn-acao { padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; }
-        .btn-enviar { background: #00ffcc; color: #050b14; }
-        .btn-fechar { background: #ff4757; color: #fff; }
+        .modal-content { background: #0f1c2e; border: 1px solid #00ffcc; padding: 25px; border-radius: 12px; width: 90%; max-width: 420px; box-shadow: 0 0 25px rgba(0,255,204,0.3); text-align: center; }
+        .modal-content h3 { color: #00ffcc; margin-bottom: 15px; }
+        .modal-content input { width: 100%; padding: 12px; background: #050b14; border: 1px solid #284b7a; color: #fff; border-radius: 8px; margin-bottom: 15px; text-align: center; outline: none; }
+        .btn-acao { background: #00ffcc; color: #050b14; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; }
+        .btn-fechar { background: #ff4757; color: #fff; margin-top: 10px; width: 100%; padding: 8px; border: none; border-radius: 6px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div class="header">
-    <div class="logo-container">
-        <div class="logo-text">⚡ MD BUSCAS ⚡</div>
+    <div id="loading-screen">
+        <img src="logo.png" alt="Logo" class="loading-logo">
+        <div class="hacker-text" id="hacker-status">INICIALIZANDO SISTEMA SEGURADO...</div>
+        <div class="progress-bar-container"><div class="progress-bar" id="progressBar"></div></div>
     </div>
-    <p>Central de Inteligência e Consultas Automatizadas</p>
-</div>
 
-<div class="grid-modules">
-    <!-- CONSULTA CPF -->
-    <div class="card-module">
-        <div class="card-left"><div class="card-icon">🪪</div><div class="card-title">CONSULTA CPF</div></div>
-        <div class="card-right"><span class="badge-status">ONLINE</span><button class="btn-consultar" onclick="abrirModal('CPF')">ACESSAR</button></div>
-    </div>
-    <!-- CONSULTA TELEFONE -->
-    <div class="card-module">
-        <div class="card-left"><div class="card-icon">📞</div><div class="card-title">CONSULTA TELEFONE</div></div>
-        <div class="card-right"><span class="badge-status">ONLINE</span><button class="btn-consultar" onclick="abrirModal('TELEFONE')">ACESSAR</button></div>
-    </div>
-    <!-- CONSULTA CNPJ -->
-    <div class="card-module">
-        <div class="card-left"><div class="card-icon">🏢</div><div class="card-title">CONSULTA CNPJ</div></div>
-        <div class="card-right"><span class="badge-status">ONLINE</span><button class="btn-consultar" onclick="abrirModal('CNPJ')">ACESSAR</button></div>
-    </div>
-    <!-- CONSULTA CEP -->
-    <div class="card-module">
-        <div class="card-left"><div class="card-icon">📍</div><div class="card-title">CONSULTA CEP</div></div>
-        <div class="card-right"><span class="badge-status">ONLINE</span><button class="btn-consultar" onclick="abrirModal('CEP')">ACESSAR</button></div>
-    </div>
-    <!-- CONSULTA RG -->
-    <div class="card-module">
-        <div class="card-left"><div class="card-icon">🆔</div><div class="card-title">CONSULTA RG</div></div>
-        <div class="card-right"><span class="badge-status">ONLINE</span><button class="btn-consultar" onclick="abrirModal('RG')">ACESSAR</button></div>
-    </div>
-    <!-- CNH / DETRAN -->
-    <div class="card-module">
-        <div class="card-left"><div class="card-icon">🚗</div><div class="card-title">CNH / DETRAN</div></div>
-        <div class="card-right"><span class="badge-status">ONLINE</span><button class="btn-consultar" onclick="abrirModal('CNH')">ACESSAR</button></div>
-    </div>
-    <!-- CONSULTA NOME -->
-    <div class="card-module">
-        <div class="card-left"><div class="card-icon">👤</div><div class="card-title">CONSULTA NOME</div></div>
-        <div class="card-right"><span class="badge-status">ONLINE</span><button class="btn-consultar" onclick="abrirModal('NOME')">ACESSAR</button></div>
-    </div>
-</div>
+    <div id="main-content">
+        <div class="header">
+            <img src="logo.png" alt="Logo" class="site-logo">
+            <h1>MD BUSCAS</h1>
+            <p>Central de Inteligência e Consultas Automatizadas</p>
+        </div>
 
-<!-- MODAL -->
-<div id="modalConsulta" class="modal">
-    <div class="modal-content">
-        <h3 id="modalTitulo">CONSULTA</h3>
-        <input type="text" id="inputAlvo" placeholder="Digite o dado necessário...">
-        <div id="resultadoBox" class="resultado-box" style="display:none;"></div>
-        <div class="modal-buttons">
-            <button class="btn-acao btn-enviar" id="btnExecutar" onclick="executarConsulta()">Consultar</button>
-            <button class="btn-acao btn-fechar" onclick="fecharModal()">Fechar</button>
+        <div class="grid-modules">
+            <div class="card-module">
+                <div class="card-left"><div class="card-icon">🏢</div><div class="card-title">CONSULTA CNPJ</div></div>
+                <div><span class="badge-status">ONLINE</span><br><br><button class="btn-consultar" onclick="abrirModal('CNPJ')">ACESSAR</button></div>
+            </div>
+            <div class="card-module">
+                <div class="card-left"><div class="card-icon">🪪</div><div class="card-title">CONSULTA CPF</div></div>
+                <div><span class="badge-status">ONLINE</span><br><br><button class="btn-consultar" onclick="abrirModal('CPF')">ACESSAR</button></div>
+            </div>
+            <div class="card-module">
+                <div class="card-left"><div class="card-icon">🚗</div><div class="card-title">VEÍCULOS</div></div>
+                <div><span class="badge-status">ONLINE</span><br><br><button class="btn-consultar" onclick="abrirModal('VEÍCULOS')">ACESSAR</button></div>
+            </div>
+            <div class="card-module">
+                <div class="card-left"><div class="card-icon">📍</div><div class="card-title">ENDEREÇOS</div></div>
+                <div><span class="badge-status">ONLINE</span><br><br><button class="btn-consultar" onclick="abrirModal('ENDEREÇOS')">ACESSAR</button></div>
+            </div>
+            <div class="card-module">
+                <div class="card-left"><div class="card-icon">📞</div><div class="card-title">TELEFONES</div></div>
+                <div><span class="badge-status">ONLINE</span><br><br><button class="btn-consultar" onclick="abrirModal('TELEFONES')">ACESSAR</button></div>
+            </div>
         </div>
     </div>
-</div>
 
-<script>
-    let tipoAtual = '';
+    <!-- MODAL DE PAGAMENTO PIX -->
+    <div id="modalPix" class="modal">
+        <div class="modal-content">
+            <h3 id="modalTitulo">PAGAMENTO PIX</h3>
+            <p id="modalDesc" style="color: #8a99ad; font-size: 0.85rem; margin-bottom: 15px;">Insira o alvo da consulta (R$ 5,00 por consulta):</p>
+            <input type="text" id="inputAlvo" placeholder="Digite o CPF / CNPJ / Dado...">
+            <div id="areaPix" style="display:none; margin-bottom: 15px;">
+                <p style="color: #00ffcc; font-size: 0.9rem; margin-bottom: 8px;">Escaneie o Pix ou copie o código:</p>
+                <input type="text" id="copiaCola" readonly style="font-size: 0.8rem; background: #050b14; color: #00b894;">
+                <p style="color: #ffaa00; font-size: 0.8rem; margin-top: 5px;">Aguardando confirmação automática do pagamento...</p>
+            </div>
+            <button class="btn-acao" id="btnGerar" onclick="gerarPagamentoPix()">Gerar Pix (R$ 5,00)</button>
+            <button class="btn-fechar" onclick="fecharModal()">Cancelar</button>
+        </div>
+    </div>
 
-    function abrirModal(tipo) {
-        tipoAtual = tipo;
-        document.getElementById('modalTitulo').innerText = 'MÓDULO: ' + tipo;
-        document.getElementById('inputAlvo').value = '';
-        document.getElementById('inputAlvo').style.display = 'block';
-        document.getElementById('resultadoBox').style.display = 'none';
-        document.getElementById('btnExecutar').style.display = 'inline-block';
-        document.getElementById('modalConsulta').style.display = 'flex';
-    }
-
-    function fecharModal() {
-        document.getElementById('modalConsulta').style.display = 'none';
-    }
-
-    async function executarConsulta() {
-        let valor = document.getElementById('inputAlvo').value.trim();
-        if(!valor) { alert('Preencha o campo!'); return; }
-
-        let box = document.getElementById('resultadoBox');
-        box.style.display = 'block';
-        box.innerText = 'Consultando bases de dados... Aguarde.';
-
-        let endpoint = '';
-        if(tipoAtual === 'CEP') endpoint = `/api/cep/${valor}`;
-        else if(tipoAtual === 'CNPJ') endpoint = `/api/cnpj/${valor}`;
-        else {
-            setTimeout(() => {
-                box.innerText = `[SUCESSO] Consulta de ${tipoAtual} realizada para: ${valor}\n(Módulo pronto para receber sua API paga!)`;
-            }, 1000);
-            return;
-        }
-
-        try {
-            let res = await fetch(endpoint);
-            let data = await res.json();
-            if(res.ok) {
-                box.innerText = JSON.stringify(data, null, 2);
-            } else {
-                box.innerText = `Erro: ${data.erro || 'Falha na consulta'}`;
+    <script>
+        let moduloAtual = '';
+        
+        // Loading de 5 segundos
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += 2;
+            document.getElementById('progressBar').style.width = progress + '%';
+            if (progress >= 100) {
+                clearInterval(interval);
+                document.getElementById('loading-screen').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('loading-screen').style.display = 'none';
+                    document.getElementById('main-content').style.display = 'block';
+                }, 800);
             }
-        } catch(e) {
-            box.innerText = 'Erro de conexão com o servidor.';
-        }
-    }
-</script>
+        }, 50);
 
+        function abrirModal(modulo) {
+            moduloAtual = modulo;
+            document.getElementById('modalTitulo').innerText = 'MÓDULO: ' + modulo;
+            document.getElementById('inputAlvo').value = '';
+            document.getElementById('inputAlvo').style.display = 'block';
+            document.getElementById('areaPix').style.display = 'none';
+            document.getElementById('btnGerar').style.display = 'block';
+            document.getElementById('modalPix').style.display = 'flex';
+        }
+
+        function fecharModal() {
+            document.getElementById('modalPix').style.display = 'none';
+        }
+
+        async function gerarPagamentoPix() {
+            let alvo = document.getElementById('inputAlvo').value.trim();
+            if(!alvo) { alert('Preencha o campo do alvo!'); return; }
+
+            let res = await fetch('/api/pagamento/pix', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ modulo: moduloAtual, alvo: alvo })
+            });
+            let data = await res.json();
+
+            if(data.sucesso) {
+                document.getElementById('inputAlvo').style.display = 'none';
+                document.getElementById('btnGerar').style.display = 'none';
+                document.getElementById('areaPix').style.display = 'block';
+                document.getElementById('copiaCola').value = data.qrcode;
+            }
+        }
+    </script>
 </body>
 </html>
