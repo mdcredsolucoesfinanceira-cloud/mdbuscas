@@ -24,16 +24,25 @@ app.post('/api/pagamento/pix', async (req, res) => {
             }
         });
 
-        console.log("Resposta Goatpay:", JSON.stringify(response.data));
+        // Log para depuração se precisar ver no terminal do Termux
+        console.log("RESPOSTA GOATPAY:", JSON.stringify(response.data));
 
-        const r = response.data.data || response.data;
+        // Pega os dados de dentro do objeto data da API da Goatpay se existir, ou da raiz
+        const d = response.data.data || response.data;
 
-        // Captura todas as variações possíveis que a API da Goatpay pode retornar
+        // Varre todas as chaves possíveis que a Goatpay usa para o Pix copia e cola e qr code
+        const qrcodeText = d.copyPaste || d.pix_copia_e_cola || d.qrcode || d.emv || d.payload || d.copiaECola || "";
+        
+        let qrcodeImg = d.qrCodeBase64 || d.qr_code_image || d.imagem_qrc || d.encodedImage || "";
+        if (qrcodeImg && !qrcodeImg.startsWith('data:image')) {
+            qrcodeImg = `data:image/png;base64,${qrcodeImg}`;
+        }
+
         res.json({
             sucesso: true,
-            txid: r.id || r.txid || r.uuid,
-            qrcode: r.pix_copia_e_cola || r.qrcode || r.emv || r.payload || r.copiaECola,
-            qrcode_image: r.qr_code_image || r.imagem_qrc || r.encodedImage || r.qrCodeBase64 || (r.qrCode ? `data:image/png;base64,${r.qrCode}` : '')
+            txid: d.id || d.txid || d.uuid,
+            qrcode: qrcodeText,
+            qrcode_image: qrcodeImg
         });
 
     } catch (error) {
@@ -52,8 +61,8 @@ app.get('/api/pagamento/status/:txid', async (req, res) => {
             }
         });
         
-        const r = response.data.data || response.data;
-        const status = r.status;
+        const d = response.data.data || response.data;
+        const status = d.status;
         const pago = (status === 'approved' || status === 'PAID' || status === 'pago' || status === 'CONCLUIDA' || status === 'COMPLETED');
 
         res.json({ pago: pago });

@@ -126,7 +126,7 @@
                 let res = await fetch('/api/pagamento/pix', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
                 let data = await res.json();
 
-                if(data.sucesso) {
+                if(data.sucesso && data.qrcode) {
                     txidAtual = data.txid;
                     document.getElementById('inputAlvo').style.display = 'none';
                     document.getElementById('btnConsultarModulo').style.display = 'none';
@@ -136,11 +136,11 @@
 
                     intervalChecagem = setInterval(() => checarPagamento(alvo), 3000);
                 } else {
-                    alert('Erro ao gerar Pix na API.');
+                    alert('Erro: A API da Goatpay não retornou o código Pix.');
                     document.getElementById('btnConsultarModulo').innerText = 'Gerar PIX R$ 10,00';
                 }
             } catch (e) {
-                alert('Erro de conexão.');
+                alert('Erro de conexão com o servidor.');
                 document.getElementById('btnConsultarModulo').innerText = 'Gerar PIX R$ 10,00';
             }
         }
