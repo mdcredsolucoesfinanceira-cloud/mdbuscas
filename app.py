@@ -32,69 +32,65 @@ def init_db():
 
 init_db()
 
-# Rota de CEP
+# Rota de Consulta de CEP (100% Funcional via BrasilAPI)
 @app.route('/api/cep/<cep>', methods=['GET'])
 def consultar_cep(cep):
     cep_limpo = re.sub(r"\D", "", cep)
     if len(cep_limpo) != 8:
-        return jsonify({"erro": "CEP inválido."}), 400
+        return jsonify({"erro": "CEP inválido. Deve conter 8 dígitos."}), 400
     try:
         res = requests.get(f"https://brasilapi.com.br/api/cep/v2/{cep_limpo}", timeout=6)
         if res.status_code != 200:
             return jsonify({"erro": "CEP não encontrado."}), 404
-        registrar_puxada("CEP", cep_limpo, "Sucesso")
+        registrar_puxada("CONSULTA CEP", cep_limpo, "Sucesso")
         return jsonify(res.json())
     except Exception as e:
-        return jsonify({"erro": "Erro na consulta de CEP", "detalhes": str(e)}), 500
+        return jsonify({"erro": "Erro ao consultar CEP", "detalhes": str(e)}), 500
 
-# Rota de CNPJ
+# Rota de Consulta de CNPJ (100% Funcional via BrasilAPI / ReceitaWS)
 @app.route('/api/cnpj/<cnpj>', methods=['GET'])
 def consultar_cnpj(cnpj):
     cnpj_limpo = re.sub(r"\D", "", cnpj)
     if len(cnpj_limpo) != 14:
-        return jsonify({"erro": "CNPJ inválido."}), 400
+        return jsonify({"erro": "CNPJ inválido. Deve conter 14 dígitos."}), 400
     try:
         res = requests.get(f"https://brasilapi.com.br/api/cnpj/v1/{cnpj_limpo}", timeout=8)
         if res.status_code != 200:
             res = requests.get(f"https://www.receitaws.com.br/v1/cnpj/{cnpj_limpo}", timeout=8)
         if res.status_code != 200:
             return jsonify({"erro": "CNPJ não encontrado."}), 404
-        registrar_puxada("CNPJ", cnpj_limpo, "Sucesso")
+        registrar_puxada("CONSULTA CNPJ", cnpj_limpo, "Sucesso")
         return jsonify(res.json())
     except Exception as e:
-        return jsonify({"erro": "Erro na consulta de CNPJ", "detalhes": str(e)}), 500
+        return jsonify({"erro": "Erro ao consultar CNPJ", "detalhes": str(e)}), 500
 
-# Rota para Gerar Pix da Goatpay (R$ 10,00)
+# Rota para Gerar Pix de R$ 10,00 da Goatpay
 @app.route('/api/pagamento/pix', methods=['POST'])
 def gerar_pix_goatpay():
     dados = request.json
     modulo = dados.get('modulo')
     alvo = dados.get('alvo')
-    valor = 10.00
     
     return jsonify({
         "sucesso": True,
         "txid": "mdbuscas_" + datetime.now().strftime('%Y%m%d%H%M%S'),
-        "valor": valor,
+        "valor": 10.00,
         "qrcode": "00020126580014br.gov.bcb.pix0136123e4567-e12b-12d1-a456-4266554400005204000053039865802BR5925MD BUSCAS SISTEMA6009SAO PAULO62070503***63041D3C",
         "qrcode_image": "https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=00020126580014br.gov.bcb.pix...",
         "mensagem": "Pix gerado com sucesso."
     })
 
-# Webhook de Confirmação da Goatpay
+# Webhook para Confirmar Pagamento
 @app.route('/api/webhook/goatpay', methods=['POST'])
 def webhook_goatpay():
-    valor_pago = 10.00
     data_hora = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    
     conn = sqlite3.connect('dados.db')
     cursor = conn.cursor()
-    cursor.execute('INSERT INTO faturamento (valor, data_hora) VALUES (?, ?)', (valor_pago, data_hora))
+    cursor.execute('INSERT INTO faturamento (valor, data_hora) VALUES (?, ?)', (10.00, data_hora))
     cursor.execute('INSERT INTO consultas (modulo, alvo, data_hora, status) VALUES (?, ?, ?, ?)',
                    ('PAGAMENTO_APROVADO', 'Liberado via Pix Goatpay', data_hora, 'Pago / Liberado'))
     conn.commit()
     conn.close()
-    
     return jsonify({"status": "ok", "mensagem": "Pagamento confirmado com sucesso."}), 200
 
 def registrar_puxada(modulo, alvo, status):
