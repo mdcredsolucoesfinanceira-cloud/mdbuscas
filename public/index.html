@@ -32,7 +32,8 @@
         .modal-content { background: #0f1c2e; border: 1px solid #00ffcc; padding: 25px; border-radius: 12px; width: 90%; max-width: 500px; box-shadow: 0 0 25px rgba(0,255,204,0.3); text-align: center; max-height: 90vh; overflow-y: auto; }
         .modal-content h3 { color: #00ffcc; margin-bottom: 12px; }
         .modal-content input { width: 100%; padding: 12px; background: #050b14; border: 1px solid #284b7a; color: #fff; border-radius: 8px; margin-bottom: 15px; text-align: center; outline: none; font-size: 1rem; }
-        .btn-acao { background: #00ffcc; color: #050b14; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; }
+        .btn-acao { background: #00ffcc; color: #050b14; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 5px; }
+        .btn-copiar { background: #f39c12; color: #050b14; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; margin-bottom: 10px; font-size: 0.85rem; }
         .btn-fechar { background: #ff4757; color: #fff; margin-top: 15px; width: 100%; padding: 8px; border: none; border-radius: 6px; cursor: pointer; }
         #resultadoDados { display: none; background: #03070c; padding: 15px; border-radius: 8px; border: 1px solid #284b7a; text-align: left; font-size: 0.8rem; overflow-x: auto; color: #00ffcc; margin-top: 15px; }
     </style>
@@ -50,11 +51,8 @@
             <p>Central de Inteligência e Consultas Automatizadas</p>
         </div>
         <div class="grid-modules">
-            <!-- Ativos com API -->
             <div class="card-module"><div class="card-left"><div class="card-icon">🏢</div><div class="card-title">CONSULTA CNPJ</div></div><div><span class="badge-status">R$ 10,00</span><br><br><button class="btn-consultar" onclick="abrirModal('CNPJ')">ACESSAR</button></div></div>
             <div class="card-module"><div class="card-left"><div class="card-icon">📍</div><div class="card-title">CONSULTA CEP</div></div><div><span class="badge-status">R$ 10,00</span><br><br><button class="btn-consultar" onclick="abrirModal('CEP')">ACESSAR</button></div></div>
-            
-            <!-- Em Manutenção / Futuros -->
             <div class="card-module"><div class="card-left"><div class="card-icon">🪪</div><div class="card-title">CONSULTA CPF</div></div><div><span class="badge-manutencao">MANUTENÇÃO</span><br><br><button class="btn-bloqueado">EM BREVE</button></div></div>
             <div class="card-module"><div class="card-left"><div class="card-icon">👤</div><div class="card-title">CONSULTA NOME</div></div><div><span class="badge-manutencao">MANUTENÇÃO</span><br><br><button class="btn-bloqueado">EM BREVE</button></div></div>
             <div class="card-module"><div class="card-left"><div class="card-icon">📞</div><div class="card-title">CONSULTA TELEFONE</div></div><div><span class="badge-manutencao">MANUTENÇÃO</span><br><br><button class="btn-bloqueado">EM BREVE</button></div></div>
@@ -71,8 +69,13 @@
             <div id="areaPix" style="display:none;">
                 <p style="color: #00ffcc; font-weight: bold; font-size: 1.1rem; margin-bottom: 8px;">TAXA DE LIBERAÇÃO: R$ 10,00</p>
                 <p style="color: #8a99ad; font-size: 0.85rem; margin-bottom: 12px;">Escaneie o QR Code ou copie a chave PIX:</p>
-                <img id="imgQrCode" src="" alt="QR Code Pix" style="width: 180px; height: 180px; border-radius: 8px; margin-bottom: 10px; border: 2px solid #00ffcc;">
+                
+                <img id="imgQrCode" src="" alt="QR Code Pix" style="width: 180px; height: 180px; border-radius: 8px; margin-bottom: 10px; border: 2px solid #00ffcc; background: #fff;">
+                
                 <input type="text" id="copiaCola" readonly style="font-size: 0.75rem; background: #050b14; color: #00ffcc; margin-bottom: 5px;">
+                
+                <button class="btn-copiar" onclick="copiarPix()">📋 Copiar Código Pix</button>
+                
                 <p style="color: #ffaa00; font-size: 0.8rem; margin-top: 10px; font-weight: bold;">⏳ Aguardando aprovação do PIX...</p>
             </div>
 
@@ -106,6 +109,7 @@
             document.getElementById('areaPix').style.display = 'none';
             document.getElementById('resultadoDados').style.display = 'none';
             document.getElementById('btnConsultarModulo').style.display = 'block';
+            document.getElementById('btnConsultarModulo').innerText = 'Gerar PIX R$ 10,00';
             document.getElementById('modalConsulta').style.display = 'flex';
             if(intervalChecagem) clearInterval(intervalChecagem);
         }
@@ -118,19 +122,35 @@
 
             document.getElementById('btnConsultarModulo').innerText = "Gerando cobrança...";
             
-            let res = await fetch('/api/pagamento/pix', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-            let data = await res.json();
+            try {
+                let res = await fetch('/api/pagamento/pix', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+                let data = await res.json();
 
-            if(data.sucesso) {
-                txidAtual = data.txid;
-                document.getElementById('inputAlvo').style.display = 'none';
-                document.getElementById('btnConsultarModulo').style.display = 'none';
-                document.getElementById('areaPix').style.display = 'block';
-                document.getElementById('copiaCola').value = data.qrcode;
-                document.getElementById('imgQrCode').src = data.qrcode_image;
+                if(data.sucesso) {
+                    txidAtual = data.txid;
+                    document.getElementById('inputAlvo').style.display = 'none';
+                    document.getElementById('btnConsultarModulo').style.display = 'none';
+                    document.getElementById('areaPix').style.display = 'block';
+                    document.getElementById('copiaCola').value = data.qrcode;
+                    document.getElementById('imgQrCode').src = data.qrcode_image;
 
-                intervalChecagem = setInterval(() => checarPagamento(alvo), 2000);
+                    intervalChecagem = setInterval(() => checarPagamento(alvo), 3000);
+                } else {
+                    alert('Erro ao gerar Pix na API.');
+                    document.getElementById('btnConsultarModulo').innerText = 'Gerar PIX R$ 10,00';
+                }
+            } catch (e) {
+                alert('Erro de conexão.');
+                document.getElementById('btnConsultarModulo').innerText = 'Gerar PIX R$ 10,00';
             }
+        }
+
+        function copiarPix() {
+            let copiaCola = document.getElementById('copiaCola');
+            copiaCola.select();
+            copiaCola.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(copiaCola.value);
+            alert('✅ Código Pix copiado com sucesso!');
         }
 
         async function checarPagamento(alvo) {

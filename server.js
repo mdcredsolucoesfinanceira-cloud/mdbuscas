@@ -8,10 +8,8 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Sua Nova Chave Real da Goatpay
 const GOATPAY_TOKEN = "gp_live_81d0c1ea8d727f0f8603e4a1a444c7e2a8ad43ccc9c18a72"; 
 
-// ROTA PARA GERAR O PIX NA GOATPAY
 app.post('/api/pagamento/pix', async (req, res) => {
     try {
         const response = await axios.post('https://api.goatpay.com.br/v1/payment-pix/create', {
@@ -26,13 +24,16 @@ app.post('/api/pagamento/pix', async (req, res) => {
             }
         });
 
-        const respData = response.data.data || response.data;
+        console.log("Resposta Goatpay:", JSON.stringify(response.data));
 
+        const r = response.data.data || response.data;
+
+        // Captura todas as variações possíveis que a API da Goatpay pode retornar
         res.json({
             sucesso: true,
-            txid: respData.id || respData.txid || respData.uuid,
-            qrcode: respData.pix_copia_e_cola || respData.qrcode || respData.emv,
-            qrcode_image: respData.qr_code_image || respData.imagem_qrc || respData.encodedImage
+            txid: r.id || r.txid || r.uuid,
+            qrcode: r.pix_copia_e_cola || r.qrcode || r.emv || r.payload || r.copiaECola,
+            qrcode_image: r.qr_code_image || r.imagem_qrc || r.encodedImage || r.qrCodeBase64 || (r.qrCode ? `data:image/png;base64,${r.qrCode}` : '')
         });
 
     } catch (error) {
@@ -41,7 +42,6 @@ app.post('/api/pagamento/pix', async (req, res) => {
     }
 });
 
-// ROTA PARA VERIFICAR STATUS DO PAGAMENTO NA GOATPAY
 app.get('/api/pagamento/status/:txid', async (req, res) => {
     const { txid } = req.params;
     try {
@@ -52,8 +52,8 @@ app.get('/api/pagamento/status/:txid', async (req, res) => {
             }
         });
         
-        const respData = response.data.data || response.data;
-        const status = respData.status;
+        const r = response.data.data || response.data;
+        const status = r.status;
         const pago = (status === 'approved' || status === 'PAID' || status === 'pago' || status === 'CONCLUIDA' || status === 'COMPLETED');
 
         res.json({ pago: pago });
@@ -62,7 +62,6 @@ app.get('/api/pagamento/status/:txid', async (req, res) => {
     }
 });
 
-// ROTA PARA CONSULTAR CNPJ (BrasilAPI + ReceitaWS)
 app.get('/api/consulta/cnpj/:cnpj', async (req, res) => {
     let cnpj = req.params.cnpj.replace(/\D/g, '');
     try {
@@ -82,7 +81,6 @@ app.get('/api/consulta/cnpj/:cnpj', async (req, res) => {
     }
 });
 
-// ROTA PARA CONSULTAR CEP (BrasilAPI)
 app.get('/api/consulta/cep/:cep', async (req, res) => {
     let cep = req.params.cep.replace(/\D/g, '');
     try {
