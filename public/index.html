@@ -7,75 +7,35 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #050b14; color: #fff; overflow-x: hidden; }
-
-        #loading-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
-            background-color: #03070c; display: flex; flex-direction: column;
-            justify-content: center; align-items: center; z-index: 9999;
-            transition: transform 1s cubic-bezier(0.77, 0, 0.175, 1), opacity 1s ease;
-        }
-
-        #loading-screen.slide-out {
-            transform: translateY(-100%);
-            opacity: 0;
-        }
-
-        .hacker-logo-text {
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 2.4rem;
-            font-weight: bold;
-            color: #00ffcc;
-            text-shadow: 0 0 20px rgba(0,255,204,0.8), 0 0 40px rgba(0,255,204,0.4);
-            letter-spacing: 4px;
-            margin-bottom: 25px;
-            animation: glitchEffect 1.2s infinite alternate;
-            text-align: center;
-        }
-
-        @keyframes glitchEffect {
-            0% { transform: scale(1); text-shadow: 0 0 10px rgba(0,255,204,0.6); }
-            50% { transform: scale(1.04); text-shadow: 0 0 30px rgba(0,255,204,1), 3px 0 #ff0055; }
-            100% { transform: scale(1); text-shadow: 0 0 10px rgba(0,255,204,0.6); }
-        }
-
+        #loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background-color: #03070c; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; transition: transform 1s cubic-bezier(0.77, 0, 0.175, 1), opacity 1s ease; }
+        #loading-screen.slide-out { transform: translateY(-100%); opacity: 0; }
+        .hacker-logo-text { font-family: 'Courier New', Courier, monospace; font-size: 2.4rem; font-weight: bold; color: #00ffcc; text-shadow: 0 0 20px rgba(0,255,204,0.8), 0 0 40px rgba(0,255,204,0.4); letter-spacing: 4px; margin-bottom: 25px; animation: glitchEffect 1.2s infinite alternate; text-align: center; }
+        @keyframes glitchEffect { 0% { transform: scale(1); text-shadow: 0 0 10px rgba(0,255,204,0.6); } 50% { transform: scale(1.04); text-shadow: 0 0 30px rgba(0,255,204,1), 3px 0 #ff0055; } 100% { transform: scale(1); text-shadow: 0 0 10px rgba(0,255,204,0.6); } }
         .hacker-status { color: #00ffcc; font-family: monospace; font-size: 0.95rem; letter-spacing: 1px; margin-bottom: 15px; text-align: center; }
         .progress-bar-container { width: 280px; height: 6px; background: #101c2e; border-radius: 10px; overflow: hidden; border: 1px solid rgba(0,255,204,0.3); }
         .progress-bar { width: 0%; height: 100%; background: #00ffcc; box-shadow: 0 0 12px #00ffcc; transition: width 0.05s linear; }
-
-        #main-content {
-            opacity: 0; transform: scale(0.95);
-            transition: opacity 0.8s ease, transform 0.8s ease;
-            padding: 20px; max-width: 1050px; margin: 0 auto;
-        }
-        #main-content.show {
-            opacity: 1; transform: scale(1);
-        }
-
+        #main-content { opacity: 0; transform: scale(0.95); transition: opacity 0.8s ease, transform 0.8s ease; padding: 20px; max-width: 1050px; margin: 0 auto; display: none; }
+        #main-content.show { opacity: 1; transform: scale(1); }
         .header { text-align: center; margin-bottom: 30px; padding-top: 15px; }
         .header h1 { color: #00ffcc; font-size: 1.8rem; text-shadow: 0 0 10px rgba(0,255,204,0.4); font-family: monospace; letter-spacing: 2px; }
         .header p { color: #8a99ad; font-size: 0.85rem; }
-
         .grid-modules { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; }
-        .card-module {
-            background: linear-gradient(135deg, #101c2e, #1a2d4a); border-radius: 12px; padding: 16px;
-            display: flex; align-items: center; justify-content: space-between; box-shadow: 0 6px 20px rgba(0,0,0,0.5); border: 1px solid rgba(0,255,204,0.2);
-        }
+        .card-module { background: linear-gradient(135deg, #101c2e, #1a2d4a); border-radius: 12px; padding: 16px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 6px 20px rgba(0,0,0,0.5); border: 1px solid rgba(0,255,204,0.2); }
         .card-left { display: flex; align-items: center; gap: 14px; }
         .card-icon { font-size: 1.8rem; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 10px; display: flex; align-items: center; justify-content: center; width: 50px; height: 50px; }
         .card-title { font-weight: bold; font-size: 0.95rem; color: #fff; }
         .badge-status { background: #00b894; color: #fff; font-size: 0.65rem; padding: 3px 8px; border-radius: 6px; font-weight: bold; }
         .btn-consultar { background: #00ffcc; color: #050b14; border: none; padding: 6px 14px; border-radius: 6px; font-weight: bold; font-size: 0.75rem; cursor: pointer; }
-
-        .modal { display: none; position: fixed; z-index: 10; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); backdrop-filter: blur(5px); justify-content: center; align-items: center; }
-        .modal-content { background: #0f1c2e; border: 1px solid #00ffcc; padding: 25px; border-radius: 12px; width: 90%; max-width: 440px; box-shadow: 0 0 25px rgba(0,255,204,0.3); text-align: center; }
+        .modal { display: none; position: fixed; z-index: 10; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); backdrop-filter: blur(5px); justify-content: center; align-items: center; }
+        .modal-content { background: #0f1c2e; border: 1px solid #00ffcc; padding: 25px; border-radius: 12px; width: 90%; max-width: 500px; box-shadow: 0 0 25px rgba(0,255,204,0.3); text-align: center; max-height: 90vh; overflow-y: auto; }
         .modal-content h3 { color: #00ffcc; margin-bottom: 12px; }
-        .modal-content input { width: 100%; padding: 12px; background: #050b14; border: 1px solid #284b7a; color: #fff; border-radius: 8px; margin-bottom: 15px; text-align: center; outline: none; }
+        .modal-content input { width: 100%; padding: 12px; background: #050b14; border: 1px solid #284b7a; color: #fff; border-radius: 8px; margin-bottom: 15px; text-align: center; outline: none; font-size: 1rem; }
         .btn-acao { background: #00ffcc; color: #050b14; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; }
-        .btn-fechar { background: #ff4757; color: #fff; margin-top: 10px; width: 100%; padding: 8px; border: none; border-radius: 6px; cursor: pointer; }
+        .btn-fechar { background: #ff4757; color: #fff; margin-top: 15px; width: 100%; padding: 8px; border: none; border-radius: 6px; cursor: pointer; }
+        #resultadoDados { display: none; background: #03070c; padding: 15px; border-radius: 8px; border: 1px solid #284b7a; text-align: left; font-size: 0.8rem; overflow-x: auto; color: #00ffcc; margin-top: 15px; }
     </style>
 </head>
 <body>
-
     <div id="loading-screen">
         <div class="hacker-logo-text">[ MD BUSCAS ]</div>
         <div class="hacker-status" id="hacker-status">CARREGANDO SISTEMA DE SEGURANÇA...</div>
@@ -87,103 +47,102 @@
             <h1>[ MD BUSCAS ]</h1>
             <p>Central de Inteligência e Consultas Automatizadas</p>
         </div>
-
         <div class="grid-modules">
-            <div class="card-module">
-                <div class="card-left"><div class="card-icon">🏢</div><div class="card-title">CONSULTA CNPJ</div></div>
-                <div><span class="badge-status">ONLINE</span><br><br><button class="btn-consultar" onclick="abrirModal('CNPJ')">ACESSAR</button></div>
-            </div>
-            <div class="card-module">
-                <div class="card-left"><div class="card-icon">🪪</div><div class="card-title">CONSULTA CPF</div></div>
-                <div><span class="badge-status">ONLINE</span><br><br><button class="btn-consultar" onclick="abrirModal('CPF')">ACESSAR</button></div>
-            </div>
-            <div class="card-module">
-                <div class="card-left"><div class="card-icon">🚗</div><div class="card-title">VEÍCULOS</div></div>
-                <div><span class="badge-status">ONLINE</span><br><br><button class="btn-consultar" onclick="abrirModal('VEÍCULOS')">ACESSAR</button></div>
-            </div>
-            <div class="card-module">
-                <div class="card-left"><div class="card-icon">📍</div><div class="card-title">CONSULTA CEP</div></div>
-                <div><span class="badge-status">ONLINE</span><br><br><button class="btn-consultar" onclick="abrirModal('CEP')">ACESSAR</button></div>
-            </div>
-            <div class="card-module">
-                <div class="card-left"><div class="card-icon">📞</div><div class="card-title">TELEFONES</div></div>
-                <div><span class="badge-status">ONLINE</span><br><br><button class="btn-consultar" onclick="abrirModal('TELEFONES')">ACESSAR</button></div>
-            </div>
+            <div class="card-module"><div class="card-left"><div class="card-icon">🏢</div><div class="card-title">CONSULTA CNPJ</div></div><div><span class="badge-status">R$ 10,00</span><br><br><button class="btn-consultar" onclick="abrirModal('CNPJ')">ACESSAR</button></div></div>
+            <div class="card-module"><div class="card-left"><div class="card-icon">📍</div><div class="card-title">CONSULTA CEP</div></div><div><span class="badge-status">R$ 10,00</span><br><br><button class="btn-consultar" onclick="abrirModal('CEP')">ACESSAR</button></div></div>
         </div>
     </div>
 
     <div id="modalConsulta" class="modal">
         <div class="modal-content">
-            <h3 id="modalTitulo">CONSULTA</h3>
-            <input type="text" id="inputAlvo" placeholder="Digite o documento ou dado alvo...">
+            <h3 id="modalTitulo">MÓDULO</h3>
+            <input type="text" id="inputAlvo" placeholder="Digite o dado (CNPJ ou CEP)...">
             
             <div id="areaPix" style="display:none;">
-                <p style="color: #00b894; font-weight: bold; font-size: 0.9rem; margin-bottom: 8px;">✔ Já encontramos seus dados!</p>
-                <p style="color: #8a99ad; font-size: 0.8rem; margin-bottom: 8px;">Escaneie o QR Code ou copie o Pix de R$ 10,00:</p>
-                <img id="imgQrCode" src="" alt="QR Code Pix" style="width: 150px; height: 150px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #00ffcc;">
-                <input type="text" id="copiaCola" readonly style="font-size: 0.75rem; background: #050b14; color: #00ffcc;">
-                <p style="color: #ffaa00; font-size: 0.75rem; margin-top: 5px;">Aguardando confirmação automática da Goatpay...</p>
+                <p style="color: #00ffcc; font-weight: bold; font-size: 1.1rem; margin-bottom: 8px;">TAXA DE LIBERAÇÃO: R$ 10,00</p>
+                <p style="color: #8a99ad; font-size: 0.85rem; margin-bottom: 12px;">Escaneie o QR Code ou copie a chave PIX:</p>
+                <img id="imgQrCode" src="" alt="QR Code Pix" style="width: 180px; height: 180px; border-radius: 8px; margin-bottom: 10px; border: 2px solid #00ffcc;">
+                <input type="text" id="copiaCola" readonly style="font-size: 0.75rem; background: #050b14; color: #00ffcc; margin-bottom: 5px;">
+                <p style="color: #ffaa00; font-size: 0.8rem; margin-top: 10px; font-weight: bold;">⏳ Aguardando aprovação do PIX (Simulação 5s)...</p>
             </div>
 
-            <button class="btn-acao" id="btnConsultarModulo" onclick="executarConsultaModulo()">Consultar Módulo</button>
-            <button class="btn-fechar" onclick="fecharModal()">Fechar</button>
+            <pre id="resultadoDados"></pre>
+
+            <button class="btn-acao" id="btnConsultarModulo" onclick="solicitarPagamento()">Gerar PIX R$ 10,00</button>
+            <button class="btn-fechar" onclick="fecharModal()">Fechar Janela</button>
         </div>
     </div>
 
     <script>
-        let progress = 0;
-        // 5 segundos exatos de carregamento (50ms * 100 passos = 5000ms)
-        const interval = setInterval(() => {
-            progress += 1;
-            document.getElementById('progressBar').style.width = progress + '%';
-            
-            if(progress === 30) document.getElementById('hacker-status').innerText = 'CONECTANDO AOS SERVIDORES...';
-            if(progress === 70) document.getElementById('hacker-status').innerText = 'AUTENTICANDO MÓDULOS...';
-            if(progress === 95) document.getElementById('hacker-status').innerText = 'LIBERANDO ACESSO...';
+        let progress = 0; let moduloAtual = ''; let txidAtual = ''; let intervalChecagem;
 
+        const intervalLoad = setInterval(() => {
+            progress += 2; document.getElementById('progressBar').style.width = progress + '%';
+            if(progress === 30) document.getElementById('hacker-status').innerText = 'CONECTANDO AOS SERVIDORES...';
+            if(progress === 70) document.getElementById('hacker-status').innerText = 'AUTENTICANDO SISTEMA...';
             if (progress >= 100) {
-                clearInterval(interval);
-                // Animação de subida da tela de load
+                clearInterval(intervalLoad);
                 document.getElementById('loading-screen').classList.add('slide-out');
-                // Mostra a tela principal com efeito de zoom suave
                 document.getElementById('main-content').style.display = 'block';
-                setTimeout(() => {
-                    document.getElementById('main-content').classList.add('show');
-                    document.getElementById('loading-screen').style.display = 'none';
-                }, 500);
+                setTimeout(() => { document.getElementById('main-content').classList.add('show'); document.getElementById('loading-screen').style.display = 'none'; }, 500);
             }
         }, 50);
 
         function abrirModal(modulo) {
-            document.getElementById('modalTitulo').innerText = 'MÓDULO: ' + modulo;
+            moduloAtual = modulo;
+            document.getElementById('modalTitulo').innerText = 'CONSULTA ' + modulo;
             document.getElementById('inputAlvo').value = '';
             document.getElementById('inputAlvo').style.display = 'block';
             document.getElementById('areaPix').style.display = 'none';
+            document.getElementById('resultadoDados').style.display = 'none';
             document.getElementById('btnConsultarModulo').style.display = 'block';
             document.getElementById('modalConsulta').style.display = 'flex';
+            if(intervalChecagem) clearInterval(intervalChecagem);
         }
 
-        function fecharModal() {
-            document.getElementById('modalConsulta').style.display = 'none';
-        }
+        function fecharModal() { document.getElementById('modalConsulta').style.display = 'none'; if(intervalChecagem) clearInterval(intervalChecagem); }
 
-        async function executarConsultaModulo() {
+        async function solicitarPagamento() {
             let alvo = document.getElementById('inputAlvo').value.trim();
             if(!alvo) { alert('Digite o dado correspondente antes de continuar!'); return; }
 
-            let res = await fetch('/api/pagamento/pix', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ modulo: 'Consulta', alvo: alvo })
-            });
+            document.getElementById('btnConsultarModulo').innerText = "Gerando cobrança...";
+            
+            let res = await fetch('/api/pagamento/pix', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
             let data = await res.json();
 
             if(data.sucesso) {
+                txidAtual = data.txid;
                 document.getElementById('inputAlvo').style.display = 'none';
                 document.getElementById('btnConsultarModulo').style.display = 'none';
                 document.getElementById('areaPix').style.display = 'block';
                 document.getElementById('copiaCola').value = data.qrcode;
                 document.getElementById('imgQrCode').src = data.qrcode_image;
+
+                intervalChecagem = setInterval(() => checarPagamento(alvo), 2000);
+            }
+        }
+
+        async function checarPagamento(alvo) {
+            let res = await fetch(`/api/pagamento/status/${txidAtual}`);
+            let data = await res.json();
+            
+            if(data.pago) {
+                clearInterval(intervalChecagem);
+                document.getElementById('areaPix').style.display = 'none';
+                let resDiv = document.getElementById('resultadoDados');
+                resDiv.style.display = 'block';
+                resDiv.innerHTML = '✅ PAGAMENTO APROVADO! Buscando dados nas centrais...';
+
+                let rota = moduloAtual === 'CNPJ' ? `/api/consulta/cnpj/${alvo}` : `/api/consulta/cep/${alvo}`;
+                let resBusca = await fetch(rota);
+                let dataBusca = await resBusca.json();
+
+                if(dataBusca.sucesso) {
+                    resDiv.innerHTML = JSON.stringify(dataBusca.dados, null, 4);
+                } else {
+                    resDiv.innerHTML = '❌ Erro ao buscar os dados: ' + dataBusca.erro;
+                }
             }
         }
     </script>
