@@ -24,13 +24,9 @@ app.post('/api/pagamento/pix', async (req, res) => {
             }
         });
 
-        // Log para depuração se precisar ver no terminal do Termux
-        console.log("RESPOSTA GOATPAY:", JSON.stringify(response.data));
+        console.log("RESPOSTA GOATPAY CRIAR:", JSON.stringify(response.data));
 
-        // Pega os dados de dentro do objeto data da API da Goatpay se existir, ou da raiz
         const d = response.data.data || response.data;
-
-        // Varre todas as chaves possíveis que a Goatpay usa para o Pix copia e cola e qr code
         const qrcodeText = d.copyPaste || d.pix_copia_e_cola || d.qrcode || d.emv || d.payload || d.copiaECola || "";
         
         let qrcodeImg = d.qrCodeBase64 || d.qr_code_image || d.imagem_qrc || d.encodedImage || "";
@@ -38,9 +34,12 @@ app.post('/api/pagamento/pix', async (req, res) => {
             qrcodeImg = `data:image/png;base64,${qrcodeImg}`;
         }
 
+        // Captura o ID interno real da Goatpay para consulta exata de status
+        const txidReal = d.id || d.transactionId || d.txid || d.uuid;
+
         res.json({
             sucesso: true,
-            txid: d.id || d.txid || d.uuid,
+            txid: txidReal,
             qrcode: qrcodeText,
             qrcode_image: qrcodeImg
         });
@@ -54,6 +53,7 @@ app.post('/api/pagamento/pix', async (req, res) => {
 app.get('/api/pagamento/status/:txid', async (req, res) => {
     const { txid } = req.params;
     try {
+        // Consulta direto na rota oficial da Goatpay com o ID da transação
         const response = await axios.get(`https://api.goatpay.com.br/v1/payment-pix/${txid}`, {
             headers: { 
                 'X-API-Key': GOATPAY_TOKEN,
@@ -61,12 +61,17 @@ app.get('/api/pagamento/status/:txid', async (req, res) => {
             }
         });
         
-        const d = response.data.data || response.data;
-        const status = d.status;
-        const pago = (status === 'approved' || status === 'PAID' || status === 'pago' || status === 'CONCLUIDA' || status === 'COMPLETED');
+        console.log(`STATUS TXID ${txid}:`, JSON.stringify(response.data));
 
-        res.json({ pago: pago });
+        const d = response.data.data || response.data;
+        const status = String(d.status || d.state || '').toLowerCase();
+        
+        // Verifica se o status indica pagamento aprovado
+        const pago = status.includes('approved') || status.includes('paid') || status.includes('pago') || status.includes('concl') || status.includes('success') || status.includes('confirmed');
+
+        res.json({ pago: pago, status_recebido: status });
     } catch (error) {
+        console.error("Erro checando status:", error.response?.data || error.message);
         res.json({ pago: false }); 
     }
 });

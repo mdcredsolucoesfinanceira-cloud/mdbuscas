@@ -76,7 +76,7 @@
                 
                 <button class="btn-copiar" onclick="copiarPix()">📋 Copiar Código Pix</button>
                 
-                <p style="color: #ffaa00; font-size: 0.8rem; margin-top: 10px; font-weight: bold;">⏳ Aguardando aprovação do PIX...</p>
+                <p id="statusTextoPix" style="color: #ffaa00; font-size: 0.85rem; margin-top: 10px; font-weight: bold;">⏳ Aguardando pagamento...</p>
             </div>
 
             <pre id="resultadoDados"></pre>
@@ -87,7 +87,7 @@
     </div>
 
     <script>
-        let progress = 0; let moduloAtual = ''; let txidAtual = ''; let intervalChecagem;
+        let progress = 0; let moduloAtual = ''; let txidAtual = ''; let alvoAtual = ''; let intervalChecagem;
 
         const intervalLoad = setInterval(() => {
             progress += 2; document.getElementById('progressBar').style.width = progress + '%';
@@ -119,6 +119,7 @@
         async function solicitarPagamento() {
             let alvo = document.getElementById('inputAlvo').value.trim();
             if(!alvo) { alert('Digite o dado correspondente antes de continuar!'); return; }
+            alvoAtual = alvo;
 
             document.getElementById('btnConsultarModulo').innerText = "Gerando cobrança...";
             
@@ -133,14 +134,16 @@
                     document.getElementById('areaPix').style.display = 'block';
                     document.getElementById('copiaCola').value = data.qrcode;
                     document.getElementById('imgQrCode').src = data.qrcode_image;
+                    document.getElementById('statusTextoPix').innerText = '⏳ Aguardando pagamento...';
 
-                    intervalChecagem = setInterval(() => checarPagamento(alvo), 3000);
+                    // Inicia a verificação automática a cada 3 segundos
+                    intervalChecagem = setInterval(checarPagamentoAutomatico, 3000);
                 } else {
-                    alert('Erro: A API da Goatpay não retornou o código Pix.');
+                    alert('Erro ao gerar Pix na Goatpay.');
                     document.getElementById('btnConsultarModulo').innerText = 'Gerar PIX R$ 10,00';
                 }
             } catch (e) {
-                alert('Erro de conexão com o servidor.');
+                alert('Erro de conexão.');
                 document.getElementById('btnConsultarModulo').innerText = 'Gerar PIX R$ 10,00';
             }
         }
@@ -153,26 +156,37 @@
             alert('✅ Código Pix copiado com sucesso!');
         }
 
-        async function checarPagamento(alvo) {
-            let res = await fetch(`/api/pagamento/status/${txidAtual}`);
-            let data = await res.json();
-            
-            if(data.pago) {
-                clearInterval(intervalChecagem);
-                document.getElementById('areaPix').style.display = 'none';
-                let resDiv = document.getElementById('resultadoDados');
-                resDiv.style.display = 'block';
-                resDiv.innerHTML = '✅ PAGAMENTO APROVADO! Buscando dados nas centrais...';
+        async function checarPagamentoAutomatico() {
+            if (!txidAtual) return;
+            try {
+                let res = await fetch(`/api/pagamento/status/${txidAtual}`);
+                let data = await res.json();
+                
+                if(data.pago) {
+                    clearInterval(intervalChecagem);
+                    
+                    // Altera o texto na tela avisando que recebeu e liberando
+                    document.getElementById('statusTextoPix').innerText = '✅ Pagamento confirmado! Liberando consulta...';
+                    
+                    setTimeout(async () => {
+                        document.getElementById('areaPix').style.display = 'none';
+                        let resDiv = document.getElementById('resultadoDados');
+                        resDiv.style.display = 'block';
+                        resDiv.innerHTML = '🔄 Buscando dados nas centrais oficiais...';
 
-                let rota = moduloAtual === 'CNPJ' ? `/api/consulta/cnpj/${alvo}` : `/api/consulta/cep/${alvo}`;
-                let resBusca = await fetch(rota);
-                let dataBusca = await resBusca.json();
+                        let rota = moduloAtual === 'CNPJ' ? `/api/consulta/cnpj/${alvoAtual}` : `/api/consulta/cep/${alvoAtual}`;
+                        let resBusca = await fetch(rota);
+                        let dataBusca = await resBusca.json();
 
-                if(dataBusca.sucesso) {
-                    resDiv.innerHTML = JSON.stringify(dataBusca.dados, null, 4);
-                } else {
-                    resDiv.innerHTML = '❌ Erro ao buscar os dados: ' + dataBusca.erro;
+                        if(dataBusca.sucesso) {
+                            resDiv.innerHTML = JSON.stringify(dataBusca.dados, null, 4);
+                        } else {
+                            resDiv.innerHTML = '❌ Erro ao buscar os dados: ' + dataBusca.erro;
+                        }
+                    }, 1500);
                 }
+            } catch(err) {
+                console.log("Checando pagamento...");
             }
         }
     </script>
