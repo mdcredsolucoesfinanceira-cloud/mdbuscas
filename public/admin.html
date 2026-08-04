@@ -3,83 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - MD Buscas (Admin)</title>
+    <title>Dashboard - MD Buscas</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-        body { background-color: #0d0d0d; color: #ffffff; padding: 15px; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #222; padding-bottom: 15px; }
-        .logo { font-size: 20px; font-weight: bold; color: #00ffcc; }
-        .badge-alerta { background: #ff3333; color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px; animation: piscar 1s infinite; }
-        @keyframes piscar { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: #0b0b0b; color: #ffffff; padding: 16px; }
+
+        /* Topo igual Goatpay */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .logo-area { display: flex; align-items: center; gap: 10px; font-weight: bold; font-size: 18px; color: #fff; }
+        .top-icons { display: flex; gap: 10px; }
+        .icon-btn { background: #161616; border: 1px solid #262626; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; cursor: pointer; position: relative; }
+        .badge-notif { position: absolute; top: -2px; right: -2px; background: #ff3333; color: white; font-size: 9px; padding: 2px 5px; border-radius: 10px; font-weight: bold; }
+
+        /* Saudação */
+        .saudacao { font-size: 14px; color: #888; margin-bottom: 4px; }
+        .titulo-dash { font-size: 22px; font-weight: bold; margin-bottom: 20px; color: #fff; }
+
+        /* Cards de Saldo / Resumo */
+        .card-saldo { background: #161616; border: 1px solid #262626; border-radius: 14px; padding: 20px; margin-bottom: 15px; }
+        .card-label { font-size: 13px; color: #888; margin-bottom: 8px; }
+        .card-valor { font-size: 32px; font-weight: bold; color: #fff; }
+
+        /* Grid de métricas secundárias */
+        .grid-duplo { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        .card-mini { background: #161616; border: 1px solid #262626; border-radius: 12px; padding: 15px; }
+        .card-mini-valor { font-size: 18px; font-weight: bold; margin-top: 5px; color: #fff; }
+
+        /* Seção de Fila */
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin: 25px 0 12px 0; }
+        .section-title { font-size: 16px; font-weight: bold; color: #fff; }
         
-        .card { background: #161616; border: 1px solid #262626; border-radius: 12px; padding: 15px; margin-bottom: 15px; }
-        .card-title { font-size: 14px; color: #888; margin-bottom: 5px; }
-        .card-value { font-size: 24px; font-weight: bold; }
+        .lista-pedidos { display: flex; flex-direction: column; gap: 10px; }
+        .pedido-card { background: #161616; border: 1px solid #262626; border-radius: 12px; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .pedido-info { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: #aaa; }
+        .pedido-info b { color: #fff; font-size: 14px; }
         
-        .section-title { font-size: 16px; margin: 20px 0 10px 0; color: #ccc; }
+        .btn-liberar { background: #00c853; color: white; border: none; padding: 8px 14px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer; }
+        .btn-liberar:active { background: #009624; }
         
-        .pedido-item { background: #1a1a1a; border: 1px solid #333; border-radius: 8px; padding: 12px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; }
-        .pedido-info { font-size: 13px; color: #bbb; }
-        .btn-aprovar { background: #00c853; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; text-align: center; }
-        .btn-aprovar:active { background: #009624; }
-        
-        /* Simulação de som invisível */
-        #audio-notificacao { display: none; }
+        .vazio { text-align: center; color: #555; padding: 40px; font-size: 13px; background: #121212; border-radius: 12px; border: 1px dashed #222; }
     </style>
 </head>
 <body>
 
+    <!-- Topo -->
     <div class="header">
-        <div class="logo">⚡ MD BUSCAS</div>
-        <div id="status-alerta" class="badge-alerta" style="display:none;">PENDENTES</div>
+        <div class="logo-area">
+            <span>⚡ MD BUSCAS</span>
+        </div>
+        <div class="top-icons">
+            <div class="icon-btn">👁️</div>
+            <div class="icon-btn">
+                🔔
+                <span class="badge-notif" id="badgeQtd">0</span>
+            </div>
+            <div class="icon-btn">☼</div>
+        </div>
     </div>
 
-    <!-- Cards estilo Goatpay -->
-    <div class="card">
-        <div class="card-title">Consultas Pendentes de Liberação</div>
-        <div class="card-value" id="qtd-pendentes">0</div>
+    <!-- Saudação e Título -->
+    <div class="saudacao">Boa tarde, MD 👋</div>
+    <div class="titulo-dash">Dashboard</div>
+
+    <!-- Card Principal de Saldo/Pendentes -->
+    <div class="card-saldo">
+        <div class="card-label">Consultas Pendentes de Liberação</div>
+        <div class="card-valor" id="txtPendentes">0</div>
     </div>
 
-    <div class="section-title">Fila de Pagamentos Pix</div>
-    <div id="lista-pedidos">
-        <div class="card" style="text-align: center; color: #666;">Nenhum pedido pendente no momento.</div>
+    <!-- Grid Recebido / Enviado -->
+    <div class="grid-duplo">
+        <div class="card-mini">
+            <div class="card-label">RECEBIDO HOJE</div>
+            <div class="card-mini-valor" style="color: #00c853;">R$ 0,00</div>
+        </div>
+        <div class="card-mini">
+            <div class="card-label">LIBERADAS</div>
+            <div class="card-mini-valor">0</div>
+        </div>
     </div>
 
-    <!-- Som de alerta estilo iFood (Gerado via AudioContext do navegador para não precisar baixar arquivo mp3) -->
+    <!-- Fila de Pedidos Manual -->
+    <div class="section-header">
+        <div class="section-title">Fila de Pagamentos Pix</div>
+    </div>
+
+    <div class="lista-pedidos" id="containerFila">
+        <div class="vazio">Nenhum pagamento pendente no momento.</div>
+    </div>
+
     <script>
-        function tocarAlertaIfood() {
+        // Alerta sonoro tipo iFood para novos pedidos
+        function tocarAlarmeIfood() {
             try {
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // Nota D5
-                osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.15); // Nota A5
-                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+                osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+                osc.frequency.setValueAtTime(880, ctx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
                 osc.connect(gain);
-                gain.connect(audioCtx.destination);
+                gain.connect(ctx.destination);
                 osc.start();
-                osc.stop(audioCtx.currentTime + 0.4);
-            } catch(e) {
-                console.log("Áudio bloqueado pelo navegador até o primeiro toque na tela.");
+                osc.stop(ctx.currentTime + 0.4);
+            } catch (e) {
+                console.log("Áudio aguardando interação.");
             }
         }
-
-        // Exemplo de simulação de dados em tempo real (Você vai conectar com a rota do seu servidor)
-        let ultimoTotalPendentes = 0;
-
-        function verificarNovosPedidos() {
-            // Aqui você faria um fetch para uma rota do seu server.js que lista os pagamentos gerados
-            // Exemplo: fetch('/api/admin/pedidos')...
-            
-            // Simulando recebimento para teste visual:
-            // Se houver novos pedidos > ultimoTotalPendentes, toca o alarme!
-            // tocarAlertaIfood();
-        }
-
-        // Verifica a cada 5 segundos
-        setInterval(verificarNovosPedidos, 5000);
     </script>
 
 </body>
