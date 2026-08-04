@@ -24,7 +24,7 @@ app.post('/api/pagamento/pix', async (req, res) => {
             }
         });
 
-        console.log("RESPOSTA COMPLETA DA GOATPAY:", JSON.stringify(response.data));
+        console.log("RESPOSTA CRIAR PIX:", JSON.stringify(response.data));
 
         const d = response.data.data || response.data;
         const qrcodeText = d.copyPaste || d.pix_copia_e_cola || d.qrcode || d.emv || d.payload || d.copiaECola || "";
@@ -34,9 +34,7 @@ app.post('/api/pagamento/pix', async (req, res) => {
             qrcodeImg = `data:image/png;base64,${qrcodeImg}`;
         }
 
-        // Procura o ID em todas as propriedades possíveis da resposta da Goatpay
         const txidReal = d.id || d.transactionId || d.txid || d.uuid || d.hash || (response.data && response.data.id);
-        console.log("ID DA TRANSAÇÃO CAPTURADO:", txidReal);
 
         res.json({
             sucesso: true,
@@ -54,10 +52,11 @@ app.post('/api/pagamento/pix', async (req, res) => {
 app.get('/api/pagamento/status/:txid', async (req, res) => {
     const { txid } = req.params;
     if (!txid || txid === 'undefined') {
-        return res.json({ pago: false, motivo: "ID de transação inválido" });
+        return res.json({ pago: false, motivo: "ID inválido" });
     }
 
     try {
+        // Tenta consultar na rota padrão da Goatpay
         const response = await axios.get(`https://api.goatpay.com.br/v1/payment-pix/${txid}`, {
             headers: { 
                 'X-API-Key': GOATPAY_TOKEN,
@@ -66,18 +65,29 @@ app.get('/api/pagamento/status/:txid', async (req, res) => {
             }
         });
         
-        console.log(`STATUS DO TXID [${txid}]:`, JSON.stringify(response.data));
+        console.log(`RESPOSTA CONSULTA STATUS [${txid}]:`, JSON.stringify(response.data));
 
         const d = response.data.data || response.data;
-        const status = String(d.status || d.state || '').toUpperCase();
         
-        // Verifica se foi pago por qualquer variação de status bem-sucedido
-        const pago = status.includes('COMPLETED') || status.includes('APPROVED') || status.includes('PAID') || status.includes('PAGO') || status.includes('SUCCESS');
+        // Pega qualquer campo que pareça status
+        const statusVal = d.status || d.state || d.paymentStatus || d.situacao || '';
+        const statusStr = String(statusVal).toUpperCase();
+        
+        console.log("STATUS EXTRAÍDO:", statusStr);
 
-        res.json({ pago: pago, status_recebido: status });
+        const pago = statusStr.includes('COMPLETED') || 
+                     statusStr.includes('APPROVED') || 
+                     statusStr.includes('PAID') || 
+                     statusStr.includes('PAGO') || 
+                     statusStr.includes('SUCCESS') ||
+                     statusStr.includes('CONFIRMED') ||
+                     d.paid === true || 
+                     d.isPaid === true;
+
+        res.json({ pago: pago, status_recebido: statusStr, raw: d });
     } catch (error) {
-        console.error("Erro checando status na API:", error.response?.data || error.message);
-        res.json({ pago: false }); 
+        console.error("Erro na API de status:", error.response?.data || error.message);
+        res.json({ pago: false, erro: error.message }); 
     }
 });
 
@@ -111,4 +121,4 @@ app.get('/api/consulta/cep/:cep', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Servidor OFICIAL rodando na porta ${PORT}`));
+app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
