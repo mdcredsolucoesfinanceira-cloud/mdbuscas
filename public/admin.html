@@ -5,179 +5,121 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MD BUSCAS - Painel Admin</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: sans-serif; }
-        body { background-color: #030712; color: #00ffcc; padding: 20px; min-height: 100vh; position: relative; }
-        .container { max-width: 1000px; margin: 0 auto; }
-        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #00ffcc; padding-bottom: 15px; margin-bottom: 20px; }
-        .cards-grid { display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; }
-        .card-metric { flex: 1; min-width: 200px; background: #0d1117; border: 1px solid #1f293d; padding: 15px; border-radius: 6px; }
-        .metric-num { font-size: 2rem; font-weight: bold; margin-top: 5px; color: #fff; }
-        .pedido-item { background: #0d1117; border: 1px solid #1f293d; border-radius: 6px; padding: 20px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
-        .pedido-item.pendente { border-color: #ffb703; }
-        .btn-aprovar-pix { background: #238636; color: #fff; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 1rem; }
-        .sound-banner { background: #1f293d; color: #00ffcc; padding: 10px; border-radius: 6px; text-align: center; margin-bottom: 15px; cursor: pointer; font-size: 0.85rem; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #050b14; color: #fff; padding: 20px; }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,255,204,0.2); padding-bottom: 15px; margin-bottom: 25px; }
+        .header h1 { color: #00ffcc; font-size: 1.5rem; text-shadow: 0 0 10px rgba(0,255,204,0.3); }
+        .back-btn { background: #1a2639; color: #00ffcc; border: 1px solid #00ffcc; padding: 6px 14px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.8rem; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .stat-card { background: linear-gradient(135deg, #0f1c2e, #162a45); border: 1px solid rgba(0,255,204,0.2); border-radius: 10px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        .stat-card h3 { color: #8a99ad; font-size: 0.85rem; text-transform: uppercase; margin-bottom: 8px; }
+        .stat-card .value { color: #00ffcc; font-size: 1.8rem; font-weight: bold; }
+        .stat-card .value.money { color: #00b894; }
 
-        #whatsappNotif {
-            position: fixed;
-            top: -120px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 90%;
-            max-width: 400px;
-            background: #128C7E;
-            color: #fff;
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            z-index: 9999;
-            transition: top 0.5s ease-in-out;
-            border: 1px solid #25D366;
-        }
-        #whatsappNotif.show { top: 15px; }
-        .wa-icon { background: #25D366; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
-        .wa-body { flex: 1; }
-        .wa-title { font-size: 0.85rem; font-weight: bold; color: #25D366; display: flex; justify-content: space-between; }
-        .wa-text { font-size: 0.95rem; font-weight: bold; margin-top: 2px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 230px; }
-        .wa-sub { font-size: 0.8rem; color: #e0e0e0; }
+        .section-title { font-size: 1.1rem; color: #fff; margin-bottom: 15px; border-left: 3px solid #00ffcc; padding-left: 10px; }
+        
+        .table-container { background: #0f1c2e; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
+        th { background: #162a45; color: #00ffcc; padding: 12px 15px; font-weight: 600; }
+        td { padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #c0d0e0; }
+        tr:last-child td { border-bottom: none; }
     </style>
 </head>
 <body>
 
-    <div id="whatsappNotif">
-        <div class="wa-icon">💬</div>
-        <div class="wa-body">
-            <div class="wa-title"><span>MD BUSCAS - NOVO PEDIDO</span> <small id="waTime">agora</small></div>
-            <div class="wa-text" id="waRazao">Nome da Empresa</div>
-            <div class="wa-sub">Pagamento de R$ 10,00 pendente!</div>
-        </div>
+<div class="header">
+    <h1>🛡️ MD BUSCAS // ADMIN DASHBOARD</h1>
+    <a href="/" class="back-btn">Voltar ao Site</a>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <h3>Faturamento Total (Pix)</h3>
+        <div class="value money" id="fat-total">R$ 0,00</div>
     </div>
-
-    <div class="container">
-        <div class="sound-banner" onclick="ativarAudio()">🔔 CLIQUE AQUI PARA ATIVAR SOM DE NOTIFICACAO</div>
-
-        <header>
-            <h2>MD BUSCAS - PAINEL ADMIN</h2>
-            <span style="color:#238636; font-weight:bold;">● ON-LINE</span>
-        </header>
-
-        <div class="cards-grid">
-            <div class="card-metric">
-                <div style="color:#8b949e; font-size:0.85rem;">Total de Pedidos</div>
-                <div class="metric-num" id="totalNum">0</div>
-            </div>
-            <div class="card-metric">
-                <div style="color:#8b949e; font-size:0.85rem;">Aguardando PIX</div>
-                <div class="metric-num" style="color:#ffb703;" id="pendentesNum">0</div>
-            </div>
-            <div class="card-metric">
-                <div style="color:#8b949e; font-size:0.85rem;">Consultas Liberadas</div>
-                <div class="metric-num" style="color:#3fb950;" id="aprovadosNum">0</div>
-            </div>
-        </div>
-
-        <h3 style="color:#fff; margin-bottom:15px;">Solicitacoes de Clientes</h3>
-        <div id="pedidosContainer">Carregando...</div>
+    <div class="stat-card">
+        <h3>Total de Puxadas</h3>
+        <div class="value" id="puxadas-total">0</div>
     </div>
+    <div class="stat-card">
+        <h3>Consultas CPF</h3>
+        <div class="value" id="puxadas-cpf">0</div>
+    </div>
+    <div class="stat-card">
+        <h3>Consultas CNPJ</h3>
+        <div class="value" id="puxadas-cnpj">0</div>
+    </div>
+</div>
 
-    <script>
-        let audioAutorizado = false;
-        let totalPendentesAnterior = 0;
+<div class="section-title">Atividade Recente dos Módulos</div>
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>Horário</th>
+                <th>Módulo</th>
+                <th>Consulta / Alvo</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody id="tabela-logs">
+            <tr>
+                <td>00:00:12</td>
+                <td>CNPJ</td>
+                <td>12.345.678/0001-99</td>
+                <td><span style="color: #00b894;">Sucesso</span></td>
+            </tr>
+        </tbody>
+    </table>
+</div>
 
-        function ativarAudio() {
-            audioAutorizado = true;
-            tocarBeep();
-            document.querySelector('.sound-banner').innerText = '✓ SOM E NOTIFICACOES ATIVADOS!';
-            document.querySelector('.sound-banner').style.background = '#238636';
-            document.querySelector('.sound-banner').style.color = '#fff';
+<script>
+    // Função que gera o bipe sonoro igual ao do iFood
+    function tocarBeepIfood() {
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+            osc.frequency.setValueAtTime(1200, audioCtx.currentTime + 0.1);
+
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.3);
+        } catch (e) {
+            console.log("Áudio bloqueado pelo navegador até haver interação.");
         }
+    }
 
-        function tocarBeep() {
-            try {
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(880, ctx.currentTime);
-                gain.gain.setValueAtTime(0.3, ctx.currentTime);
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.start();
-                osc.stop(ctx.currentTime + 0.4);
-            } catch(e) {}
-        }
+    // Função chamada quando houver nova consulta
+    function registrarNovaConsulta(modulo, alvo) {
+        tocarBeepIfood();
+        
+        let totalPuxadas = document.getElementById('puxadas-total');
+        totalPuxadas.innerText = parseInt(totalPuxadas.innerText) + 1;
 
-        function dispararWhatsappPopUp(razao, dataHora) {
-            document.getElementById('waRazao').innerText = razao;
-            document.getElementById('waTime').innerText = dataHora;
-            const notif = document.getElementById('whatsappNotif');
-            
-            notif.classList.add('show');
-            setTimeout(() => {
-                notif.classList.remove('show');
-            }, 6000);
-        }
+        let tabela = document.getElementById('tabela-logs');
+        let agora = new Date().toLocaleTimeString();
+        
+        let novaLinha = `<tr>
+            <td>${agora}</td>
+            <td>${modulo}</td>
+            <td>${alvo}</td>
+            <td><span style="color: #00b894;">Sucesso</span></td>
+        </tr>`;
+        
+        tabela.insertAdjacentHTML('afterbegin', novaLinha);
+    }
+</script>
 
-        async function atualizarDados() {
-            try {
-                const resposta = await fetch('/api/admin/pedidos');
-                const lista = await resposta.json();
-                
-                const pendentes = lista.filter(p => p.status === 'pendente');
-                const aprovados = lista.filter(p => p.status === 'aprovado');
-
-                document.getElementById('totalNum').innerText = lista.length;
-                document.getElementById('pendentesNum').innerText = pendentes.length;
-                document.getElementById('aprovadosNum').innerText = aprovados.length;
-
-                if (pendentes.length > totalPendentesAnterior) {
-                    if (audioAutorizado) tocarBeep();
-                    const ultimoPedido = pendentes[0];
-                    dispararWhatsappPopUp(ultimoPedido.razao, ultimoPedido.dataHora);
-                    document.title = `💬 (1) NOVO PEDIDO PIX!`;
-                } else if (pendentes.length === 0) {
-                    document.title = "MD BUSCAS - Painel Admin";
-                }
-
-                totalPendentesAnterior = pendentes.length;
-
-                const container = document.getElementById('pedidosContainer');
-                if (lista.length === 0) {
-                    container.innerHTML = '<p style="color:#8b949e; text-align:center; padding:40px; background:#0d1117; border-radius:6px;">Nenhum pedido registrado no momento.</p>';
-                    return;
-                }
-
-                container.innerHTML = lista.map(p => `
-                    <div class="pedido-item ${p.status}">
-                        <div>
-                            <strong style="color:${p.status === 'pendente' ? '#ffb703' : '#3fb950'}">[${p.status.toUpperCase()}]</strong>
-                            <span style="color:#8b949e; font-size:0.8rem; margin-left:10px;">${p.dataHora}</span>
-                            <h3 style="color:#fff; margin-top:5px; font-size:1.1rem;">${p.razao}</h3>
-                            <p style="color:#00ffcc; font-size:0.85rem; margin-top:3px;">ID: ${p.idPedido} | CNPJ: ${p.cnpj}</p>
-                        </div>
-                        <div>
-                            ${p.status === 'pendente' 
-                                ? `<button class="btn-aprovar-pix" onclick="aprovarPix('${p.idPedido}')">CONFIRMAR PIX (R$ 10)</button>` 
-                                : '<span style="color:#3fb950; font-weight:bold;">CONSULTA ENTREGUE</span>'}
-                        </div>
-                    </div>
-                `).join('');
-            } catch(e) {}
-        }
-
-        async function aprovarPix(idPedido) {
-            await fetch('/api/admin/aprovar', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ idPedido })
-            });
-            atualizarDados();
-        }
-
-        atualizarDados();
-        setInterval(atualizarDados, 2000);
-    </script>
 </body>
 </html>
