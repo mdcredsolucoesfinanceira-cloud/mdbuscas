@@ -8,31 +8,54 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Banco de dados em memória para gerenciar os pedidos do admin
+// =========================================================================
+// 🔑 CONFIGURAÇÃO DA API GOATPAY (Chave inserida com sucesso)
+// =========================================================================
+const GOATPAY_API_KEY = "gp_live_e7df14ea590e46a58a6b41c42986e29fdbcf500d1644ca5d";
+const GOATPAY_ENDPOINT = "https://api.goatpay.com.br/v1/pix"; // Ou o endpoint oficial da Goatpay
+
+// Banco de dados em memória para as solicitações do Admin
 let pedidosPendentes = [];
 
-// 1. Rota para gerar o Pix na Goatpay (ou mock se não configurado)
+// 1. ROTA DE GERAÇÃO DO PIX REAL PELA GOATPAY
 app.post('/api/pagamento/pix', async (req, res) => {
     try {
-        const txid = 'txid_' + Math.random().toString(36).substring(2, 12);
-        
-        // Dados simulados ou integração real com Goatpay
+        const respostaGoat = await axios.post(GOATPAY_ENDPOINT, {
+            amount: 10.00,
+            description: "Taxa de Liberacao Consulta - MD BUSCAS"
+        }, {
+            headers: {
+                'Authorization': `Bearer ${GOATPAY_API_KEY}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const dadosPix = respostaGoat.data;
+
+        const txid = dadosPix.id || dadosPix.txid || 'goat_' + Math.random().toString(36).substring(2, 10);
+        const qrcodeCopiaCola = dadosPix.qrcode || dadosPix.pix_code;
+        const qrcodeImagem = dadosPix.qrcode_image || `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrcodeCopiaCola)}`;
+
         res.json({
             sucesso: true,
             txid: txid,
-            qrcode: "00020126850014br.gov.bcb.pix2563pix.onlyup.com.br/qr/v3/" + txid,
-            qrcode_image: "https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=PixTest"
+            qrcode: qrcodeCopiaCola,
+            qrcode_image: qrcodeImagem
         });
+
     } catch (error) {
-        res.status(500).json({ sucesso: false, erro: "Erro ao gerar Pix" });
+        console.error("Erro ao comunicar com a Goatpay:", error.response ? error.response.data : error.message);
+        res.status(500).json({ 
+            sucesso: false, 
+            erro: "Erro ao gerar cobrança na Goatpay." 
+        });
     }
 });
 
-// 2. Rota chamada quando o cliente clica no botão do WhatsApp (Salva no Admin)
+// 2. ROTA NOTIFICAR WHATSAPP (Aparece no admin.html)
 app.post('/api/notificar-whatsapp', (req, res) => {
     const { txid, modulo, alvo } = req.body;
     
-    // Evita duplicatas do mesmo txid
     const existe = pedidosPendentes.find(p => p.txid === txid);
     if (!existe && txid) {
         pedidosPendentes.push({
@@ -46,12 +69,12 @@ app.post('/api/notificar-whatsapp', (req, res) => {
     res.json({ sucesso: true });
 });
 
-// 3. Rota para o Painel Admin listar os pedidos pendentes
+// 3. ROTA PAINEL ADMIN - LISTAR PEDIDOS
 app.get('/api/admin/pedidos', (req, res) => {
     res.json(pedidosPendentes);
 });
 
-// 4. Rota para o Admin aprovar/liberar a consulta
+// 4. ROTA PAINEL ADMIN - LIBERAR CLIENTE
 app.post('/api/admin/liberar', (req, res) => {
     const { txid } = req.body;
     const pedido = pedidosPendentes.find(p => p.txid === txid);
@@ -63,7 +86,7 @@ app.post('/api/admin/liberar', (req, res) => {
     }
 });
 
-// 5. Rota para o cliente checar se o Admin já liberou
+// 5. CHECAR SE O ADMIN APROVOU
 app.get('/api/pagamento/status/:txid', (req, res) => {
     const { txid } = req.params;
     const pedido = pedidosPendentes.find(p => p.txid === txid);
@@ -74,7 +97,7 @@ app.get('/api/pagamento/status/:txid', (req, res) => {
     }
 });
 
-// 6. Rotas de Consulta (Exemplo CNPJ e CEP)
+// 6. ROTAS DAS CONSULTAS (CNPJ / CEP)
 app.get('/api/consulta/cnpj/:cnpj', async (req, res) => {
     const cnpj = req.params.cnpj.replace(/\D/g, '');
     try {
@@ -96,5 +119,5 @@ app.get('/api/consulta/cep/:cep', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`Servidor rodando na porta ${PORT}`);
+    console.log(`Servidor MD BUSCAS ativo na porta ${PORT}`);
 });
