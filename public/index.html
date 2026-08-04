@@ -13,23 +13,32 @@
             background-color: #03070c; display: flex; flex-direction: column;
             justify-content: center; align-items: center; z-index: 9999; transition: opacity 0.8s ease;
         }
-        .loading-logo {
-            width: 180px; height: 180px; border-radius: 20px; object-fit: cover;
-            box-shadow: 0 0 30px rgba(0, 255, 204, 0.6); border: 2px solid #00ffcc;
-            animation: pulseLogo 1.5s infinite alternate; margin-bottom: 25px;
+
+        .hacker-logo-text {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: #00ffcc;
+            text-shadow: 0 0 15px rgba(0,255,204,0.8), 0 0 30px rgba(0,255,204,0.4);
+            letter-spacing: 3px;
+            margin-bottom: 25px;
+            animation: glitchEffect 1.5s infinite alternate;
+            text-align: center;
         }
-        @keyframes pulseLogo {
-            0% { transform: scale(1); box-shadow: 0 0 20px rgba(0,255,204,0.4); }
-            100% { transform: scale(1.05); box-shadow: 0 0 40px rgba(0,255,204,0.8); }
+
+        @keyframes glitchEffect {
+            0% { transform: scale(1); text-shadow: 0 0 10px rgba(0,255,204,0.6); }
+            50% { transform: scale(1.03); text-shadow: 0 0 25px rgba(0,255,204,1), 2px 0 #ff0055; }
+            100% { transform: scale(1); text-shadow: 0 0 10px rgba(0,255,204,0.6); }
         }
-        .hacker-text { color: #00ffcc; font-family: monospace; font-size: 0.95rem; letter-spacing: 1px; margin-bottom: 15px; text-align: center; }
+
+        .hacker-status { color: #00ffcc; font-family: monospace; font-size: 0.95rem; letter-spacing: 1px; margin-bottom: 15px; text-align: center; }
         .progress-bar-container { width: 260px; height: 6px; background: #101c2e; border-radius: 10px; overflow: hidden; border: 1px solid rgba(0,255,204,0.3); }
         .progress-bar { width: 0%; height: 100%; background: #00ffcc; box-shadow: 0 0 10px #00ffcc; transition: width 0.1s linear; }
 
         #main-content { display: none; padding: 20px; max-width: 1050px; margin: 0 auto; }
         .header { text-align: center; margin-bottom: 30px; padding-top: 15px; }
-        .site-logo { width: 120px; height: 120px; border-radius: 16px; object-fit: cover; border: 2px solid #00ffcc; box-shadow: 0 0 20px rgba(0,255,204,0.4); margin-bottom: 10px; }
-        .header h1 { color: #00ffcc; font-size: 1.6rem; text-shadow: 0 0 10px rgba(0,255,204,0.4); }
+        .header h1 { color: #00ffcc; font-size: 1.8rem; text-shadow: 0 0 10px rgba(0,255,204,0.4); font-family: monospace; letter-spacing: 2px; }
         .header p { color: #8a99ad; font-size: 0.85rem; }
 
         .grid-modules { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; }
@@ -54,15 +63,14 @@
 <body>
 
     <div id="loading-screen">
-        <img src="logo_2.png" alt="MD BUSCAS Logo" class="loading-logo">
-        <div class="hacker-text" id="hacker-status">INICIALIZANDO SISTEMA DE CONSULTA...</div>
+        <div class="hacker-logo-text">[ MD BUSCAS ]</div>
+        <div class="hacker-status" id="hacker-status">INICIALIZANDO SISTEMA DE CONSULTA...</div>
         <div class="progress-bar-container"><div class="progress-bar" id="progressBar"></div></div>
     </div>
 
     <div id="main-content">
         <div class="header">
-            <img src="logo_2.png" alt="MD BUSCAS Logo" class="site-logo">
-            <h1>MD BUSCAS</h1>
+            <h1>[ MD BUSCAS ]</h1>
             <p>Central de Inteligência e Consultas Automatizadas</p>
         </div>
 
@@ -110,7 +118,6 @@
 
     <script>
         let moduloAtual = '';
-
         let progress = 0;
         const interval = setInterval(() => {
             progress += 2;
@@ -143,7 +150,6 @@
             let alvo = document.getElementById('inputAlvo').value.trim();
             if(!alvo) { alert('Digite o dado correspondente antes de continuar!'); return; }
 
-            // Se for CEP ou CNPJ, podemos fazer a busca direto ou chamar o Pix. Aqui dispara o Pix conforme solicitado:
             let res = await fetch('/api/pagamento/pix', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
