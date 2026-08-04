@@ -11,32 +11,46 @@
         #loading-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
             background-color: #03070c; display: flex; flex-direction: column;
-            justify-content: center; align-items: center; z-index: 9999; transition: opacity 0.8s ease;
+            justify-content: center; align-items: center; z-index: 9999;
+            transition: transform 1s cubic-bezier(0.77, 0, 0.175, 1), opacity 1s ease;
+        }
+
+        #loading-screen.slide-out {
+            transform: translateY(-100%);
+            opacity: 0;
         }
 
         .hacker-logo-text {
             font-family: 'Courier New', Courier, monospace;
-            font-size: 2.2rem;
+            font-size: 2.4rem;
             font-weight: bold;
             color: #00ffcc;
-            text-shadow: 0 0 15px rgba(0,255,204,0.8), 0 0 30px rgba(0,255,204,0.4);
-            letter-spacing: 3px;
+            text-shadow: 0 0 20px rgba(0,255,204,0.8), 0 0 40px rgba(0,255,204,0.4);
+            letter-spacing: 4px;
             margin-bottom: 25px;
-            animation: glitchEffect 1.5s infinite alternate;
+            animation: glitchEffect 1.2s infinite alternate;
             text-align: center;
         }
 
         @keyframes glitchEffect {
             0% { transform: scale(1); text-shadow: 0 0 10px rgba(0,255,204,0.6); }
-            50% { transform: scale(1.03); text-shadow: 0 0 25px rgba(0,255,204,1), 2px 0 #ff0055; }
+            50% { transform: scale(1.04); text-shadow: 0 0 30px rgba(0,255,204,1), 3px 0 #ff0055; }
             100% { transform: scale(1); text-shadow: 0 0 10px rgba(0,255,204,0.6); }
         }
 
         .hacker-status { color: #00ffcc; font-family: monospace; font-size: 0.95rem; letter-spacing: 1px; margin-bottom: 15px; text-align: center; }
-        .progress-bar-container { width: 260px; height: 6px; background: #101c2e; border-radius: 10px; overflow: hidden; border: 1px solid rgba(0,255,204,0.3); }
-        .progress-bar { width: 0%; height: 100%; background: #00ffcc; box-shadow: 0 0 10px #00ffcc; transition: width 0.1s linear; }
+        .progress-bar-container { width: 280px; height: 6px; background: #101c2e; border-radius: 10px; overflow: hidden; border: 1px solid rgba(0,255,204,0.3); }
+        .progress-bar { width: 0%; height: 100%; background: #00ffcc; box-shadow: 0 0 12px #00ffcc; transition: width 0.05s linear; }
 
-        #main-content { display: none; padding: 20px; max-width: 1050px; margin: 0 auto; }
+        #main-content {
+            opacity: 0; transform: scale(0.95);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+            padding: 20px; max-width: 1050px; margin: 0 auto;
+        }
+        #main-content.show {
+            opacity: 1; transform: scale(1);
+        }
+
         .header { text-align: center; margin-bottom: 30px; padding-top: 15px; }
         .header h1 { color: #00ffcc; font-size: 1.8rem; text-shadow: 0 0 10px rgba(0,255,204,0.4); font-family: monospace; letter-spacing: 2px; }
         .header p { color: #8a99ad; font-size: 0.85rem; }
@@ -64,7 +78,7 @@
 
     <div id="loading-screen">
         <div class="hacker-logo-text">[ MD BUSCAS ]</div>
-        <div class="hacker-status" id="hacker-status">INICIALIZANDO SISTEMA DE CONSULTA...</div>
+        <div class="hacker-status" id="hacker-status">CARREGANDO SISTEMA DE SEGURANÇA...</div>
         <div class="progress-bar-container"><div class="progress-bar" id="progressBar"></div></div>
     </div>
 
@@ -117,23 +131,30 @@
     </div>
 
     <script>
-        let moduloAtual = '';
         let progress = 0;
+        // 5 segundos exatos de carregamento (50ms * 100 passos = 5000ms)
         const interval = setInterval(() => {
-            progress += 2;
+            progress += 1;
             document.getElementById('progressBar').style.width = progress + '%';
+            
+            if(progress === 30) document.getElementById('hacker-status').innerText = 'CONECTANDO AOS SERVIDORES...';
+            if(progress === 70) document.getElementById('hacker-status').innerText = 'AUTENTICANDO MÓDULOS...';
+            if(progress === 95) document.getElementById('hacker-status').innerText = 'LIBERANDO ACESSO...';
+
             if (progress >= 100) {
                 clearInterval(interval);
-                document.getElementById('loading-screen').style.opacity = '0';
+                // Animação de subida da tela de load
+                document.getElementById('loading-screen').classList.add('slide-out');
+                // Mostra a tela principal com efeito de zoom suave
+                document.getElementById('main-content').style.display = 'block';
                 setTimeout(() => {
+                    document.getElementById('main-content').classList.add('show');
                     document.getElementById('loading-screen').style.display = 'none';
-                    document.getElementById('main-content').style.display = 'block';
-                }, 800);
+                }, 500);
             }
         }, 50);
 
         function abrirModal(modulo) {
-            moduloAtual = modulo;
             document.getElementById('modalTitulo').innerText = 'MÓDULO: ' + modulo;
             document.getElementById('inputAlvo').value = '';
             document.getElementById('inputAlvo').style.display = 'block';
@@ -153,7 +174,7 @@
             let res = await fetch('/api/pagamento/pix', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ modulo: moduloAtual, alvo: alvo })
+                body: JSON.stringify({ modulo: 'Consulta', alvo: alvo })
             });
             let data = await res.json();
 
