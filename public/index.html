@@ -35,7 +35,6 @@
         .btn-acao { background: #00ffcc; color: #050b14; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 5px; }
         .btn-copiar { background: #f39c12; color: #050b14; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; margin-bottom: 10px; font-size: 0.85rem; }
         .btn-whatsapp { display: block; background: #25d366; color: white; text-align: center; padding: 10px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.85rem; margin-bottom: 10px; }
-        .btn-teste { background: #3b82f6; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 8px; font-size: 0.75rem; }
         .btn-fechar { background: #ff4757; color: #fff; margin-top: 15px; width: 100%; padding: 8px; border: none; border-radius: 6px; cursor: pointer; }
         #resultadoDados { display: none; background: #03070c; padding: 15px; border-radius: 8px; border: 1px solid #284b7a; text-align: left; font-size: 0.8rem; overflow-x: auto; color: #00ffcc; margin-top: 15px; }
     </style>
@@ -78,15 +77,12 @@
 
                 <button class="btn-copiar" onclick="copiarPix()">📋 Copiar Código Pix</button>
 
-                <!-- Botão do WhatsApp Integrado -->
                 <a href="https://wa.me/5585998021364?text=Olá!%20Fiz%20o%20pagamento%20do%20Pix%20para%20liberar%20a%20consulta.%20Segue%20o%20comprovante!" target="_blank" class="btn-whatsapp">
                     💬 Já fiz o pagamento? Enviar Comprovante
                 </a>
 
-                <p id="statusTextoPix" style="color: #ffaa00; font-size: 0.85rem; margin-top: 10px; font-weight: bold;">⏳ Aguardando pagamento...</p>
+                <p id="statusTextoPix" style="color: #ffaa00; font-size: 0.85rem; margin-top: 10px; font-weight: bold;">⏳ Aguardando pagamento ou liberação do suporte...</p>
                 <p id="debugTxid" style="color: #556677; font-size: 0.7rem; margin-top: 3px;"></p>
-
-                <button class="btn-teste" onclick="forcarLiberacaoTeste()">⚡ [TESTE] Simular Pagamento Aprovado</button>
             </div>
 
             <pre id="resultadoDados"></pre>
@@ -134,7 +130,7 @@
             document.getElementById('btnConsultarModulo').innerText = "Gerando cobrança...";
 
             try {
-                let res = await fetch('/api/pagamento/pix', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+                let res = await fetch('/api/pagamento/pix', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ modulo, alvo }) });
                 let data = await res.json();
 
                 if(data.sucesso && data.qrcode) {
@@ -147,7 +143,8 @@
                     document.getElementById('statusTextoPix').innerText = '⏳ Aguardando pagamento...';
                     document.getElementById('debugTxid').innerText = 'ID: ' + txidAtual;
 
-                    intervalChecagem = setInterval(checarPagamentoAutomatico, 3000);
+                    // Checa periodicamente se o admin liberou manualmente ou se a API pagou
+                    intervalChecagem = setInterval(checarStatusLiberacao, 3000);
                 } else {
                     alert('Erro ao gerar Pix na Goatpay.');
                     document.getElementById('btnConsultarModulo').innerText = 'Gerar PIX R$ 10,00';
@@ -166,24 +163,19 @@
             alert('✅ Código Pix copiado com sucesso!');
         }
 
-        async function checarPagamentoAutomatico() {
+        async function checarStatusLiberacao() {
             if (!txidAtual) return;
             try {
                 let res = await fetch(`/api/pagamento/status/${txidAtual}`);
                 let data = await res.json();
 
-                if(data.pago) {
+                if(data.pago || data.liberadoAdmin) {
                     clearInterval(intervalChecagem);
                     liberarConsultaFinal();
                 }
             } catch(err) {
-                console.log("Checando pagamento...");
+                console.log("Verificando status...");
             }
-        }
-
-        function forcarLiberacaoTeste() {
-            if(intervalChecagem) clearInterval(intervalChecagem);
-            liberarConsultaFinal();
         }
 
         async function liberarConsultaFinal() {
