@@ -103,17 +103,45 @@ app.get('/api/pagamento/status/:txid', (req, res) => {
     }
 });
 
-// 6. ROTAS DAS CONSULTAS (CNPJ / CEP)
+// 6. ROTAS DE CONSULTA (CNPJ UNIFICADO: BrasilAPI + ReceitaWS)
 app.get('/api/consulta/cnpj/:cnpj', async (req, res) => {
     const cnpj = req.params.cnpj.replace(/\D/g, '');
+    let dadosUnificados = {};
+    let sucessoBusca = false;
+
     try {
-        const response = await axios.get(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`);
-        res.json({ sucesso: true, dados: response.data });
+        const respBrasil = await axios.get(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`, { timeout: 5000 });
+        if (respBrasil.data) {
+            dadosUnificados = { ...respBrasil.data };
+            sucessoBusca = true;
+        }
     } catch (e) {
-        res.json({ sucesso: false, erro: "CNPJ não encontrado ou inválido." });
+        console.log("BrasilAPI falhou, tentando ReceitaWS...");
+    }
+
+    try {
+        const respReceita = await axios.get(`https://www.receitaws.com.br/v1/cnpj/${cnpj}`, { timeout: 5000 });
+        if (respReceita.data && respReceita.data.status === "OK") {
+            dadosUnificados = { 
+                ...respReceita.data, 
+                ...dadosUnificados, 
+                atividade_principal: respReceita.data.atividade_principal || dadosUnificados.atividade_principal,
+                qsa: respReceita.data.qsa || dadosUnificados.qsa 
+            };
+            sucessoBusca = true;
+        }
+    } catch (e) {
+        console.log("ReceitaWS falhou.");
+    }
+
+    if (sucessoBusca && Object.keys(dadosUnificados).length > 0) {
+        res.json({ sucesso: true, dados: dadosUnificados });
+    } else {
+        res.json({ sucesso: false, erro: "CNPJ não encontrado nas bases de consulta." });
     }
 });
 
+// 7. ROTA DE CONSULTA CEP
 app.get('/api/consulta/cep/:cep', async (req, res) => {
     const cep = req.params.cep.replace(/\D/g, '');
     try {

@@ -77,9 +77,9 @@
 
                 <button class="btn-copiar" onclick="copiarPix()">📋 Copiar Código Pix</button>
 
-                <!-- BOTÃO DO WHATSAPP QUE ENVIA PARA O ADMIN E ABRE O ZAP -->
+                <!-- BOTÃO COM O TEXTO SOLICITADO -->
                 <a onclick="notificarAdminEAbriWhatsapp()" class="btn-whatsapp">
-                    💬 Já fiz o pagamento? Enviar Comprovante
+                    💬 Já fez o pagamento? Envie o comprovante ao suporte
                 </a>
 
                 <p id="statusTextoPix" style="color: #ffaa00; font-size: 0.85rem; margin-top: 10px; font-weight: bold;">⏳ Aguardando pagamento ou liberação...</p>
@@ -144,7 +144,6 @@
                     document.getElementById('statusTextoPix').innerText = '⏳ Aguardando pagamento...';
                     document.getElementById('debugTxid').innerText = 'ID: ' + txidAtual;
 
-                    // Fica checando se o admin clicou em liberar
                     intervalChecagem = setInterval(checarLiberacaoAdmin, 3000);
                 } else {
                     alert('Erro ao gerar Pix.');
@@ -164,7 +163,6 @@
             alert('✅ Código Pix copiado com sucesso!');
         }
 
-        // FUNÇÃO QUE NOTIFICA O ADMIN E ABRE O WHATSAPP NO MESMO CLIQUE
         async function notificarAdminEAbriWhatsapp() {
             try {
                 await fetch('/api/notificar-whatsapp', {
@@ -177,7 +175,7 @@
             }
 
             let numeroAdmin = "5585998021364";
-            let texto = encodeURIComponent(`Olá! Fiz o pagamento da consulta (${moduloAtual} - Alvo: ${alvoAtual}). Segue o comprovante! ID: ${txidAtual}`);
+            let texto = encodeURIComponent(`Olá! Já fiz o pagamento da consulta (${moduloAtual} - Alvo: ${alvoAtual}). Segue o comprovante ao suporte! ID: ${txidAtual}`);
             window.open(`https://wa.me/${numeroAdmin}?text=${texto}`, '_blank');
         }
 
