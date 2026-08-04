@@ -3,138 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MD BUSCAS - Gestão Administrativa</title>
+    <title>Dashboard - MD Buscas (Admin)</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #050b14; color: #fff; padding: 20px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        body { background-color: #0d0d0d; color: #ffffff; padding: 15px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #222; padding-bottom: 15px; }
+        .logo { font-size: 20px; font-weight: bold; color: #00ffcc; }
+        .badge-alerta { background: #ff3333; color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px; animation: piscar 1s infinite; }
+        @keyframes piscar { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
         
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,255,204,0.2); padding-bottom: 15px; margin-bottom: 25px; }
-        .header h1 { color: #00ffcc; font-size: 1.4rem; text-shadow: 0 0 10px rgba(0,255,204,0.3); }
-        .back-btn { background: #1a2639; color: #00ffcc; border: 1px solid #00ffcc; padding: 6px 14px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.8rem; }
+        .card { background: #161616; border: 1px solid #262626; border-radius: 12px; padding: 15px; margin-bottom: 15px; }
+        .card-title { font-size: 14px; color: #888; margin-bottom: 5px; }
+        .card-value { font-size: 24px; font-weight: bold; }
         
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
-        .stat-card { background: linear-gradient(135deg, #0f1c2e, #162a45); border: 1px solid rgba(0,255,204,0.2); border-radius: 10px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        .stat-card h3 { color: #8a99ad; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 8px; }
-        .stat-card .value { color: #00ffcc; font-size: 1.6rem; font-weight: bold; }
-        .stat-card .value.money { color: #00b894; }
-
-        .section-title { font-size: 1.1rem; color: #fff; margin-bottom: 15px; border-left: 3px solid #00ffcc; padding-left: 10px; }
+        .section-title { font-size: 16px; margin: 20px 0 10px 0; color: #ccc; }
         
-        .table-container { background: #0f1c2e; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem; }
-        th { background: #162a45; color: #00ffcc; padding: 12px 15px; font-weight: 600; }
-        td { padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #c0d0e0; }
+        .pedido-item { background: #1a1a1a; border: 1px solid #333; border-radius: 8px; padding: 12px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; }
+        .pedido-info { font-size: 13px; color: #bbb; }
+        .btn-aprovar { background: #00c853; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; text-align: center; }
+        .btn-aprovar:active { background: #009624; }
+        
+        /* Simulação de som invisível */
+        #audio-notificacao { display: none; }
     </style>
 </head>
 <body>
 
-<div class="header">
-    <h1>🛡️ MD BUSCAS // GESTÃO ADMIN</h1>
-    <a href="/" class="back-btn">Voltar ao Site</a>
-</div>
-
-<div class="stats-grid">
-    <div class="stat-card">
-        <h3>Faturamento Total</h3>
-        <div class="value money" id="fat-total">R$ 0,00</div>
+    <div class="header">
+        <div class="logo">⚡ MD BUSCAS</div>
+        <div id="status-alerta" class="badge-alerta" style="display:none;">PENDENTES</div>
     </div>
-    <div class="stat-card">
-        <h3>Faturamento Hoje</h3>
-        <div class="value money" id="fat-hoje">R$ 0,00</div>
+
+    <!-- Cards estilo Goatpay -->
+    <div class="card">
+        <div class="card-title">Consultas Pendentes de Liberação</div>
+        <div class="card-value" id="qtd-pendentes">0</div>
     </div>
-    <div class="stat-card">
-        <h3>Puxadas Hoje</h3>
-        <div class="value" id="pux-hoje">0</div>
+
+    <div class="section-title">Fila de Pagamentos Pix</div>
+    <div id="lista-pedidos">
+        <div class="card" style="text-align: center; color: #666;">Nenhum pedido pendente no momento.</div>
     </div>
-    <div class="stat-card">
-        <h3>Puxadas no Mês</h3>
-        <div class="value" id="pux-mes">0</div>
-    </div>
-    <div class="stat-card">
-        <h3>Total de Puxadas</h3>
-        <div class="value" id="pux-total">0</div>
-    </div>
-</div>
 
-<div class="section-title">Atividade e Histórico Recente</div>
-<div class="table-container">
-    <table>
-        <thead>
-            <tr>
-                <th>Data / Hora</th>
-                <th>Módulo</th>
-                <th>Consulta / Alvo</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody id="tabela-logs">
-            <tr><td colspan="4" style="text-align: center;">Carregando dados...</td></tr>
-        </tbody>
-    </table>
-</div>
-
-<script>
-    let ultimoTotalPuxadas = -1;
-
-    // Som de alerta estilo iFood gerado via Web Audio API
-    function tocarBeepIfood() {
-        try {
-            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-            osc.frequency.setValueAtTime(1200, audioCtx.currentTime + 0.1);
-            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.3);
-        } catch (e) {}
-    }
-
-    async function carregarDadosAdmin() {
-        try {
-            let res = await fetch('/api/admin/dados');
-            let data = await res.json();
-            
-            document.getElementById('fat-total').innerText = `R$ ${data.faturamento_total.toFixed(2)}`;
-            document.getElementById('fat-hoje').innerText = `R$ ${data.faturamento_hoje.toFixed(2)}`;
-            document.getElementById('pux-hoje').innerText = data.puxadas_hoje;
-            document.getElementById('pux-mes').innerText = data.puxadas_mes;
-            document.getElementById('pux-total').innerText = data.total_puxadas;
-
-            if (ultimoTotalPuxadas !== -1 && data.total_puxadas > ultimoTotalPuxadas) {
-                tocarBeepIfood();
+    <!-- Som de alerta estilo iFood (Gerado via AudioContext do navegador para não precisar baixar arquivo mp3) -->
+    <script>
+        function tocarAlertaIfood() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // Nota D5
+                osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.15); // Nota A5
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.4);
+            } catch(e) {
+                console.log("Áudio bloqueado pelo navegador até o primeiro toque na tela.");
             }
-            ultimoTotalPuxadas = data.total_puxadas;
-
-            let tabela = document.getElementById('tabela-logs');
-            tabela.innerHTML = '';
-            
-            if(data.logs.length === 0) {
-                tabela.innerHTML = '<tr><td colspan="4" style="text-align: center;">Nenhuma consulta registrada ainda.</td></tr>';
-                return;
-            }
-
-            data.logs.forEach(log => {
-                let linha = `<tr>
-                    <td>${log.data_hora}</td>
-                    <td>${log.modulo}</td>
-                    <td>${log.alvo}</td>
-                    <td><span style="color: #00b894;">${log.status}</span></td>
-                </tr>`;
-                tabela.innerHTML += linha;
-            });
-        } catch (e) {
-            console.error("Erro ao buscar dados do admin");
         }
-    }
 
-    setInterval(carregarDadosAdmin, 5000);
-    carregarDadosAdmin();
-</script>
+        // Exemplo de simulação de dados em tempo real (Você vai conectar com a rota do seu servidor)
+        let ultimoTotalPendentes = 0;
+
+        function verificarNovosPedidos() {
+            // Aqui você faria um fetch para uma rota do seu server.js que lista os pagamentos gerados
+            // Exemplo: fetch('/api/admin/pedidos')...
+            
+            // Simulando recebimento para teste visual:
+            // Se houver novos pedidos > ultimoTotalPendentes, toca o alarme!
+            // tocarAlertaIfood();
+        }
+
+        // Verifica a cada 5 segundos
+        setInterval(verificarNovosPedidos, 5000);
+    </script>
 
 </body>
 </html>
