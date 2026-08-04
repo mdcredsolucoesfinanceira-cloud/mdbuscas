@@ -3,21 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - MD Buscas</title>
+    <title>Dashboard Admin - MD Buscas</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
         body { background-color: #0b0b0b; color: #ffffff; padding: 16px; }
 
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .logo-area { font-weight: bold; font-size: 18px; color: #00ffcc; }
-        
+        .btn-notif { background: #222; color: #fff; border: 1px solid #444; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+
         .titulo-dash { font-size: 22px; font-weight: bold; margin-bottom: 20px; color: #fff; }
 
         .card-saldo { background: #161616; border: 1px solid #262626; border-radius: 14px; padding: 20px; margin-bottom: 20px; }
         .card-label { font-size: 13px; color: #888; margin-bottom: 8px; }
         .card-valor { font-size: 32px; font-weight: bold; color: #fff; }
 
-        .section-title { font-size: 16px; font-weight: bold; color: #fff; margin-bottom: 12px; }
+        .section-title { font-size: 16px; font-weight: bold; color: #fff; margin: 20px 0 12px 0; }
         
         .lista-pedidos { display: flex; flex-direction: column; gap: 10px; }
         .pedido-card { background: #161616; border: 1px solid #333; border-radius: 12px; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
@@ -27,43 +28,87 @@
         .btn-liberar { background: #00c853; color: white; border: none; padding: 10px 16px; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer; }
         .btn-liberar:active { background: #009624; }
         
-        .vazio { text-align: center; color: #555; padding: 40px; font-size: 13px; background: #121212; border-radius: 12px; border: 1px dashed #222; }
+        .historico-card { background: #121212; border: 1px solid #222; border-radius: 10px; padding: 12px; margin-bottom: 8px; font-size: 12px; color: #888; display: flex; justify-content: space-between; align-items: center; }
+        .historico-card b { color: #ccc; }
+
+        .vazio { text-align: center; color: #555; padding: 30px; font-size: 13px; background: #121212; border-radius: 12px; border: 1px dashed #222; }
     </style>
 </head>
 <body>
 
     <div class="header">
         <div class="logo-area">⚡ MD BUSCAS (Admin)</div>
+        <button class="btn-notif" onclick="ativarNotificacoes()">🔔 Ativar Alerta</button>
     </div>
 
-    <div class="titulo-dash">Controle de Pagamentos</div>
+    <div class="titulo-dash">Painel de Controle</div>
 
     <div class="card-saldo">
-        <div class="card-label">Aguardando Confirmação Manual</div>
-        <div class="card-valor" id="txtPendentes">1</div>
+        <div class="card-label">Total de Consultas Realizadas (Histórico)</div>
+        <div class="card-valor" id="totalHistorico">0</div>
     </div>
 
-    <div class="section-title">Fila de Pix para Liberar</div>
-
+    <div class="section-title">Fila de Pix Pendentes</div>
     <div class="lista-pedidos" id="containerFila">
-        <!-- Exemplo visual de um pedido aguardando liberação manual -->
-        <div class="pedido-card">
-            <div class="pedido-info">
-                <b>Cliente / Ref: md_1722800000</b>
-                <span>Valor: R$ 10,00</span>
-                <span style="color: #ff9800;">Status: Aguardando Comprovante</span>
-            </div>
-            <button class="btn-liberar" onclick="liberarConsulta('md_1722800000')">Liberar</button>
-        </div>
+        <div class="vazio">Nenhum pagamento pendente.</div>
+    </div>
+
+    <div class="section-title">Histórico Geral (Salvo)</div>
+    <div class="lista-pedidos" id="containerHistorico">
+        <div class="vazio">Nenhum histórico registrado ainda.</div>
     </div>
 
     <script>
-        function liberarConsulta(txid) {
-            if(confirm("Deseja realmente liberar a consulta para este cliente?")) {
-                alert("Consulta liberada com sucesso! O cliente já pode consultar.");
-                // Aqui você pode adicionar a lógica para atualizar o status no servidor
-                location.reload();
+        // Pedir permissão para Notificação Push do Navegador
+        function ativarNotificacoes() {
+            if ("Notification" in window) {
+                Notification.requestPermission().then(permission => {
+                    if (permission === "granted") {
+                        alert("Notificações ativadas com sucesso!");
+                    }
+                });
             }
+        }
+
+        // Som estilo iFood
+        function tocarAlarmeIfood() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+                osc.frequency.setValueAtTime(880, ctx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.5);
+            } catch (e) {
+                console.log("Áudio bloqueado.");
+            }
+        }
+
+        // Disparar Notificação Push Nativa no Celular
+        function dispararPushNativo(titulo, texto) {
+            if (Notification.permission === "granted") {
+                navigator.serviceWorker.ready.then(registration => {
+                    registration.showNotification(titulo, {
+                        body: texto,
+                        icon: '/icon.png',
+                        vibrate: [200, 100, 200]
+                    });
+                }).catch(() => {
+                    new Notification(titulo, { body: texto });
+                });
+            }
+        }
+
+        // Simulação de chegada de novo pedido para testar o alarme e push
+        function simularNovoPedidoChegando() {
+            tocarAlarmeIfood();
+            dispararPushNativo("Novo Pix Gerado! 💰", "Um cliente gerou um pagamento e aguarda liberação.");
         }
     </script>
 
