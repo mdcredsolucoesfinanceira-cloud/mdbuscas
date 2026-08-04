@@ -8,7 +8,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #050b14; color: #fff; overflow-x: hidden; }
 
-        /* TELA DE LOADING HACKER COM A SUA LOGO.PNG (5 SEGUNDOS) */
+        /* TELA DE LOADING COM A SUA LOGO_2.PNG (5 SEGUNDOS) */
         #loading-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
             background-color: #03070c; display: flex; flex-direction: column;
@@ -23,11 +23,10 @@
             0% { transform: scale(1); box-shadow: 0 0 20px rgba(0,255,204,0.4); }
             100% { transform: scale(1.05); box-shadow: 0 0 40px rgba(0,255,204,0.8); }
         }
-        .hacker-text { color: #00ffcc; font-family: monospace; font-size: 1rem; letter-spacing: 2px; margin-bottom: 15px; }
+        .hacker-text { color: #00ffcc; font-family: monospace; font-size: 0.95rem; letter-spacing: 1px; margin-bottom: 15px; text-align: center; }
         .progress-bar-container { width: 260px; height: 6px; background: #101c2e; border-radius: 10px; overflow: hidden; border: 1px solid rgba(0,255,204,0.3); }
         .progress-bar { width: 0%; height: 100%; background: #00ffcc; box-shadow: 0 0 10px #00ffcc; transition: width 0.1s linear; }
 
-        /* CONTEÚDO PRINCIPAL DO SITE */
         #main-content { display: none; padding: 20px; max-width: 1050px; margin: 0 auto; }
         .header { text-align: center; margin-bottom: 30px; padding-top: 15px; }
         .site-logo { width: 120px; height: 120px; border-radius: 16px; object-fit: cover; border: 2px solid #00ffcc; box-shadow: 0 0 20px rgba(0,255,204,0.4); margin-bottom: 10px; }
@@ -45,7 +44,6 @@
         .badge-status { background: #00b894; color: #fff; font-size: 0.65rem; padding: 3px 8px; border-radius: 6px; font-weight: bold; }
         .btn-consultar { background: #00ffcc; color: #050b14; border: none; padding: 6px 14px; border-radius: 6px; font-weight: bold; font-size: 0.75rem; cursor: pointer; }
 
-        /* MODAL DE CONSULTA E PIX GOATPAY */
         .modal { display: none; position: fixed; z-index: 10; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); backdrop-filter: blur(5px); justify-content: center; align-items: center; }
         .modal-content { background: #0f1c2e; border: 1px solid #00ffcc; padding: 25px; border-radius: 12px; width: 90%; max-width: 440px; box-shadow: 0 0 25px rgba(0,255,204,0.3); text-align: center; }
         .modal-content h3 { color: #00ffcc; margin-bottom: 12px; }
@@ -56,17 +54,17 @@
 </head>
 <body>
 
-    <!-- TELA DE LOADING HACKER COM A SUA LOGO.PNG (5 SEGUNDOS) -->
+    <!-- TELA DE LOADING COM A SUA LOGO_2.PNG -->
     <div id="loading-screen">
-        <img src="logo.png" alt="MD BUSCAS Logo" class="loading-logo">
-        <div class="hacker-text" id="hacker-status">INICIALIZANDO SISTEMA SEGURADO...</div>
+        <img src="logo_2.png" alt="MD BUSCAS Logo" class="loading-logo">
+        <div class="hacker-text" id="hacker-status">INICIALIZANDO SISTEMA DE CONSULTA...</div>
         <div class="progress-bar-container"><div class="progress-bar" id="progressBar"></div></div>
     </div>
 
-    <!-- CONTEÚDO DO SITE -->
+    <!-- CONTEÚDO PRINCIPAL -->
     <div id="main-content">
         <div class="header">
-            <img src="logo.png" alt="MD BUSCAS Logo" class="site-logo">
+            <img src="logo_2.png" alt="MD BUSCAS Logo" class="site-logo">
             <h1>MD BUSCAS</h1>
             <p>Central de Inteligência e Consultas Automatizadas</p>
         </div>
@@ -85,8 +83,8 @@
                 <div><span class="badge-status">ONLINE</span><br><br><button class="btn-consultar" onclick="abrirModal('VEÍCULOS')">ACESSAR</button></div>
             </div>
             <div class="card-module">
-                <div class="card-left"><div class="card-icon">📍</div><div class="card-title">ENDEREÇOS</div></div>
-                <div><span class="badge-status">ONLINE</span><br><br><button class="btn-consultar" onclick="abrirModal('ENDEREÇOS')">ACESSAR</button></div>
+                <div class="card-left"><div class="card-icon">📍</div><div class="card-title">ENDEREÇOS (CEP)</div></div>
+                <div><span class="badge-status">ONLINE</span><br><br><button class="btn-consultar" onclick="abrirModal('CEP')">ACESSAR</button></div>
             </div>
             <div class="card-module">
                 <div class="card-left"><div class="card-icon">📞</div><div class="card-title">TELEFONES</div></div>
@@ -95,7 +93,7 @@
         </div>
     </div>
 
-    <!-- MODAL DE CONSULTA E PIX DA GOATPAY -->
+    <!-- MODAL DE CONSULTA E PIX GOATPAY -->
     <div id="modalConsulta" class="modal">
         <div class="modal-content">
             <h3 id="modalTitulo">CONSULTA</h3>
@@ -117,10 +115,10 @@
     <script>
         let moduloAtual = '';
 
-        // Animação de carregamento hacker de 5 segundos com a logo.png
+        // Animação de carregamento de 5 segundos com a logo_2.png
         let progress = 0;
         const interval = setInterval(() => {
-            progress += 2; // 2% a cada 100ms = 5 segundos totais
+            progress += 2; // 2% a cada 100ms = 5 segundos
             document.getElementById('progressBar').style.width = progress + '%';
             if (progress >= 100) {
                 clearInterval(interval);
@@ -150,7 +148,6 @@
             let alvo = document.getElementById('inputAlvo').value.trim();
             if(!alvo) { alert('Digite o dado correspondente antes de continuar!'); return; }
 
-            // Chama a rota da Goatpay para gerar o Pix de R$ 10,00
             let res = await fetch('/api/pagamento/pix', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
