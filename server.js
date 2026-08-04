@@ -8,40 +8,53 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Memória temporária para simular pagamento de teste
-const pagamentosTeste = {};
+// Sua Chave Real da Goatpay integrada
+const GOATPAY_TOKEN = "gp_live_e793a0b1c720448c8fc3cbc4a0f58baac88e1cf7c0312832"; 
 
-// 1. ROTA PARA GERAR O PIX DE TESTE (R$ 10,00)
+// 1. ROTA PARA GERAR O PIX REAL NA GOATPAY
 app.post('/api/pagamento/pix', async (req, res) => {
     try {
-        const txid = "teste_" + Date.now();
-        pagamentosTeste[txid] = false;
-        
-        // Auto-aprova o pagamento após 5 segundos para você testar a liberação das APIs!
-        setTimeout(() => { 
-            pagamentosTeste[txid] = true; 
-            console.log(`[TESTE] Pagamento ${txid} foi APROVADO automaticamente.`);
-        }, 5000);
+        const response = await axios.post('https://api.goatpay.com.br/v1/pix', {
+            amount: 10.00,
+            // Aqui definimos o nome que vai aparecer para o cliente no comprovante/banco
+            description: "MD CONSULTORIA E MEIOS DE PAGAMENTO"
+        }, {
+            headers: { 
+                'Authorization': `Bearer ${GOATPAY_TOKEN}`,
+                'Content-Type': 'application/json'
+            }
+        });
 
         res.json({
             sucesso: true,
-            txid: txid,
-            qrcode: "00020101021226740014br.gov.bcb.pix.SIMULACAO_R$10_MD_BUSCAS",
-            qrcode_image: "https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg"
+            txid: response.data.id || response.data.txid,
+            qrcode: response.data.pix_copia_e_cola || response.data.qrcode,
+            qrcode_image: response.data.qr_code_image || response.data.imagem_qrc
         });
 
     } catch (error) {
-        res.status(500).json({ sucesso: false, erro: "Falha ao gerar PIX de teste." });
+        console.error("Erro Goatpay:", error.response?.data || error.message);
+        res.status(500).json({ sucesso: false, erro: "Falha ao gerar PIX na Goatpay." });
     }
 });
 
-// 2. ROTA PARA VERIFICAR O STATUS DO PIX DE TESTE
+// 2. ROTA PARA VERIFICAR O STATUS DO PAGAMENTO NA GOATPAY
 app.get('/api/pagamento/status/:txid', async (req, res) => {
     const { txid } = req.params;
-    if (pagamentosTeste[txid] !== undefined) {
-        return res.json({ pago: pagamentosTeste[txid] });
+    try {
+        const response = await axios.get(`https://api.goatpay.com.br/v1/pix/${txid}`, {
+            headers: { 'Authorization': `Bearer ${GOATPAY_TOKEN}` }
+        });
+        
+        const status = response.data.status;
+        // Aceita os status comuns de aprovação da Goatpay
+        const pago = (status === 'approved' || status === 'PAID' || status === 'pago' || status === 'CONCLUIDA');
+
+        res.json({ pago: pago });
+    } catch (error) {
+        // Se der algum erro na consulta temporária, retorna falso para continuar tentando
+        res.json({ pago: false }); 
     }
-    res.json({ pago: false }); 
 });
 
 // 3. ROTA PARA CONSULTAR CNPJ (BrasilAPI + ReceitaWS)
@@ -76,4 +89,4 @@ app.get('/api/consulta/cep/:cep', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Servidor de TESTE rodando na porta ${PORT}`));
+app.listen(PORT, () => console.log(`Servidor OFICIAL rodando na porta ${PORT}`));
