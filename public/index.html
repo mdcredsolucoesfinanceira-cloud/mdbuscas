@@ -76,7 +76,7 @@
                 
                 <button class="btn-copiar" onclick="copiarPix()">📋 Copiar Código Pix</button>
                 
-                <p id="statusTextoPix" style="color: #ffaa00; font-size: 0.85rem; margin-top: 10px; font-weight: bold;">⏳ Aguardando pagamento...</p>
+                <p id="statusTextoPix" style="color: #ffaa00; font-size: 0.85rem; margin-top: 10px; font-weight: bold;">⏳ Aguardando pagamento (COMPLETED)...</p>
             </div>
 
             <pre id="resultadoDados"></pre>
@@ -136,7 +136,7 @@
                     document.getElementById('imgQrCode').src = data.qrcode_image;
                     document.getElementById('statusTextoPix').innerText = '⏳ Aguardando pagamento...';
 
-                    // Inicia a verificação automática a cada 3 segundos
+                    // Checa automaticamente a cada 3 segundos
                     intervalChecagem = setInterval(checarPagamentoAutomatico, 3000);
                 } else {
                     alert('Erro ao gerar Pix na Goatpay.');
@@ -165,7 +165,6 @@
                 if(data.pago) {
                     clearInterval(intervalChecagem);
                     
-                    // Altera o texto na tela avisando que recebeu e liberando
                     document.getElementById('statusTextoPix').innerText = '✅ Pagamento confirmado! Liberando consulta...';
                     
                     setTimeout(async () => {

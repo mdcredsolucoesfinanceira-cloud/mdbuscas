@@ -34,7 +34,6 @@ app.post('/api/pagamento/pix', async (req, res) => {
             qrcodeImg = `data:image/png;base64,${qrcodeImg}`;
         }
 
-        // Captura o ID interno real da Goatpay para consulta exata de status
         const txidReal = d.id || d.transactionId || d.txid || d.uuid;
 
         res.json({
@@ -53,21 +52,23 @@ app.post('/api/pagamento/pix', async (req, res) => {
 app.get('/api/pagamento/status/:txid', async (req, res) => {
     const { txid } = req.params;
     try {
-        // Consulta direto na rota oficial da Goatpay com o ID da transação
         const response = await axios.get(`https://api.goatpay.com.br/v1/payment-pix/${txid}`, {
             headers: { 
                 'X-API-Key': GOATPAY_TOKEN,
-                'Authorization': `Bearer ${GOATPAY_TOKEN}` 
+                'Authorization': `Bearer ${GOATPAY_TOKEN}`,
+                'Content-Type': 'application/json'
             }
         });
         
         console.log(`STATUS TXID ${txid}:`, JSON.stringify(response.data));
 
         const d = response.data.data || response.data;
-        const status = String(d.status || d.state || '').toLowerCase();
+        const status = String(d.status || d.state || '').toUpperCase();
         
-        // Verifica se o status indica pagamento aprovado
-        const pago = status.includes('approved') || status.includes('paid') || status.includes('pago') || status.includes('concl') || status.includes('success') || status.includes('confirmed');
+        console.log("STATUS FORMATADO:", status);
+
+        // A Goatpay retorna COMPLETED quando o PIX é pago com sucesso
+        const pago = status.includes('COMPLETED') || status.includes('APPROVED') || status.includes('PAID') || status.includes('PAGO') || status.includes('SUCCESS');
 
         res.json({ pago: pago, status_recebido: status });
     } catch (error) {
