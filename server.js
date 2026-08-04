@@ -24,7 +24,7 @@ app.post('/api/pagamento/pix', async (req, res) => {
             }
         });
 
-        console.log("RESPOSTA GOATPAY CRIAR:", JSON.stringify(response.data));
+        console.log("RESPOSTA COMPLETA DA GOATPAY:", JSON.stringify(response.data));
 
         const d = response.data.data || response.data;
         const qrcodeText = d.copyPaste || d.pix_copia_e_cola || d.qrcode || d.emv || d.payload || d.copiaECola || "";
@@ -34,7 +34,9 @@ app.post('/api/pagamento/pix', async (req, res) => {
             qrcodeImg = `data:image/png;base64,${qrcodeImg}`;
         }
 
-        const txidReal = d.id || d.transactionId || d.txid || d.uuid;
+        // Procura o ID em todas as propriedades possíveis da resposta da Goatpay
+        const txidReal = d.id || d.transactionId || d.txid || d.uuid || d.hash || (response.data && response.data.id);
+        console.log("ID DA TRANSAÇÃO CAPTURADO:", txidReal);
 
         res.json({
             sucesso: true,
@@ -51,6 +53,10 @@ app.post('/api/pagamento/pix', async (req, res) => {
 
 app.get('/api/pagamento/status/:txid', async (req, res) => {
     const { txid } = req.params;
+    if (!txid || txid === 'undefined') {
+        return res.json({ pago: false, motivo: "ID de transação inválido" });
+    }
+
     try {
         const response = await axios.get(`https://api.goatpay.com.br/v1/payment-pix/${txid}`, {
             headers: { 
@@ -60,19 +66,17 @@ app.get('/api/pagamento/status/:txid', async (req, res) => {
             }
         });
         
-        console.log(`STATUS TXID ${txid}:`, JSON.stringify(response.data));
+        console.log(`STATUS DO TXID [${txid}]:`, JSON.stringify(response.data));
 
         const d = response.data.data || response.data;
         const status = String(d.status || d.state || '').toUpperCase();
         
-        console.log("STATUS FORMATADO:", status);
-
-        // A Goatpay retorna COMPLETED quando o PIX é pago com sucesso
+        // Verifica se foi pago por qualquer variação de status bem-sucedido
         const pago = status.includes('COMPLETED') || status.includes('APPROVED') || status.includes('PAID') || status.includes('PAGO') || status.includes('SUCCESS');
 
         res.json({ pago: pago, status_recebido: status });
     } catch (error) {
-        console.error("Erro checando status:", error.response?.data || error.message);
+        console.error("Erro checando status na API:", error.response?.data || error.message);
         res.json({ pago: false }); 
     }
 });

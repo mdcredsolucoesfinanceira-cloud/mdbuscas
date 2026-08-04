@@ -76,7 +76,8 @@
                 
                 <button class="btn-copiar" onclick="copiarPix()">📋 Copiar Código Pix</button>
                 
-                <p id="statusTextoPix" style="color: #ffaa00; font-size: 0.85rem; margin-top: 10px; font-weight: bold;">⏳ Aguardando pagamento (COMPLETED)...</p>
+                <p id="statusTextoPix" style="color: #ffaa00; font-size: 0.85rem; margin-top: 10px; font-weight: bold;">⏳ Aguardando pagamento...</p>
+                <p id="debugTxid" style="color: #556677; font-size: 0.7rem; margin-top: 5px;"></p>
             </div>
 
             <pre id="resultadoDados"></pre>
@@ -135,6 +136,7 @@
                     document.getElementById('copiaCola').value = data.qrcode;
                     document.getElementById('imgQrCode').src = data.qrcode_image;
                     document.getElementById('statusTextoPix').innerText = '⏳ Aguardando pagamento...';
+                    document.getElementById('debugTxid').innerText = 'ID: ' + txidAtual;
 
                     // Checa automaticamente a cada 3 segundos
                     intervalChecagem = setInterval(checarPagamentoAutomatico, 3000);
