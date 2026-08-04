@@ -3,114 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Admin - MD Buscas</title>
+    <title>MD BUSCAS - Painel Admin</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-        body { background-color: #0b0b0b; color: #ffffff; padding: 16px; }
-
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .logo-area { font-weight: bold; font-size: 18px; color: #00ffcc; }
-        .btn-notif { background: #222; color: #fff; border: 1px solid #444; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; }
-
-        .titulo-dash { font-size: 22px; font-weight: bold; margin-bottom: 20px; color: #fff; }
-
-        .card-saldo { background: #161616; border: 1px solid #262626; border-radius: 14px; padding: 20px; margin-bottom: 20px; }
-        .card-label { font-size: 13px; color: #888; margin-bottom: 8px; }
-        .card-valor { font-size: 32px; font-weight: bold; color: #fff; }
-
-        .section-title { font-size: 16px; font-weight: bold; color: #fff; margin: 20px 0 12px 0; }
-        
-        .lista-pedidos { display: flex; flex-direction: column; gap: 10px; }
-        .pedido-card { background: #161616; border: 1px solid #333; border-radius: 12px; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
-        .pedido-info { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: #aaa; }
-        .pedido-info b { color: #fff; font-size: 14px; }
-        
-        .btn-liberar { background: #00c853; color: white; border: none; padding: 10px 16px; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer; }
-        .btn-liberar:active { background: #009624; }
-        
-        .historico-card { background: #121212; border: 1px solid #222; border-radius: 10px; padding: 12px; margin-bottom: 8px; font-size: 12px; color: #888; display: flex; justify-content: space-between; align-items: center; }
-        .historico-card b { color: #ccc; }
-
-        .vazio { text-align: center; color: #555; padding: 30px; font-size: 13px; background: #121212; border-radius: 12px; border: 1px dashed #222; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: monospace; }
+        body { background: #050b14; color: #00ffcc; padding: 20px; }
+        h1 { margin-bottom: 20px; text-shadow: 0 0 10px rgba(0,255,204,0.4); font-size: 1.5rem; }
+        .pedido-card { background: #0f1c2e; border: 1px solid #00ffcc; padding: 15px; border-radius: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .btn-aprovar { background: #25d366; color: #050b14; border: none; padding: 10px 20px; font-weight: bold; cursor: pointer; border-radius: 5px; font-size: 0.9rem; }
+        .btn-aprovar:hover { background: #20ba5a; }
+        .info-pedido { font-size: 0.9rem; line-height: 1.5; color: #fff; }
+        .info-pedido b { color: #00ffcc; }
     </style>
 </head>
 <body>
-
-    <div class="header">
-        <div class="logo-area">⚡ MD BUSCAS (Admin)</div>
-        <button class="btn-notif" onclick="ativarNotificacoes()">🔔 Ativar Alerta</button>
-    </div>
-
-    <div class="titulo-dash">Painel de Controle</div>
-
-    <div class="card-saldo">
-        <div class="card-label">Total de Consultas Realizadas (Histórico)</div>
-        <div class="card-valor" id="totalHistorico">0</div>
-    </div>
-
-    <div class="section-title">Fila de Pix Pendentes</div>
-    <div class="lista-pedidos" id="containerFila">
-        <div class="vazio">Nenhum pagamento pendente.</div>
-    </div>
-
-    <div class="section-title">Histórico Geral (Salvo)</div>
-    <div class="lista-pedidos" id="containerHistorico">
-        <div class="vazio">Nenhum histórico registrado ainda.</div>
-    </div>
+    <h1>[ PAINEL ADMIN - CONSULTAS PENDENTES ]</h1>
+    <p style="color: #8a99ad; margin-bottom: 20px; font-size: 0.85rem;">Os pedidos aparecem aqui assim que o cliente clica no botão de enviar o comprovante no WhatsApp.</p>
+    
+    <div id="listaPedidos">Carregando pedidos...</div>
 
     <script>
-        // Pedir permissão para Notificação Push do Navegador
-        function ativarNotificacoes() {
-            if ("Notification" in window) {
-                Notification.requestPermission().then(permission => {
-                    if (permission === "granted") {
-                        alert("Notificações ativadas com sucesso!");
-                    }
-                });
-            }
-        }
-
-        // Som estilo iFood
-        function tocarAlarmeIfood() {
+        async function carregarPedidos() {
             try {
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(587.33, ctx.currentTime);
-                osc.frequency.setValueAtTime(880, ctx.currentTime + 0.15);
-                gain.gain.setValueAtTime(0.3, ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.start();
-                osc.stop(ctx.currentTime + 0.5);
-            } catch (e) {
-                console.log("Áudio bloqueado.");
-            }
-        }
+                let res = await fetch('/api/admin/pedidos');
+                let pedidos = await res.json();
+                let div = document.getElementById('listaPedidos');
+                
+                if(pedidos.length === 0) {
+                    div.innerHTML = '<p style="color: #8a99ad;">Nenhum pedido pendente no momento.</p>';
+                    return;
+                }
 
-        // Disparar Notificação Push Nativa no Celular
-        function dispararPushNativo(titulo, texto) {
-            if (Notification.permission === "granted") {
-                navigator.serviceWorker.ready.then(registration => {
-                    registration.showNotification(titulo, {
-                        body: texto,
-                        icon: '/icon.png',
-                        vibrate: [200, 100, 200]
-                    });
-                }).catch(() => {
-                    new Notification(titulo, { body: texto });
+                div.innerHTML = '';
+                pedidos.forEach(p => {
+                    div.innerHTML += `
+                        <div class="pedido-card">
+                            <div class="info-pedido">
+                                <b>Módulo:</b> ${p.modulo} | <b>Alvo:</b> ${p.alvo}<br>
+                                <b>ID/TXID:</b> ${p.txid} | <b>Hora:</b> ${p.data}<br>
+                                <b>Status:</b> <span style="color: ${p.status === 'pendente' ? '#ffaa00' : '#25d366'}">${p.status.toUpperCase()}</span>
+                            </div>
+                            <div>
+                                ${p.status === 'pendente' ? `<button class="btn-aprovar" onclick="liberar('${p.txid}')">LIBERAR CONSULTA</button>` : '<span style="color: #25d366; font-weight: bold;">APROVADO ✅</span>'}
+                            </div>
+                        </div>
+                    `;
                 });
+            } catch(e) {
+                console.log("Erro ao carregar admin");
             }
         }
 
-        // Simulação de chegada de novo pedido para testar o alarme e push
-        function simularNovoPedidoChegando() {
-            tocarAlarmeIfood();
-            dispararPushNativo("Novo Pix Gerado! 💰", "Um cliente gerou um pagamento e aguarda liberação.");
+        async function liberar(txid) {
+            let res = await fetch('/api/admin/liberar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ txid })
+            });
+            let data = await res.json();
+            if(data.sucesso) {
+                alert('✅ Consulta liberada com sucesso para o cliente!');
+                carregarPedidos();
+            } else {
+                alert('❌ Erro ao liberar.');
+            }
         }
-    </script>
 
+        // Atualiza a cada 3 segundos automaticamente
+        setInterval(carregarPedidos, 3000);
+        carregarPedidos();
+    </script>
 </body>
 </html>

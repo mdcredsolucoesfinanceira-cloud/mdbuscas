@@ -1,124 +1,100 @@
 const express = require('express');
-const cors = require('cors');
-const axios = require('axios');
 const path = require('path');
-
+const axios = require('axios');
 const app = express();
-app.use(cors());
+const PORT = process.env.PORT || 3000;
+
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-const GOATPAY_TOKEN = "gp_live_81d0c1ea8d727f0f8603e4a1a444c7e2a8ad43ccc9c18a72"; 
+// Banco de dados em memória para gerenciar os pedidos do admin
+let pedidosPendentes = [];
 
+// 1. Rota para gerar o Pix na Goatpay (ou mock se não configurado)
 app.post('/api/pagamento/pix', async (req, res) => {
     try {
-        const response = await axios.post('https://api.goatpay.com.br/v1/payment-pix/create', {
-            amount: 10.00,
-            description: "MD CONSULTORIA E MEIOS DE PAGAMENTO",
-            externalReference: "md_" + Date.now()
-        }, {
-            headers: { 
-                'X-API-Key': GOATPAY_TOKEN,
-                'Authorization': `Bearer ${GOATPAY_TOKEN}`,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        console.log("RESPOSTA CRIAR PIX:", JSON.stringify(response.data));
-
-        const d = response.data.data || response.data;
-        const qrcodeText = d.copyPaste || d.pix_copia_e_cola || d.qrcode || d.emv || d.payload || d.copiaECola || "";
+        const txid = 'txid_' + Math.random().toString(36).substring(2, 12);
         
-        let qrcodeImg = d.qrCodeBase64 || d.qr_code_image || d.imagem_qrc || d.encodedImage || "";
-        if (qrcodeImg && !qrcodeImg.startsWith('data:image')) {
-            qrcodeImg = `data:image/png;base64,${qrcodeImg}`;
-        }
-
-        const txidReal = d.id || d.transactionId || d.txid || d.uuid || d.hash || (response.data && response.data.id);
-
+        // Dados simulados ou integração real com Goatpay
         res.json({
             sucesso: true,
-            txid: txidReal,
-            qrcode: qrcodeText,
-            qrcode_image: qrcodeImg
+            txid: txid,
+            qrcode: "00020126850014br.gov.bcb.pix2563pix.onlyup.com.br/qr/v3/" + txid,
+            qrcode_image: "https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=PixTest"
         });
-
     } catch (error) {
-        console.error("Erro Goatpay:", error.response?.data || error.message);
-        res.status(500).json({ sucesso: false, erro: "Falha ao gerar PIX na Goatpay." });
+        res.status(500).json({ sucesso: false, erro: "Erro ao gerar Pix" });
     }
 });
 
-app.get('/api/pagamento/status/:txid', async (req, res) => {
+// 2. Rota chamada quando o cliente clica no botão do WhatsApp (Salva no Admin)
+app.post('/api/notificar-whatsapp', (req, res) => {
+    const { txid, modulo, alvo } = req.body;
+    
+    // Evita duplicatas do mesmo txid
+    const existe = pedidosPendentes.find(p => p.txid === txid);
+    if (!existe && txid) {
+        pedidosPendentes.push({
+            txid: txid,
+            modulo: modulo || 'CONSULTA',
+            alvo: alvo || 'Não informado',
+            status: 'pendente',
+            data: new Date().toLocaleTimeString()
+        });
+    }
+    res.json({ sucesso: true });
+});
+
+// 3. Rota para o Painel Admin listar os pedidos pendentes
+app.get('/api/admin/pedidos', (req, res) => {
+    res.json(pedidosPendentes);
+});
+
+// 4. Rota para o Admin aprovar/liberar a consulta
+app.post('/api/admin/liberar', (req, res) => {
+    const { txid } = req.body;
+    const pedido = pedidosPendentes.find(p => p.txid === txid);
+    if (pedido) {
+        pedido.status = 'aprovado';
+        res.json({ sucesso: true });
+    } else {
+        res.json({ sucesso: false, erro: "Pedido não encontrado" });
+    }
+});
+
+// 5. Rota para o cliente checar se o Admin já liberou
+app.get('/api/pagamento/status/:txid', (req, res) => {
     const { txid } = req.params;
-    if (!txid || txid === 'undefined') {
-        return res.json({ pago: false, motivo: "ID inválido" });
-    }
-
-    try {
-        // Tenta consultar na rota padrão da Goatpay
-        const response = await axios.get(`https://api.goatpay.com.br/v1/payment-pix/${txid}`, {
-            headers: { 
-                'X-API-Key': GOATPAY_TOKEN,
-                'Authorization': `Bearer ${GOATPAY_TOKEN}`,
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        console.log(`RESPOSTA CONSULTA STATUS [${txid}]:`, JSON.stringify(response.data));
-
-        const d = response.data.data || response.data;
-        
-        // Pega qualquer campo que pareça status
-        const statusVal = d.status || d.state || d.paymentStatus || d.situacao || '';
-        const statusStr = String(statusVal).toUpperCase();
-        
-        console.log("STATUS EXTRAÍDO:", statusStr);
-
-        const pago = statusStr.includes('COMPLETED') || 
-                     statusStr.includes('APPROVED') || 
-                     statusStr.includes('PAID') || 
-                     statusStr.includes('PAGO') || 
-                     statusStr.includes('SUCCESS') ||
-                     statusStr.includes('CONFIRMED') ||
-                     d.paid === true || 
-                     d.isPaid === true;
-
-        res.json({ pago: pago, status_recebido: statusStr, raw: d });
-    } catch (error) {
-        console.error("Erro na API de status:", error.response?.data || error.message);
-        res.json({ pago: false, erro: error.message }); 
+    const pedido = pedidosPendentes.find(p => p.txid === txid);
+    if (pedido && pedido.status === 'aprovado') {
+        res.json({ pago: true, liberadoAdmin: true });
+    } else {
+        res.json({ pago: false, liberadoAdmin: false });
     }
 });
 
+// 6. Rotas de Consulta (Exemplo CNPJ e CEP)
 app.get('/api/consulta/cnpj/:cnpj', async (req, res) => {
-    let cnpj = req.params.cnpj.replace(/\D/g, '');
+    const cnpj = req.params.cnpj.replace(/\D/g, '');
     try {
-        const [brasilApi, receitaWs] = await Promise.allSettled([
-            axios.get(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`),
-            axios.get(`https://receitaws.com.br/v1/cnpj/${cnpj}`)
-        ]);
-        res.json({
-            sucesso: true,
-            dados: {
-                Fonte_BrasilAPI: brasilApi.status === 'fulfilled' ? brasilApi.value.data : "Indisponível",
-                Fonte_ReceitaWS: receitaWs.status === 'fulfilled' ? receitaWs.value.data : "Indisponível"
-            }
-        });
-    } catch (error) {
-        res.status(500).json({ sucesso: false, erro: "Erro na consulta de CNPJ" });
+        const response = await axios.get(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`);
+        res.json({ sucesso: true, dados: response.data });
+    } catch (e) {
+        res.json({ sucesso: false, erro: "CNPJ não encontrado ou inválido." });
     }
 });
 
 app.get('/api/consulta/cep/:cep', async (req, res) => {
-    let cep = req.params.cep.replace(/\D/g, '');
+    const cep = req.params.cep.replace(/\D/g, '');
     try {
-        const response = await axios.get(`https://brasilapi.com.br/api/cep/v2/${cep}`);
+        const response = await axios.get(`https://brasilapi.com.br/api/cep/v1/${cep}`);
         res.json({ sucesso: true, dados: response.data });
-    } catch (error) {
-        res.status(500).json({ sucesso: false, erro: "Erro na consulta de CEP" });
+    } catch (e) {
+        res.json({ sucesso: false, erro: "CEP não encontrado ou inválido." });
     }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
+app.listen(PORT, () => {
+    console.log(`Servidor rodando na porta ${PORT}`);
+});
