@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MD BUSCAS - Central de Inteligência</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #050b14; color: #fff; overflow-x: hidden; }
+
+        #loading-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
+            background-color: #03070c; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 9999; transition: opacity 0.8s ease;
+        }
+        .loading-logo {
+            width: 180px; height: 180px; border-radius: 20px; object-fit: cover;
+            box-shadow: 0 0 30px rgba(0, 255, 204, 0.6); border: 2px solid #00ffcc;
+            animation: pulseLogo 1.5s infinite alternate; margin-bottom: 25px;
+        }
+        @keyframes pulseLogo {
+            0% { transform: scale(1); box-shadow: 0 0 20px rgba(0,255,204,0.4); }
+            100% { transform: scale(1.05); box-shadow: 0 0 40px rgba(0,255,204,0.8); }
+        }
+        .hacker-text { color: #00ffcc; font-family: monospace; font-size: 0.95rem; letter-spacing: 1px; margin-bottom: 15px; text-align: center; }
+        .progress-bar-container { width: 260px; height: 6px; background: #101c2e; border-radius: 10px; overflow: hidden; border: 1px solid rgba(0,255,204,0.3); }
+        .progress-bar { width: 0%; height: 100%; background: #00ffcc; box-shadow: 0 0 10px #00ffcc; transition: width 0.1s linear; }
+
+        #main-content { display: none; padding: 20px; max-width: 1050px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 30px; padding-top: 15px; }
+        .site-logo { width: 120px; height: 120px; border-radius: 16px; object-fit: cover; border: 2px solid #00ffcc; box-shadow: 0 0 20px rgba(0,255,204,0.4); margin-bottom: 10px; }
+        .header h1 { color: #00ffcc; font-size: 1.6rem; text-shadow: 0 0 10px rgba(0,255,204,0.4); }
+        .header p { color: #8a99ad; font-size: 0.85rem; }
+
+        .grid-modules { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; }
+        .card-module {
+            background: linear-gradient(135deg, #101c2e, #1a2d4a); border-radius: 12px; padding: 16px;
+            display: flex; align-items: center; justify-content: space-between; box-shadow: 0 6px 20px rgba(0,0,0,0.5); border: 1px solid rgba(0,255,204,0.2);
+        }
+        .card-left { display: flex; align-items: center; gap: 14px; }
+        .card-icon { font-size: 1.8rem; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 10px; display: flex; align-items: center; justify-content: center; width: 50px; height: 50px; }
+        .card-title { font-weight: bold; font-size: 0.95rem; color: #fff; }
+        .badge-status { background: #00b894; color: #fff; font-size: 0.65rem; padding: 3px 8px; border-radius: 6px; font-weight: bold; }
+        .btn-consultar { background: #00ffcc; color: #050b14; border: none; padding: 6px 14px; border-radius: 6px; font-weight: bold; font-size: 0.75rem; cursor: pointer; }
+
+        .modal { display: none; position: fixed; z-index: 10; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); backdrop-filter: blur(5px); justify-content: center; align-items: center; }
+        .modal-content { background: #0f1c2e; border: 1px solid #00ffcc; padding: 25px; border-radius: 12px; width: 90%; max-width: 440px; box-shadow: 0 0 25px rgba(0,255,204,0.3); text-align: center; }
+        .modal-content h3 { color: #00ffcc; margin-bottom: 12px; }
+        .modal-content input { width: 100%; padding: 12px; background: #050b14; border: 1px solid #284b7a; color: #fff; border-radius: 8px; margin-bottom: 15px; text-align: center; outline: none; }
+        .btn-acao { background: #00ffcc; color: #050b14; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; }
+        .btn-fechar { background: #ff4757; color: #fff; margin-top: 10px; width: 100%; padding: 8px; border: none; border-radius: 6px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div id="loading-screen">
+        <img src="logo.png" alt="MD BUSCAS Logo" class="loading-logo">
+        <div class="hacker-text" id="hacker-status">INICIALIZANDO SISTEMA DE CONSULTA...</div>
+        <div class="progress-bar-container"><div class="progress-bar" id="progressBar"></div></div>
+    </div>
+
+    <div id="main-content">
+        <div class="header">
+            <img src="logo.png" alt="MD BUSCAS Logo" class="site-logo">
+            <h1>MD BUSCAS</h1>
+            <p>Central de Inteligência e Consultas Automatizadas</p>
+        </div>
+
+        <div class="grid-modules">
+            <div class="card-module">
+                <div class="card-left"><div class="card-icon">🏢</div><div class="card-title">CONSULTA CNPJ</div></div>
+                <div><span class="badge-status">ONLINE</span><br><br><button class="btn-consultar" onclick="abrirModal('CNPJ')">ACESSAR</button></div>
+            </div>
+            <div class="card-module">
+                <div class="card-left"><div class="card-icon">🪪</div><div class="card-title">CONSULTA CPF</div></div>
+                <div><span class="badge-status">ONLINE</span><br><br><button class="btn-consultar" onclick="abrirModal('CPF')">ACESSAR</button></div>
+            </div>
+            <div class="card-module">
+                <div class="card-left"><div class="card-icon">🚗</div><div class="card-title">VEÍCULOS</div></div>
+                <div><span class="badge-status">ONLINE</span><br><br><button class="btn-consultar" onclick="abrirModal('VEÍCULOS')">ACESSAR</button></div>
+            </div>
+            <div class="card-module">
+                <div class="card-left"><div class="card-icon">📍</div><div class="card-title">CONSULTA CEP</div></div>
+                <div><span class="badge-status">ONLINE</span><br><br><button class="btn-consultar" onclick="abrirModal('CEP')">ACESSAR</button></div>
+            </div>
+            <div class="card-module">
+                <div class="card-left"><div class="card-icon">📞</div><div class="card-title">TELEFONES</div></div>
+                <div><span class="badge-status">ONLINE</span><br><br><button class="btn-consultar" onclick="abrirModal('TELEFONES')">ACESSAR</button></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalConsulta" class="modal">
+        <div class="modal-content">
+            <h3 id="modalTitulo">CONSULTA</h3>
+            <input type="text" id="inputAlvo" placeholder="Digite o documento ou dado alvo...">
+            
+            <div id="areaPix" style="display:none;">
+                <p style="color: #00b894; font-weight: bold; font-size: 0.9rem; margin-bottom: 8px;">✔ Já encontramos seus dados!</p>
+                <p style="color: #8a99ad; font-size: 0.8rem; margin-bottom: 8px;">Escaneie o QR Code ou copie o Pix de R$ 10,00:</p>
+                <img id="imgQrCode" src="" alt="QR Code Pix" style="width: 150px; height: 150px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #00ffcc;">
+                <input type="text" id="copiaCola" readonly style="font-size: 0.75rem; background: #050b14; color: #00ffcc;">
+                <p style="color: #ffaa00; font-size: 0.75rem; margin-top: 5px;">Aguardando confirmação automática da Goatpay...</p>
+            </div>
+
+            <button class="btn-acao" id="btnConsultarModulo" onclick="executarConsultaModulo()">Consultar Módulo</button>
+            <button class="btn-fechar" onclick="fecharModal()">Fechar</button>
+        </div>
+    </div>
+
+    <script>
+        let moduloAtual = '';
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += 2;
+            document.getElementById('progressBar').style.width = progress + '%';
+            if (progress >= 100) {
+                clearInterval(interval);
+                document.getElementById('loading-screen').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('loading-screen').style.display = 'none';
+                    document.getElementById('main-content').style.display = 'block';
+                }, 800);
+            }
+        }, 50);
+
+        function abrirModal(modulo) {
+            moduloAtual = modulo;
+            document.getElementById('modalTitulo').innerText = 'MÓDULO: ' + modulo;
+            document.getElementById('inputAlvo').value = '';
+            document.getElementById('inputAlvo').style.display = 'block';
+            document.getElementById('areaPix').style.display = 'none';
+            document.getElementById('btnConsultarModulo').style.display = 'block';
+            document.getElementById('modalConsulta').style.display = 'flex';
+        }
+
+        function fecharModal() {
+            document.getElementById('modalConsulta').style.display = 'none';
+        }
+
+        async function executarConsultaModulo() {
+            let alvo = document.getElementById('inputAlvo').value.trim();
+            if(!alvo) { alert('Digite o dado correspondente antes de continuar!'); return; }
+
+            let res = await fetch('/api/pagamento/pix', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ modulo: moduloAtual, alvo: alvo })
+            });
+            let data = await res.json();
+
+            if(data.sucesso) {
+                document.getElementById('inputAlvo').style.display = 'none';
+                document.getElementById('btnConsultarModulo').style.display = 'none';
+                document.getElementById('areaPix').style.display = 'block';
+                document.getElementById('copiaCola').value = data.qrcode;
+                document.getElementById('imgQrCode').src = data.qrcode_image;
+            }
+        }
+    </script>
+</body>
+</html>
