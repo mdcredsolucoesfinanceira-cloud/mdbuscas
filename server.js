@@ -8,28 +8,31 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Sua Chave Real da Goatpay integrada
-const GOATPAY_TOKEN = "gp_live_e793a0b1c720448c8fc3cbc4a0f58baac88e1cf7c0312832"; 
+// Sua Nova Chave Real da Goatpay
+const GOATPAY_TOKEN = "gp_live_81d0c1ea8d727f0f8603e4a1a444c7e2a8ad43ccc9c18a72"; 
 
-// 1. ROTA PARA GERAR O PIX REAL NA GOATPAY
+// ROTA PARA GERAR O PIX NA GOATPAY
 app.post('/api/pagamento/pix', async (req, res) => {
     try {
-        const response = await axios.post('https://api.goatpay.com.br/v1/pix', {
+        const response = await axios.post('https://api.goatpay.com.br/v1/payment-pix/create', {
             amount: 10.00,
-            // Aqui definimos o nome que vai aparecer para o cliente no comprovante/banco
-            description: "MD CONSULTORIA E MEIOS DE PAGAMENTO"
+            description: "MD CONSULTORIA E MEIOS DE PAGAMENTO",
+            externalReference: "md_" + Date.now()
         }, {
             headers: { 
+                'X-API-Key': GOATPAY_TOKEN,
                 'Authorization': `Bearer ${GOATPAY_TOKEN}`,
                 'Content-Type': 'application/json'
             }
         });
 
+        const respData = response.data.data || response.data;
+
         res.json({
             sucesso: true,
-            txid: response.data.id || response.data.txid,
-            qrcode: response.data.pix_copia_e_cola || response.data.qrcode,
-            qrcode_image: response.data.qr_code_image || response.data.imagem_qrc
+            txid: respData.id || respData.txid || respData.uuid,
+            qrcode: respData.pix_copia_e_cola || respData.qrcode || respData.emv,
+            qrcode_image: respData.qr_code_image || respData.imagem_qrc || respData.encodedImage
         });
 
     } catch (error) {
@@ -38,26 +41,28 @@ app.post('/api/pagamento/pix', async (req, res) => {
     }
 });
 
-// 2. ROTA PARA VERIFICAR O STATUS DO PAGAMENTO NA GOATPAY
+// ROTA PARA VERIFICAR STATUS DO PAGAMENTO NA GOATPAY
 app.get('/api/pagamento/status/:txid', async (req, res) => {
     const { txid } = req.params;
     try {
-        const response = await axios.get(`https://api.goatpay.com.br/v1/pix/${txid}`, {
-            headers: { 'Authorization': `Bearer ${GOATPAY_TOKEN}` }
+        const response = await axios.get(`https://api.goatpay.com.br/v1/payment-pix/${txid}`, {
+            headers: { 
+                'X-API-Key': GOATPAY_TOKEN,
+                'Authorization': `Bearer ${GOATPAY_TOKEN}` 
+            }
         });
         
-        const status = response.data.status;
-        // Aceita os status comuns de aprovação da Goatpay
-        const pago = (status === 'approved' || status === 'PAID' || status === 'pago' || status === 'CONCLUIDA');
+        const respData = response.data.data || response.data;
+        const status = respData.status;
+        const pago = (status === 'approved' || status === 'PAID' || status === 'pago' || status === 'CONCLUIDA' || status === 'COMPLETED');
 
         res.json({ pago: pago });
     } catch (error) {
-        // Se der algum erro na consulta temporária, retorna falso para continuar tentando
         res.json({ pago: false }); 
     }
 });
 
-// 3. ROTA PARA CONSULTAR CNPJ (BrasilAPI + ReceitaWS)
+// ROTA PARA CONSULTAR CNPJ (BrasilAPI + ReceitaWS)
 app.get('/api/consulta/cnpj/:cnpj', async (req, res) => {
     let cnpj = req.params.cnpj.replace(/\D/g, '');
     try {
@@ -77,7 +82,7 @@ app.get('/api/consulta/cnpj/:cnpj', async (req, res) => {
     }
 });
 
-// 4. ROTA PARA CONSULTAR CEP (BrasilAPI)
+// ROTA PARA CONSULTAR CEP (BrasilAPI)
 app.get('/api/consulta/cep/:cep', async (req, res) => {
     let cep = req.params.cep.replace(/\D/g, '');
     try {
