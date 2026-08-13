@@ -11,7 +11,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-const GOATPAY_API_KEY = "gp_live_e7df14ea590e46a58a6b41c42986e29fdbcf5";
+const GOATPAY_API_KEY = "gp_live_a72b7c6c37ca2cf36be3b5e55997452711d20fc7d5663a7d";
 const GOATPAY_ENDPOINT = "https://api.goatpay.com.br/v1/payment-pix/create";
 
 let db = null;
@@ -49,7 +49,7 @@ function salvarBanco() {
   }
 }
 
-// 1. ROTA DE GERAÇÃO DO PIX (CORRIGIDA)
+// 1. ROTA DE GERAÇÃO DO PIX
 app.post('/api/pagamento/pix', async (req, res) => {
   try {
     const externalRef = 'pedido_' + Math.random().toString(36).substring(2, 12);
