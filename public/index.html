@@ -8,7 +8,6 @@
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     body { background-color: #050b14; color: #fff; padding: 20px; }
     
-    /* TELA DE INTRODUÇÃO COM A LOGO */
     #telaIntro {
       position: fixed;
       top: 0; left: 0; width: 100%; height: 100%;
@@ -21,14 +20,10 @@
       transition: opacity 0.5s ease;
     }
     #telaIntro img {
-      max-width: 250px;
+      max-width: 220px;
       width: 60%;
       height: auto;
-      animation: pulse 1.5s infinite alternate;
-    }
-    @keyframes pulse {
-      0% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(0,255,204,0.3)); }
-      100% { transform: scale(1.05); filter: drop-shadow(0 0 25px rgba(0,255,204,0.7)); }
+      object-fit: contain;
     }
     #telaIntro p {
       color: #00ffcc;
@@ -62,9 +57,9 @@
 </head>
 <body>
 
-  <!-- TELA DE INTRODUÇÃO (5 SEGUNDOS) -->
+  <!-- TELA DE INTRODUÇÃO (5 SEGUNDOS COM LOGO) -->
   <div id="telaIntro">
-    <img src="/logo.png" alt="Logo MD Buscas">
+    <img src="logo.png" alt="MD Buscas" onerror="this.style.display='none'">
     <p>Carregando Central...</p>
   </div>
 
@@ -74,6 +69,14 @@
   </div>
 
   <div class="grid-modules">
+    <div class="card-module">
+      <div class="card-info">
+        <div class="card-icon">🆔</div>
+        <div><div class="card-title">CONSULTA CPF</div><span class="badge-status">R$ 10,00</span></div>
+      </div>
+      <button class="btn-consultar" onclick="abrirModal('CPF')">ACESSAR</button>
+    </div>
+
     <div class="card-module">
       <div class="card-info">
         <div class="card-icon">🏢</div>
@@ -113,14 +116,6 @@
       </div>
       <button class="btn-bloqueado">EM BREVE</button>
     </div>
-
-    <div class="card-module">
-      <div class="card-info">
-        <div class="card-icon">📋</div>
-        <div><div class="card-title">CONSULTA RENAVAM</div><span class="badge-manutencao">EM MANUTENÇÃO</span></div>
-      </div>
-      <button class="btn-bloqueado">EM BREVE</button>
-    </div>
   </div>
 
   <div id="modalConsulta" class="modalConsultas">
@@ -151,7 +146,6 @@
   </div>
 
   <script>
-    // Controla o tempo da intro (5 segundos)
     window.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => {
         let intro = document.getElementById('telaIntro');
@@ -255,7 +249,11 @@
         resDiv.style.display = 'block';
         resDiv.innerHTML = '🔍 Consultando nas centrais oficiais...';
         
-        let rota = moduloAtual === 'CNPJ' ? `/api/consulta/cnpj/${alvoAtual}` : `/api/consulta/cep/${alvoAtual}`;
+        let rota = '';
+        if(moduloAtual === 'CPF') rota = `/api/consulta/cpf/${alvoAtual}`;
+        else if(moduloAtual === 'CNPJ') rota = `/api/consulta/cnpj/${alvoAtual}`;
+        else rota = `/api/consulta/cep/${alvoAtual}`;
+
         let resBusca = await fetch(rota);
         let dataBusca = await resBusca.json();
         
