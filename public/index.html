@@ -5,309 +5,118 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MD BUSCAS - Central de Inteligência</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    body { background-color: #000000; color: #fff; padding: 20px; }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+    body { background-color: #000; color: #fff; padding: 20px; }
     
-    #telaIntro {
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background-color: #000000;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 9999;
-      transition: opacity 0.8s ease;
-      text-align: center;
-      padding: 20px;
+    /* Animação do Letreiro */
+    #telaIntro { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; transition: opacity 0.8s; }
+    @keyframes neonGlow { 
+      0% { text-shadow: 0 0 5px #00ffcc; transform: scale(1); }
+      50% { text-shadow: 0 0 25px #00ffcc, 0 0 40px #00ffcc; transform: scale(1.05); }
+      100% { text-shadow: 0 0 5px #00ffcc; transform: scale(1); }
     }
+    .intro-logo { font-size: 2.5rem; font-weight: 800; color: #00ffcc; animation: neonGlow 2s infinite ease-in-out; letter-spacing: 4px; }
     
-    @keyframes neonGlow {
-      0% { text-shadow: 0 0 5px rgba(0, 255, 204, 0.2); transform: scale(1); }
-      50% { text-shadow: 0 0 25px rgba(0, 255, 204, 0.9), 0 0 40px rgba(0, 255, 204, 0.6); transform: scale(1.03); }
-      100% { text-shadow: 0 0 5px rgba(0, 255, 204, 0.2); transform: scale(1); }
-    }
-
-    .intro-logo {
-      font-size: 2.5rem;
-      font-weight: 800;
-      color: #00ffcc;
-      font-family: monospace;
-      letter-spacing: 4px;
-      animation: neonGlow 2s infinite ease-in-out;
-      margin-bottom: 8px;
-    }
-
-    .intro-sub {
-      font-size: 0.95rem;
-      color: #94a3b5;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      font-weight: 600;
-      opacity: 0.8;
-    }
-
     .header { text-align: center; margin-bottom: 30px; }
-    .header h1 { color: #00ffcc; font-size: 1.8rem; font-family: monospace; letter-spacing: 2px; }
-    .header p { color: #94a3b5; font-size: 0.85rem; }
+    .header h1 { color: #00ffcc; font-size: 1.8rem; letter-spacing: 2px; }
+    
     .grid-modules { display: flex; flex-direction: column; gap: 12px; max-width: 600px; margin: 0 auto; }
-    .card-module { background: linear-gradient(135deg, #101c2e, #1a2d4a); border-radius: 12px; padding: 16px; display: flex; align-items: center; justify-content: space-between; border: 1px solid rgba(0,255,204,0.2); }
-    .card-info { display: flex; align-items: center; gap: 15px; }
-    .card-icon { font-size: 1.8rem; }
-    .card-title { font-weight: bold; font-size: 0.9rem; color: #fff; }
-    .badge-status { background: #00b894; color: #fff; font-size: 0.65rem; padding: 3px 8px; border-radius: 6px; font-weight: bold; display: inline-block; margin-top: 4px; }
-    .badge-manutencao { background: #e74c3c; color: #fff; font-size: 0.65rem; padding: 3px 8px; border-radius: 6px; font-weight: bold; display: inline-block; margin-top: 4px; }
-    .btn-consultar { background: #00ffcc; color: #050b14; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; font-size: 0.8rem; cursor: pointer; }
-    .btn-bloqueado { background: #284b7a; color: #94a3b5; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; font-size: 0.8rem; cursor: not-allowed; }
+    .card-module { background: #101c2e; border-radius: 12px; padding: 16px; display: flex; align-items: center; justify-content: space-between; border: 1px solid rgba(0,255,204,0.2); }
+    .btn-consultar { background: #00ffcc; color: #000; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; }
     
-    .modalConsultas { display: none; position: fixed; z-index: 10; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); justify-content: center; align-items: center; padding: 20px; }
-    .modal-conteudo { background: #0b1626; padding: 25px; border-radius: 12px; width: 100%; max-width: 450px; border: 1px solid #00ffcc; text-align: center; max-height: 90vh; overflow-y: auto; }
-    .modalConsultas h3 { color: #00ffcc; margin-bottom: 15px; }
-    .modalConsultas input { width: 100%; padding: 12px; background: #050b14; border: 1px solid #284b7a; color: #fff; border-radius: 6px; text-align: center; outline: none; font-size: 1rem; margin-bottom: 10px; }
-    .btn-copiar { background: #f39c12; color: #050b14; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; font-size: 0.85rem; }
-    .btn-whatsapp { display: block; background: #25d366; color: white; text-align: center; padding: 10px; text-decoration: none; font-weight: bold; font-size: 0.85rem; margin-top: 10px; border-radius: 6px; cursor: pointer; }
-    .btn-verificar { display: block; background: #00ffcc; color: #050b14; text-align: center; padding: 10px; text-decoration: none; font-weight: bold; font-size: 0.85rem; margin-top: 10px; border-radius: 6px; cursor: pointer; width: 100%; border: none;}
-    .btn-acao { background: #00ffcc; color: #050b14; border: none; padding: 12px; border-radius: 6px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 10px; }
-    .btn-fechar { background: #e74c3c; color: #fff; border: none; padding: 10px; border-radius: 6px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 10px; }
-    
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    #resultadosDados { 
-      display: none; 
-      background: #03070c; 
-      padding: 15px; 
-      border-radius: 8px; 
-      font-size: 0.8rem; 
-      overflow-x: auto; 
-      color: #00ffcc; 
-      margin-top: 15px; 
-      text-align: left;
-      animation: fadeIn 0.6s ease forwards;
-    }
+    .modalConsultas { display: none; position: fixed; z-index: 10; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; padding: 20px; }
+    .modal-conteudo { background: #0b1626; padding: 20px; border-radius: 12px; width: 100%; max-width: 400px; border: 1px solid #00ffcc; text-align: center; }
+    .btn-copiar { background: #f39c12; color: #000; border: none; padding: 10px; border-radius: 6px; width: 100%; margin-top: 10px; font-weight: bold; }
+    .btn-whatsapp { display: block; background: #25d366; color: white; padding: 10px; border-radius: 6px; text-decoration: none; font-weight: bold; margin-top: 10px; }
+    .btn-fechar { background: #e74c3c; border: none; color: #fff; padding: 10px; border-radius: 6px; width: 100%; margin-top: 10px; }
+    #resultadosDados { display: none; background: #03070c; padding: 15px; border-radius: 8px; color: #00ffcc; margin-top: 15px; text-align: left; font-size: 0.8rem; overflow-x: auto; }
   </style>
 </head>
 <body>
 
+  <!-- Letreiro com animação -->
   <div id="telaIntro">
     <div class="intro-logo">MD BUSCAS</div>
-    <div class="intro-sub">Informação é Poder</div>
   </div>
 
-  <div class="header">
-    <h1>MD BUSCAS</h1>
-    <p>Central de Inteligência e Consultas Automatizadas</p>
-  </div>
+  <div class="header"><h1>MD BUSCAS</h1></div>
 
   <div class="grid-modules">
-    <div class="card-module">
-      <div class="card-info">
-        <div class="card-icon">🆔</div>
-        <div><div class="card-title">CONSULTA CPF</div><span class="badge-manutencao">EM MANUTENÇÃO</span></div>
-      </div>
-      <button class="btn-bloqueado">EM BREVE</button>
-    </div>
-
-    <div class="card-module">
-      <div class="card-info">
-        <div class="card-icon">🏢</div>
-        <div><div class="card-title">CONSULTA CNPJ</div><span class="badge-status">R$ 10,00</span></div>
-      </div>
-      <button class="btn-consultar" onclick="abrirModal('CNPJ')">ACESSAR</button>
-    </div>
-
-    <div class="card-module">
-      <div class="card-info">
-        <div class="card-icon">📍</div>
-        <div><div class="card-title">CONSULTA CEP</div><span class="badge-status">R$ 10,00</span></div>
-      </div>
-      <button class="btn-consultar" onclick="abrirModal('CEP')">ACESSAR</button>
-    </div>
-
-    <div class="card-module">
-      <div class="card-info">
-        <div class="card-icon">👤</div>
-        <div><div class="card-title">CONSULTA NOME</div><span class="badge-manutencao">EM MANUTENÇÃO</span></div>
-      </div>
-      <button class="btn-bloqueado">EM BREVE</button>
-    </div>
-
-    <div class="card-module">
-      <div class="card-info">
-        <div class="card-icon">📞</div>
-        <div><div class="card-title">CONSULTA TELEFONE</div><span class="badge-manutencao">EM MANUTENÇÃO</span></div>
-      </div>
-      <button class="btn-bloqueado">EM BREVE</button>
-    </div>
-
-    <div class="card-module">
-      <div class="card-info">
-        <div class="card-icon">🚗</div>
-        <div><div class="card-title">CONSULTA PLACA</div><span class="badge-manutencao">EM MANUTENÇÃO</span></div>
-      </div>
-      <button class="btn-bloqueado">EM BREVE</button>
-    </div>
-
-    <div class="card-module">
-      <div class="card-info">
-        <div class="card-icon">📋</div>
-        <div><div class="card-title">CONSULTA RENAVAM</div><span class="badge-manutencao">EM MANUTENÇÃO</span></div>
-      </div>
-      <button class="btn-bloqueado">EM BREVE</button>
-    </div>
+    <div class="card-module"><div>CONSULTA CNPJ</div><button class="btn-consultar" onclick="abrirModal('CNPJ')">ACESSAR</button></div>
   </div>
 
   <div id="modalConsulta" class="modalConsultas">
     <div class="modal-conteudo">
-      <h3 id="modalTitulo">MÓDULO</h3>
-      <input type="text" id="inputAlvo" placeholder="Digite o dado necessário...">
+      <h3 id="modalTitulo" style="color:#00ffcc">CONSULTA CNPJ</h3>
+      <input type="text" id="inputAlvo" placeholder="Digite o CNPJ..." style="width:100%; padding:10px; margin:10px 0; border-radius:5px; border:none;">
       
       <div id="areaPix" style="display:none;">
-        <p style="color: #00ffcc; font-weight: bold; font-size: 1rem; margin-bottom: 5px;">TAXA DE LIBERAÇÃO: R$ 10,00</p>
-        <p style="color: #8a9a9d; font-size: 0.8rem; margin-bottom: 10px;">Escaneie o QR Code ou copie a chave PIX:</p>
-        
-        <img id="imgQrCode" src="" alt="QR Code Pix" style="width: 160px; height: 160px; border-radius: 8px; margin-bottom: 10px; border: 2px solid #00ffcc; background: #fff;">
-        
-        <input type="text" id="copiaCola" readonly style="font-size: 0.7rem; background: #050b14; color: #00ffcc;">
+        <img id="imgQrCode" style="width:160px; background:#fff; border:2px solid #00ffcc; border-radius:5px;">
+        <input type="text" id="copiaCola" readonly style="width:100%; margin-top:10px; font-size:10px; padding:5px;">
         <button class="btn-copiar" onclick="copiarPix()">Copiar Código Pix</button>
-        
-        <!-- Botão verde com o texto ajustado -->
-        <a onclick="notificarAdminEAbriWhatsapp()" class="btn-whatsapp">📲 Já fez o pagamento? Informe ao suporte</a>
-        
-        <!-- Botão para o cliente testar a liberação após você aprovar no painel admin -->
-        <button class="btn-verificar" onclick="checarLiberacaoAdmin()">🔄 Já aprovei no painel! Liberar Dados</button>
-        
-        <p id="statusTextoPix" style="color: #ffaa00; font-size: 0.8rem; margin-top: 10px; font-weight: bold;">⏳ Aguardando liberação...</p>
-        <p id="debugTxid" style="color: #556777; font-size: 0.7rem; margin-top: 3px;"></p>
+        <a id="linkWpp" class="btn-whatsapp">Já fez o pagamento? Informe ao suporte</a>
+        <p id="msgStatus" style="margin-top:10px; font-size:0.8rem; color:#00ffcc; font-weight:bold;">⏳ Aguardando liberação automática...</p>
       </div>
 
       <pre id="resultadosDados"></pre>
-      
-      <button class="btn-acao" id="btnConsultarModulo" onclick="solicitarPagamento()">Gerar PIX R$ 10,00</button>
-      <button class="btn-fechar" onclick="fecharModal()">Fechar Janela</button>
+      <button class="btn-acao" id="btnGerar" onclick="solicitarPagamento()" style="background:#00ffcc; border:none; padding:10px; width:100%; margin-top:10px; font-weight:bold; border-radius:5px;">Gerar PIX R$ 10,00</button>
+      <button class="btn-fechar" onclick="fecharModal()">Fechar</button>
     </div>
   </div>
 
   <script>
+    // Animação de entrada
     window.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => {
         let intro = document.getElementById('telaIntro');
         intro.style.opacity = '0';
         setTimeout(() => intro.style.display = 'none', 800);
-      }, 2500);
+      }, 2000);
     });
 
-    let moduloAtual = ''; let txidAtual = ''; let alvoAtual = ''; let intervalChecagem;
+    let txidAtual = '', intervalChecagem;
 
-    function abrirModal(modulo) {
-      moduloAtual = modulo;
-      document.getElementById('modalTitulo').innerText = 'CONSULTA ' + modulo;
-      document.getElementById('inputAlvo').value = '';
-      document.getElementById('inputAlvo').style.display = 'block';
-      document.getElementById('areaPix').style.display = 'none';
-      document.getElementById('resultadosDados').style.display = 'none';
-      document.getElementById('btnConsultarModulo').style.display = 'block';
-      document.getElementById('btnConsultarModulo').innerText = 'Gerar PIX R$ 10,00';
-      document.getElementById('modalConsulta').style.display = 'flex';
-    }
-
-    function fecharModal() {
-      document.getElementById('modalConsulta').style.display = 'none';
-      if(intervalChecagem) clearInterval(intervalChecagem);
-    }
+    function abrirModal(m) { document.getElementById('modalConsulta').style.display = 'flex'; }
+    function fecharModal() { document.getElementById('modalConsulta').style.display = 'none'; clearInterval(intervalChecagem); }
 
     async function solicitarPagamento() {
-      let alvo = document.getElementById('inputAlvo').value.trim();
-      if(!alvo) { alert('Digite o dado correspondente antes de continuar!'); return; }
-      alvoAtual = alvo;
+      let alvo = document.getElementById('inputAlvo').value;
+      if(!alvo) return alert('Digite o CNPJ!');
       
-      document.getElementById('btnConsultarModulo').innerText = 'Gerando cobrança...';
+      let res = await fetch('/api/pagamento/pix', { method: 'POST' });
+      let data = await res.json();
+      txidAtual = data.txid;
+      
+      document.getElementById('inputAlvo').style.display = 'none';
+      document.getElementById('btnGerar').style.display = 'none';
+      document.getElementById('areaPix').style.display = 'block';
+      document.getElementById('imgQrCode').src = data.qrcode_image;
+      document.getElementById('copiaCola').value = data.qrcode;
+      document.getElementById('linkWpp').href = `https://wa.me/5585998021364?text=Paguei o pedido ${txidAtual} referente ao CNPJ ${alvo}`;
+      
+      intervalChecagem = setInterval(checarAutomatico, 3000);
+    }
 
-      try {
-        let res = await fetch('/api/pagamento/pix', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-        let data = await res.json();
-        
-        if(data.sucesso && data.qrcode) {
-          txidAtual = data.txid;
-          document.getElementById('inputAlvo').style.display = 'none';
-          document.getElementById('btnConsultarModulo').style.display = 'none';
-          document.getElementById('areaPix').style.display = 'block';
-          document.getElementById('copiaCola').value = data.qrcode;
-          document.getElementById('imgQrCode').src = data.qrcode_image;
-          document.getElementById('statusTextoPix').innerText = '⏳ Aguardando liberação...';
-          document.getElementById('debugTxid').innerText = 'ID: ' + txidAtual;
-
-          intervalChecagem = setInterval(checarLiberacaoAdmin, 3000);
-        } else {
-          alert('Erro ao gerar Pix.');
-          document.getElementById('btnConsultarModulo').innerText = 'Gerar PIX R$ 10,00';
-        }
-      } catch (e) {
-        alert('Erro de conexão.');
-        document.getElementById('btnConsultarModulo').innerText = 'Gerar PIX R$ 10,00';
+    async function checarAutomatico() {
+      if(!txidAtual) return;
+      let res = await fetch(`/api/pagamento/status/${txidAtual}`);
+      let data = await res.json();
+      if (data.liberadoAdmin === true || data.pago === true) {
+        clearInterval(intervalChecagem);
+        liberarDados();
       }
     }
 
-    function copiarPix() {
-      let copiaCola = document.getElementById('copiaCola');
-      copiaCola.select();
-      copiaCola.setSelectionRange(0, 99999);
-      navigator.clipboard.writeText(copiaCola.value);
-      alert('✔️ Código Pix copiado com sucesso!');
+    async function liberarDados() {
+      document.getElementById('msgStatus').innerText = '✅ Pagamento confirmado! Buscando dados...';
+      let resBusca = await fetch(`/api/consulta/cnpj/${document.getElementById('inputAlvo').value}`);
+      let dataBusca = await resBusca.json();
+      let resDiv = document.getElementById('resultadosDados');
+      resDiv.style.display = 'block';
+      resDiv.innerHTML = dataBusca.sucesso ? JSON.stringify(dataBusca.dados, null, 2) : 'Erro na busca.';
     }
 
-    async function notificarAdminEAbriWhatsapp() {
-      try {
-        await fetch('/api/notificar-whatsapp', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ txid: txidAtual, modulo: moduloAtual, alvo: alvoAtual })
-        });
-      } catch (e) {}
-      
-      let numeroAdmin = "5585998021364"; // Corrigido para DDD 85 e seu número correto
-      let texto = encodeURIComponent(`Olá, fiz o pagamento do pedido ID: ${txidAtual} (${moduloAtual} - Alvo: ${alvoAtual}). Segue o comprovante!`);
-      window.open(`https://wa.me/${numeroAdmin}?text=${texto}`, '_blank');
-    }
-
-    async function checarLiberacaoAdmin() {
-      if (!txidAtual) return;
-      try {
-        let res = await fetch(`/api/pagamento/status/${txidAtual}`);
-        let data = await res.json();
-        
-        if (data.liberadoAdmin === true || data.pago === true) {
-          clearInterval(intervalChecagem);
-          liberarConsultaFinal();
-        } else {
-          alert("O pagamento ainda não foi marcado como liberado no painel do administrador.");
-        }
-      } catch(err) {
-        alert("Erro ao checar status.");
-      }
-    }
-
-    async function liberarConsultaFinal() {
-      document.getElementById('statusTextoPix').innerText = '✔️ Pagamento confirmado! Buscando dados...';
-      
-      setTimeout(async () => {
-        document.getElementById('areaPix').style.display = 'none';
-        let resDiv = document.getElementById('resultadosDados');
-        resDiv.style.display = 'block';
-        resDiv.innerHTML = '🔍 Consultando nas centrais oficiais...';
-        
-        let rota = moduloAtual === 'CNPJ' ? `/api/consulta/cnpj/${alvoAtual}` : `/api/consulta/cep/${alvoAtual}`;
-        let resBusca = await fetch(rota);
-        let dataBusca = await resBusca.json();
-        
-        if(dataBusca.sucesso) {
-          resDiv.innerHTML = JSON.stringify(dataBusca.dados, null, 4);
-        } else {
-          resDiv.innerHTML = '❌ Erro ao buscar os dados: ' + dataBusca.erro;
-        }
-      }, 1000);
-    }
+    function copiarPix() { navigator.clipboard.writeText(document.getElementById('copiaCola').value); alert('Código copiado!'); }
   </script>
 </body>
 </html>
