@@ -20,14 +20,15 @@
       transition: opacity 0.5s ease;
     }
     #telaIntro img {
-      max-width: 220px;
-      width: 60%;
+      max-width: 280px;
+      width: 70%;
       height: auto;
       object-fit: contain;
+      filter: drop-shadow(0 0 15px rgba(0,255,204,0.4));
     }
     #telaIntro p {
       color: #00ffcc;
-      margin-top: 20px;
+      margin-top: 25px;
       font-size: 0.9rem;
       letter-spacing: 1px;
     }
@@ -57,9 +58,9 @@
 </head>
 <body>
 
-  <!-- TELA DE INTRODUÇÃO (5 SEGUNDOS COM LOGO) -->
+  <!-- TELA DE INTRODUÇÃO (5 SEGUNDOS COM A SUA LOGO OFICIAL) -->
   <div id="telaIntro">
-    <img src="logo.png" alt="MD Buscas" onerror="this.style.display='none'">
+    <img src="logo.png" alt="MD Buscas">
     <p>Carregando Central...</p>
   </div>
 
@@ -72,9 +73,9 @@
     <div class="card-module">
       <div class="card-info">
         <div class="card-icon">🆔</div>
-        <div><div class="card-title">CONSULTA CPF</div><span class="badge-status">R$ 10,00</span></div>
+        <div><div class="card-title">CONSULTA CPF</div><span class="badge-manutencao">EM MANUTENÇÃO</span></div>
       </div>
-      <button class="btn-consultar" onclick="abrirModal('CPF')">ACESSAR</button>
+      <button class="btn-bloqueado">EM BREVE</button>
     </div>
 
     <div class="card-module">
@@ -113,6 +114,14 @@
       <div class="card-info">
         <div class="card-icon">🚗</div>
         <div><div class="card-title">CONSULTA PLACA</div><span class="badge-manutencao">EM MANUTENÇÃO</span></div>
+      </div>
+      <button class="btn-bloqueado">EM BREVE</button>
+    </div>
+
+    <div class="card-module">
+      <div class="card-info">
+        <div class="card-icon">📋</div>
+        <div><div class="card-title">CONSULTA RENAVAM</div><span class="badge-manutencao">EM MANUTENÇÃO</span></div>
       </div>
       <button class="btn-bloqueado">EM BREVE</button>
     </div>
@@ -249,11 +258,7 @@
         resDiv.style.display = 'block';
         resDiv.innerHTML = '🔍 Consultando nas centrais oficiais...';
         
-        let rota = '';
-        if(moduloAtual === 'CPF') rota = `/api/consulta/cpf/${alvoAtual}`;
-        else if(moduloAtual === 'CNPJ') rota = `/api/consulta/cnpj/${alvoAtual}`;
-        else rota = `/api/consulta/cep/${alvoAtual}`;
-
+        let rota = moduloAtual === 'CNPJ' ? `/api/consulta/cnpj/${alvoAtual}` : `/api/consulta/cep/${alvoAtual}`;
         let resBusca = await fetch(rota);
         let dataBusca = await resBusca.json();
         
