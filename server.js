@@ -49,7 +49,7 @@ function salvarBanco() {
   }
 }
 
-// 1. ROTA DE GERAÇÃO DO PIX (BLINDADA E CORRIGIDA)
+// 1. ROTA DE GERAÇÃO DO PIX (ULTRA BLINDADA)
 app.post('/api/pagamento/pix', async (req, res) => {
   try {
     const externalRef = 'pedido_' + Math.random().toString(36).substring(2, 12);
@@ -67,17 +67,20 @@ app.post('/api/pagamento/pix', async (req, res) => {
     });
 
     const respData = respostaGoat.data;
-    const dadosPix = respData.data || respData;
-    
-    // Captura o QR Code independente de como a GoatPay entregue
-    const qrcodeCopiaCola = dadosPix.qrCodeCopyPaste || dadosPix.qrCode || dadosPix.pix_code || dadosPix.emv || dadosPix.payload;
-    const txid = dadosPix.txid || dadosPix.id || externalRef;
+    console.log("RESPOSTA DA GOATPAY RECEBIDA:", JSON.stringify(respData));
+
+    // Varredura exaustiva em todos os níveis possíveis da resposta da GoatPay
+    const dados = respData.data || respData.payment || respData.pix || respData;
+
+    const qrcodeCopiaCola = dados.pixCode || dados.qrCodeCopyPaste || dados.qrCode || dados.pix_code || dados.emv || dados.payload || dados.code || respData.pixCode || respData.qrCodeCopyPaste;
+    const txid = dados.txid || dados.id || respData.txid || respData.id || externalRef;
 
     if (!qrcodeCopiaCola) {
-      return res.status(500).json({ sucesso: false, erro: "Erro ao extrair o QR Code da resposta." });
+      console.error("ERRO CRITICO: Nao achou o copia e cola no JSON:", JSON.stringify(respData));
+      return res.status(500).json({ sucesso: false, erro: "Erro ao extrair o QR Code da resposta da operadora." });
     }
 
-    const qrcodeImage = dadosPix.qrCodeUrl || dadosPix.qrCodeBase64 || dadosPix.qrcode_image || `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrcodeCopiaCola)}`;
+    const qrcodeImage = dados.qrCodeUrl || dados.qrCodeBase64 || dados.qrcode_image || dados.image || `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrcodeCopiaCola)}`;
 
     if (db) {
       try {
@@ -95,6 +98,7 @@ app.post('/api/pagamento/pix', async (req, res) => {
     });
 
   } catch (error) {
+    console.error("ERRO GOATPAY AO GERAR:", error.response ? error.response.data : error.message);
     res.status(500).json({
       sucesso: false,
       erro: "Erro ao gerar Pix na Goatpay."
