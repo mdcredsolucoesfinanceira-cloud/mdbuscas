@@ -1,6 +1,9 @@
 const express = require('express');
 const path = require('path');
 const axios = require('axios');
+const initSqlJs = require('sql.js');
+const fs = require('fs');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -8,150 +11,229 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// =========================================================================
-// 🔑 CONFIGURAÇÃO OFICIAL GOATPAY
-// =========================================================================
-const GOATPAY_API_KEY = "gp_live_e7df14ea590e46a58a6b41c42986e29fdbcf500d1644ca5d";
+const GOATPAY_API_KEY = "gp_live_e7df14ea590e46a58a6b41c42986e29fdbcf5";
 const GOATPAY_ENDPOINT = "https://api.goatpay.com.br/v1/payment-pix/create";
-const GOATPAY_WEBHOOK_SECRET = "whsec_b25572932bdc11ebd1212172ff1a6ae5c48d1c4e2c1d1f40";
 
-// Banco de dados em memória para as solicitações do Admin
-let pedidosPendentes = [];
+let db = null;
 
-// 1. ROTA DE GERAÇÃO DO PIX REAL PELA GOATPAY
+// Inicializa o banco SQLite
+async function iniciarBanco() {
+  try {
+    const SQL = await initSqlJs();
+    const dbFile = './banco.sqlite';
+    if (fs.existsSync(dbFile)) {
+      db = new SQL.Database(fs.readFileSync(dbFile));
+    } else {
+      db = new SQL.Database();
+    }
+    db.run(`CREATE TABLE IF NOT EXISTS pedidos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      txid TEXT,
+      modulo TEXT,
+      alvo TEXT,
+      status TEXT,
+      data TEXT
+    )`);
+    salvarBanco();
+    console.log("Banco SQLite pronto!");
+  } catch (e) {
+    console.log("Erro no banco:", e.message);
+  }
+}
+
+function salvarBanco() {
+  if (db) {
+    try {
+      fs.writeFileSync('./banco.sqlite', Buffer.from(db.export()));
+    } catch (e) {}
+  }
+}
+
+// 1. ROTA DE GERAÇÃO DO PIX
 app.post('/api/pagamento/pix', async (req, res) => {
-    try {
-        const externalRef = 'pedido_' + Math.random().toString(36).substring(2, 12);
-
-        const respostaGoat = await axios.post(GOATPAY_ENDPOINT, {
-            amount: 10.00,
-            description: "Taxa de Liberacao Consulta - MD BUSCAS",
-            coverFee: false,
-            externalReference: externalRef
-        }, {
-            headers: {
-                'X-API-Key': GOATPAY_API_KEY,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        const respostaApi = respostaGoat.data;
-        const dadosPix = respostaApi.data || respostaApi;
-
-        const txid = dadosPix.id || dadosPix.txid || externalRef;
-        const qrcodeCopiaCola = dadosPix.copyPaste || dadosPix.qrcode || dadosPix.pix_code;
-        const qrcodeImagem = dadosPix.qrcodeUrl || dadosPix.qrCodeBase64 || dadosPix.qrcode_image || `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrcodeCopiaCola)}`;
-
-        res.json({
-            sucesso: true,
-            txid: txid,
-            qrcode: qrcodeCopiaCola,
-            qrcode_image: qrcodeImagem
-        });
-
-    } catch (error) {
-        console.error("ERRO GOATPAY:", error.response ? error.response.data : error.message);
-        res.status(500).json({ 
-            sucesso: false, 
-            erro: "Erro ao gerar Pix na Goatpay." 
-        });
-    }
-});
-
-// 2. ROTA NOTIFICAR WHATSAPP (Aparece no admin.html)
-app.post('/api/notificar-whatsapp', (req, res) => {
-    const { txid, modulo, alvo } = req.body;
+  try {
+    const externalRef = 'pedido_' + Math.random().toString(36).substring(2, 12);
     
-    const existe = pedidosPendentes.find(p => p.txid === txid);
-    if (!existe && txid) {
-        pedidosPendentes.push({
-            txid: txid,
-            modulo: modulo || 'CONSULTA',
-            alvo: alvo || 'Não informado',
-            status: 'pendente',
-            data: new Date().toLocaleTimeString()
-        });
+    const respostaGoat = await axios.post(GOATPAY_ENDPOINT, {
+      amount: 10.00,
+      description: "Taxa de Liberacao Consulta - MD BUSCAS",
+      coverFee: false,
+      externalReference: externalRef
+    }, {
+      headers: {
+        'X-API-Key': GOATPAY_API_KEY,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const respostaApi = respostaGoat.data;
+    const dadosPix = respostaApi.data || respostaApi;
+    
+    const txid = dadosPix.txid || externalRef;
+    const qrcodeCopiaCola = dadosPix.qrCodeCopyPaste || dadosPix.qrCode || dadosPix.pix_code;
+    const qrcodeImage = dadosPix.qrCodeUrl || dadosPix.qrCodeBase64 || dadosPix.qrcode_image || `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrcodeCopiaCola)}`;
+
+    res.json({
+      sucesso: true,
+      txid: txid,
+      qrcode: qrcodeCopiaCola,
+      qrcode_image: qrcodeImage
+    });
+
+  } catch (error) {
+    console.error("ERRO GOATPAY:", error.response ? error.response.data : error.message);
+    res.status(500).json({
+      sucesso: false,
+      erro: "Erro ao gerar Pix na Goatpay."
+    });
+  }
+});
+
+// 2. ROTA NOTIFICAR WHATSAPP / SALVAR PEDIDO
+app.post('/api/notificar-whatsapp', async (req, res) => {
+  const { txid, modulo, alvo } = req.body;
+  if (!txid) return res.status(400).json({ sucesso: false, erro: "Txid ausente" });
+
+  if (db) {
+    try {
+      const stmt = db.prepare(`SELECT * FROM pedidos WHERE txid = ?`);
+      stmt.bind([txid]);
+      let existente = stmt.step();
+      stmt.free();
+
+      if (!existente) {
+        db.run(`INSERT INTO pedidos (txid, modulo, alvo, status, data) VALUES (?, ?, ?, ?, ?)`, 
+          [txid, modulo || 'CONSULTA', alvo || 'Não informado', 'pendente', new Date().toLocaleString()]);
+        salvarBanco();
+      }
+    } catch (e) {}
+  }
+
+  res.json({ sucesso: true });
+});
+
+// 3. WEBHOOK DA GOATPAY (VERSÃO REFORÇADA E CORRIGIDA)
+app.post('/api/webhook/goatpay', async (req, res) => {
+  const payload = req.body;
+  console.log("--- WEBHOOK GOATPAY RECEBIDO ---");
+  console.log(JSON.stringify(payload));
+
+  const status = payload.status || (payload.data ? payload.data.status : null);
+  const txid = payload.externalReference || (payload.data ? payload.data.externalReference : null) || payload.txid;
+
+  console.log(`Status recebido: ${status} | Txid/Ref: ${txid}`);
+
+  if (status && ['PAID', 'APPROVED', 'aprovado', 'paid', 'approved'].includes(status.toLowerCase())) {
+    if (txid && db) {
+      try {
+        db.run(`UPDATE pedidos SET status = 'aprovado' WHERE txid = ?`, [txid]);
+        salvarBanco();
+        console.log(`[SUCESSO] Pedido ${txid} atualizado para APROVADO no banco!`);
+      } catch (e) {
+        console.log("Erro ao atualizar banco:", e.message);
+      }
     }
-    res.json({ sucesso: true });
+  }
+  
+  res.status(200).send('OK');
 });
 
-// 3. ROTA PAINEL ADMIN - LISTAR PEDIDOS
-app.get('/api/admin/pedidos', (req, res) => {
-    res.json(pedidosPendentes);
-});
-
-// 4. ROTA PAINEL ADMIN - LIBERAR CLIENTE
-app.post('/api/admin/liberar', (req, res) => {
-    const { txid } = req.body;
-    const pedido = pedidosPendentes.find(p => p.txid === txid);
-    if (pedido) {
-        pedido.status = 'aprovado';
-        res.json({ sucesso: true });
-    } else {
-        res.json({ sucesso: false, erro: "Pedido não encontrado" });
+// 4. LISTAR PEDIDOS ADMIN
+app.get('/api/admin/pedidos', async (req, res) => {
+  if (!db) return res.json([]);
+  try {
+    const result = db.exec(`SELECT * FROM pedidos`);
+    if (result.length > 0) {
+      const columns = result[0].columns;
+      const pedidos = result[0].values.map(row => {
+        let obj = {};
+        columns.forEach((col, index) => obj[col] = row[index]);
+        return obj;
+      });
+      return res.json(pedidos);
     }
+  } catch (e) {}
+  res.json([]);
 });
 
-// 5. CHECAR SE O ADMIN APROVOU
-app.get('/api/pagamento/status/:txid', (req, res) => {
-    const { txid } = req.params;
-    const pedido = pedidosPendentes.find(p => p.txid === txid);
-    if (pedido && pedido.status === 'aprovado') {
-        res.json({ pago: true, liberadoAdmin: true });
-    } else {
-        res.json({ pago: false, liberadoAdmin: false });
-    }
+// 5. LIBERAR ADMIN
+app.post('/api/admin/liberar', async (req, res) => {
+  const { txid } = req.body;
+  if (db) {
+    try {
+      db.run(`UPDATE pedidos SET status = 'aprovado' WHERE txid = ?`, [txid]);
+      salvarBanco();
+    } catch (e) {}
+  }
+  res.json({ sucesso: true });
 });
 
-// 6. ROTAS DE CONSULTA (CNPJ UNIFICADO: BrasilAPI + ReceitaWS)
+// 6. CHECAR STATUS DO PAGAMENTO
+app.get('/api/pagamento/status/:txid', async (req, res) => {
+  const { txid } = req.params;
+  let statusPedido = 'pendente';
+
+  if (db) {
+    try {
+      const stmt = db.prepare(`SELECT status FROM pedidos WHERE txid = ?`);
+      stmt.bind([txid]);
+      if (stmt.step()) {
+        const row = stmt.get();
+        statusPedido = row[0];
+      }
+      stmt.free();
+    } catch (e) {}
+  }
+
+  if (statusPedido === 'aprovado') {
+    res.json({ pago: true, liberadoAdmin: true });
+  } else {
+    res.json({ pago: false, liberadoAdmin: false });
+  }
+});
+
+// 7. CONSULTA CNPJ
 app.get('/api/consulta/cnpj/:cnpj', async (req, res) => {
-    const cnpj = req.params.cnpj.replace(/\D/g, '');
-    let dadosUnificados = {};
-    let sucessoBusca = false;
+  const cnpj = req.params.cnpj.replace(/\D/g, '');
+  let dadosUnificados = {};
+  let sucessoBusca = false;
 
-    try {
-        const respBrasil = await axios.get(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`, { timeout: 5000 });
-        if (respBrasil.data) {
-            dadosUnificados = { ...respBrasil.data };
-            sucessoBusca = true;
-        }
-    } catch (e) {
-        console.log("BrasilAPI falhou, tentando ReceitaWS...");
+  try {
+    const respBrasil = await axios.get(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`, { timeout: 5000 });
+    if (respBrasil.data) {
+      dadosUnificados = { ...respBrasil.data };
+      sucessoBusca = true;
     }
+  } catch (e) {}
 
-    try {
-        const respReceita = await axios.get(`https://www.receitaws.com.br/v1/cnpj/${cnpj}`, { timeout: 5000 });
-        if (respReceita.data && respReceita.data.status === "OK") {
-            dadosUnificados = { 
-                ...respReceita.data, 
-                ...dadosUnificados, 
-                atividade_principal: respReceita.data.atividade_principal || dadosUnificados.atividade_principal,
-                qsa: respReceita.data.qsa || dadosUnificados.qsa 
-            };
-            sucessoBusca = true;
-        }
-    } catch (e) {
-        console.log("ReceitaWS falhou.");
+  try {
+    const respReceita = await axios.get(`https://www.receitaws.com.br/v1/cnpj/${cnpj}`);
+    if (respReceita.data && respReceita.data.status === 'OK') {
+      dadosUnificados = { ...dadosUnificados, ...respReceita.data };
+      sucessoBusca = true;
     }
+  } catch (e) {}
 
-    if (sucessoBusca && Object.keys(dadosUnificados).length > 0) {
-        res.json({ sucesso: true, dados: dadosUnificados });
-    } else {
-        res.json({ sucesso: false, erro: "CNPJ não encontrado nas bases de consulta." });
-    }
+  if (sucessoBusca && Object.keys(dadosUnificados).length > 0) {
+    res.json({ sucesso: true, dados: dadosUnificados });
+  } else {
+    res.json({ sucesso: false, erro: "CNPJ não encontrado nas bases de consulta." });
+  }
 });
 
-// 7. ROTA DE CONSULTA CEP
+// 8. CONSULTA CEP
 app.get('/api/consulta/cep/:cep', async (req, res) => {
-    const cep = req.params.cep.replace(/\D/g, '');
-    try {
-        const response = await axios.get(`https://brasilapi.com.br/api/cep/v1/${cep}`);
-        res.json({ sucesso: true, dados: response.data });
-    } catch (e) {
-        res.json({ sucesso: false, erro: "CEP não encontrado ou inválido." });
-    }
+  const cep = req.params.cep.replace(/\D/g, '');
+  try {
+    const response = await axios.get(`https://brasilapi.com.br/api/cep/v1/${cep}`);
+    res.json({ sucesso: true, dados: response.data });
+  } catch (error) {
+    res.json({ sucesso: false, erro: "CEP não encontrado ou inválido." });
+  }
 });
 
-app.listen(PORT, () => {
-    console.log(`Servidor MD BUSCAS ativo na porta ${PORT}`);
+iniciarBanco().then(() => {
+  app.listen(PORT, () => {
+    console.log(`Servidor rodando na porta ${PORT}`);
+  });
 });
