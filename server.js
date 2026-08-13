@@ -49,7 +49,7 @@ function salvarBanco() {
   }
 }
 
-// 1. ROTA DE GERAÇÃO DO PIX
+// 1. ROTA DE GERAÇÃO DO PIX (CORRIGIDA)
 app.post('/api/pagamento/pix', async (req, res) => {
   try {
     const externalRef = 'pedido_' + Math.random().toString(36).substring(2, 12);
@@ -72,6 +72,14 @@ app.post('/api/pagamento/pix', async (req, res) => {
     const txid = dadosPix.txid || externalRef;
     const qrcodeCopiaCola = dadosPix.qrCodeCopyPaste || dadosPix.qrCode || dadosPix.pix_code;
     const qrcodeImage = dadosPix.qrCodeUrl || dadosPix.qrCodeBase64 || dadosPix.qrcode_image || `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrcodeCopiaCola)}`;
+
+    if (db) {
+      try {
+        db.run(`INSERT INTO pedidos (txid, modulo, alvo, status, data) VALUES (?, ?, ?, ?, ?)`, 
+          [txid, 'CONSULTA', externalRef, 'pendente', new Date().toLocaleString()]);
+        salvarBanco();
+      } catch (e) {}
+    }
 
     res.json({
       sucesso: true,
@@ -112,7 +120,7 @@ app.post('/api/notificar-whatsapp', async (req, res) => {
   res.json({ sucesso: true });
 });
 
-// 3. WEBHOOK DA GOATPAY (VERSÃO REFORÇADA E CORRIGIDA)
+// 3. WEBHOOK DA GOATPAY
 app.post('/api/webhook/goatpay', async (req, res) => {
   const payload = req.body;
   console.log("--- WEBHOOK GOATPAY RECEBIDO ---");
@@ -123,7 +131,7 @@ app.post('/api/webhook/goatpay', async (req, res) => {
 
   console.log(`Status recebido: ${status} | Txid/Ref: ${txid}`);
 
-  if (status && ['PAID', 'APPROVED', 'aprovado', 'paid', 'approved'].includes(status.toLowerCase())) {
+  if (status && ['PAID', 'APPROVED', 'aprovado', 'paid', 'approved', 'COMPLETED', 'completed'].includes(status.toLowerCase())) {
     if (txid && db) {
       try {
         db.run(`UPDATE pedidos SET status = 'aprovado' WHERE txid = ?`, [txid]);
