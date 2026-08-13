@@ -16,13 +16,16 @@
       100% { text-shadow: 0 0 5px #00ffcc; transform: scale(1); }
     }
     .intro-logo { font-size: 2.5rem; font-weight: 800; color: #00ffcc; animation: neonGlow 2s infinite ease-in-out; letter-spacing: 4px; }
+    .intro-sub { font-size: 0.95rem; color: #94a3b5; letter-spacing: 3px; text-transform: uppercase; font-weight: 600; opacity: 0.8; margin-top: 10px; }
     
     .header { text-align: center; margin-bottom: 30px; }
     .header h1 { color: #00ffcc; font-size: 1.8rem; letter-spacing: 2px; }
+    .header p { color: #94a3b5; font-size: 0.85rem; }
     
     .grid-modules { display: flex; flex-direction: column; gap: 12px; max-width: 600px; margin: 0 auto; }
     .card-module { background: #101c2e; border-radius: 12px; padding: 16px; display: flex; align-items: center; justify-content: space-between; border: 1px solid rgba(0,255,204,0.2); }
     .btn-consultar { background: #00ffcc; color: #000; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+    .btn-bloqueado { background: #284b7a; color: #94a3b5; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: not-allowed; }
     
     .modalConsultas { display: none; position: fixed; z-index: 10; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; padding: 20px; }
     .modal-conteudo { background: #0b1626; padding: 20px; border-radius: 12px; width: 100%; max-width: 400px; border: 1px solid #00ffcc; text-align: center; }
@@ -34,21 +37,26 @@
 </head>
 <body>
 
-  <!-- Letreiro com animação -->
   <div id="telaIntro">
     <div class="intro-logo">MD BUSCAS</div>
+    <div class="intro-sub">Informação é Poder</div>
   </div>
 
-  <div class="header"><h1>MD BUSCAS</h1></div>
+  <div class="header">
+    <h1>MD BUSCAS</h1>
+    <p>Central de Inteligência e Consultas Automatizadas</p>
+  </div>
 
   <div class="grid-modules">
-    <div class="card-module"><div>CONSULTA CNPJ</div><button class="btn-consultar" onclick="abrirModal('CNPJ')">ACESSAR</button></div>
+    <div class="card-module"><div>CPF <br><small style="color:red">EM MANUTENÇÃO</small></div><button class="btn-bloqueado">EM BREVE</button></div>
+    <div class="card-module"><div>CNPJ <br><small style="color:green">R$ 10,00</small></div><button class="btn-consultar" onclick="abrirModal('CNPJ')">ACESSAR</button></div>
+    <div class="card-module"><div>CEP <br><small style="color:green">R$ 10,00</small></div><button class="btn-consultar" onclick="abrirModal('CEP')">ACESSAR</button></div>
   </div>
 
   <div id="modalConsulta" class="modalConsultas">
     <div class="modal-conteudo">
-      <h3 id="modalTitulo" style="color:#00ffcc">CONSULTA CNPJ</h3>
-      <input type="text" id="inputAlvo" placeholder="Digite o CNPJ..." style="width:100%; padding:10px; margin:10px 0; border-radius:5px; border:none;">
+      <h3 id="modalTitulo" style="color:#00ffcc">CONSULTA</h3>
+      <input type="text" id="inputAlvo" placeholder="Digite o dado..." style="width:100%; padding:10px; margin:10px 0; border-radius:5px; border:none;">
       
       <div id="areaPix" style="display:none;">
         <img id="imgQrCode" style="width:160px; background:#fff; border:2px solid #00ffcc; border-radius:5px;">
@@ -65,7 +73,6 @@
   </div>
 
   <script>
-    // Animação de entrada
     window.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => {
         let intro = document.getElementById('telaIntro');
@@ -74,14 +81,21 @@
       }, 2000);
     });
 
-    let txidAtual = '', intervalChecagem;
+    let txidAtual = '', intervalChecagem, moduloAtual = '';
 
-    function abrirModal(m) { document.getElementById('modalConsulta').style.display = 'flex'; }
-    function fecharModal() { document.getElementById('modalConsulta').style.display = 'none'; clearInterval(intervalChecagem); }
+    function abrirModal(m) { 
+      moduloAtual = m; 
+      document.getElementById('modalConsulta').style.display = 'flex'; 
+    }
+    
+    function fecharModal() { 
+      document.getElementById('modalConsulta').style.display = 'none'; 
+      clearInterval(intervalChecagem); 
+    }
 
     async function solicitarPagamento() {
       let alvo = document.getElementById('inputAlvo').value;
-      if(!alvo) return alert('Digite o CNPJ!');
+      if(!alvo) return alert('Digite o dado!');
       
       let res = await fetch('/api/pagamento/pix', { method: 'POST' });
       let data = await res.json();
@@ -92,7 +106,7 @@
       document.getElementById('areaPix').style.display = 'block';
       document.getElementById('imgQrCode').src = data.qrcode_image;
       document.getElementById('copiaCola').value = data.qrcode;
-      document.getElementById('linkWpp').href = `https://wa.me/5585998021364?text=Paguei o pedido ${txidAtual} referente ao CNPJ ${alvo}`;
+      document.getElementById('linkWpp').href = `https://wa.me/5585998021364?text=Paguei o pedido ${txidAtual} referente a ${moduloAtual} ${alvo}`;
       
       intervalChecagem = setInterval(checarAutomatico, 3000);
     }
@@ -109,7 +123,9 @@
 
     async function liberarDados() {
       document.getElementById('msgStatus').innerText = '✅ Pagamento confirmado! Buscando dados...';
-      let resBusca = await fetch(`/api/consulta/cnpj/${document.getElementById('inputAlvo').value}`);
+      let alvo = document.getElementById('inputAlvo').value;
+      let rota = `/api/consulta/${moduloAtual.toLowerCase()}/${alvo}`;
+      let resBusca = await fetch(rota);
       let dataBusca = await resBusca.json();
       let resDiv = document.getElementById('resultadosDados');
       resDiv.style.display = 'block';
