@@ -49,7 +49,7 @@ function salvarBanco() {
   }
 }
 
-// 1. ROTA DE GERAÇÃO DO PIX
+// 1. ROTA DE GERAÇÃO DO PIX (BLINDADA E CORRIGIDA)
 app.post('/api/pagamento/pix', async (req, res) => {
   try {
     const externalRef = 'pedido_' + Math.random().toString(36).substring(2, 12);
@@ -66,11 +66,17 @@ app.post('/api/pagamento/pix', async (req, res) => {
       }
     });
 
-    const respostaApi = respostaGoat.data;
-    const dadosPix = respostaApi.data || respostaApi;
+    const respData = respostaGoat.data;
+    const dadosPix = respData.data || respData;
     
-    const txid = dadosPix.txid || externalRef;
-    const qrcodeCopiaCola = dadosPix.qrCodeCopyPaste || dadosPix.qrCode || dadosPix.pix_code;
+    // Captura o QR Code independente de como a GoatPay entregue
+    const qrcodeCopiaCola = dadosPix.qrCodeCopyPaste || dadosPix.qrCode || dadosPix.pix_code || dadosPix.emv || dadosPix.payload;
+    const txid = dadosPix.txid || dadosPix.id || externalRef;
+
+    if (!qrcodeCopiaCola) {
+      return res.status(500).json({ sucesso: false, erro: "Erro ao extrair o QR Code da resposta." });
+    }
+
     const qrcodeImage = dadosPix.qrCodeUrl || dadosPix.qrCodeBase64 || dadosPix.qrcode_image || `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrcodeCopiaCola)}`;
 
     if (db) {
@@ -89,7 +95,6 @@ app.post('/api/pagamento/pix', async (req, res) => {
     });
 
   } catch (error) {
-    console.error("ERRO GOATPAY:", error.response ? error.response.data : error.message);
     res.status(500).json({
       sucesso: false,
       erro: "Erro ao gerar Pix na Goatpay."
@@ -101,14 +106,12 @@ app.post('/api/pagamento/pix', async (req, res) => {
 app.post('/api/notificar-whatsapp', async (req, res) => {
   const { txid, modulo, alvo } = req.body;
   if (!txid) return res.status(400).json({ sucesso: false, erro: "Txid ausente" });
-
   if (db) {
     try {
       const stmt = db.prepare(`SELECT * FROM pedidos WHERE txid = ?`);
       stmt.bind([txid]);
       let existente = stmt.step();
       stmt.free();
-
       if (!existente) {
         db.run(`INSERT INTO pedidos (txid, modulo, alvo, status, data) VALUES (?, ?, ?, ?, ?)`, 
           [txid, modulo || 'CONSULTA', alvo || 'Não informado', 'pendente', new Date().toLocaleString()]);
@@ -116,33 +119,23 @@ app.post('/api/notificar-whatsapp', async (req, res) => {
       }
     } catch (e) {}
   }
-
   res.json({ sucesso: true });
 });
 
 // 3. WEBHOOK DA GOATPAY
 app.post('/api/webhook/goatpay', async (req, res) => {
   const payload = req.body;
-  console.log("--- WEBHOOK GOATPAY RECEBIDO ---");
-  console.log(JSON.stringify(payload));
-
   const status = payload.status || (payload.data ? payload.data.status : null);
   const txid = payload.externalReference || (payload.data ? payload.data.externalReference : null) || payload.txid;
-
-  console.log(`Status recebido: ${status} | Txid/Ref: ${txid}`);
 
   if (status && ['PAID', 'APPROVED', 'aprovado', 'paid', 'approved', 'COMPLETED', 'completed'].includes(status.toLowerCase())) {
     if (txid && db) {
       try {
         db.run(`UPDATE pedidos SET status = 'aprovado' WHERE txid = ?`, [txid]);
         salvarBanco();
-        console.log(`[SUCESSO] Pedido ${txid} atualizado para APROVADO no banco!`);
-      } catch (e) {
-        console.log("Erro ao atualizar banco:", e.message);
-      }
+      } catch (e) {}
     }
   }
-  
   res.status(200).send('OK');
 });
 
@@ -180,7 +173,6 @@ app.post('/api/admin/liberar', async (req, res) => {
 app.get('/api/pagamento/status/:txid', async (req, res) => {
   const { txid } = req.params;
   let statusPedido = 'pendente';
-
   if (db) {
     try {
       const stmt = db.prepare(`SELECT status FROM pedidos WHERE txid = ?`);
@@ -192,12 +184,7 @@ app.get('/api/pagamento/status/:txid', async (req, res) => {
       stmt.free();
     } catch (e) {}
   }
-
-  if (statusPedido === 'aprovado') {
-    res.json({ pago: true, liberadoAdmin: true });
-  } else {
-    res.json({ pago: false, liberadoAdmin: false });
-  }
+  res.json({ pago: statusPedido === 'aprovado', liberadoAdmin: statusPedido === 'aprovado' });
 });
 
 // 7. CONSULTA CNPJ
@@ -205,28 +192,16 @@ app.get('/api/consulta/cnpj/:cnpj', async (req, res) => {
   const cnpj = req.params.cnpj.replace(/\D/g, '');
   let dadosUnificados = {};
   let sucessoBusca = false;
-
   try {
     const respBrasil = await axios.get(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`, { timeout: 5000 });
-    if (respBrasil.data) {
-      dadosUnificados = { ...respBrasil.data };
-      sucessoBusca = true;
-    }
+    if (respBrasil.data) { dadosUnificados = { ...respBrasil.data }; sucessoBusca = true; }
   } catch (e) {}
-
   try {
     const respReceita = await axios.get(`https://www.receitaws.com.br/v1/cnpj/${cnpj}`);
-    if (respReceita.data && respReceita.data.status === 'OK') {
-      dadosUnificados = { ...dadosUnificados, ...respReceita.data };
-      sucessoBusca = true;
-    }
+    if (respReceita.data && respReceita.data.status === 'OK') { dadosUnificados = { ...dadosUnificados, ...respReceita.data }; sucessoBusca = true; }
   } catch (e) {}
-
-  if (sucessoBusca && Object.keys(dadosUnificados).length > 0) {
-    res.json({ sucesso: true, dados: dadosUnificados });
-  } else {
-    res.json({ sucesso: false, erro: "CNPJ não encontrado nas bases de consulta." });
-  }
+  if (sucessoBusca && Object.keys(dadosUnificados).length > 0) res.json({ sucesso: true, dados: dadosUnificados });
+  else res.json({ sucesso: false, erro: "CNPJ não encontrado." });
 });
 
 // 8. CONSULTA CEP
@@ -236,7 +211,7 @@ app.get('/api/consulta/cep/:cep', async (req, res) => {
     const response = await axios.get(`https://brasilapi.com.br/api/cep/v1/${cep}`);
     res.json({ sucesso: true, dados: response.data });
   } catch (error) {
-    res.json({ sucesso: false, erro: "CEP não encontrado ou inválido." });
+    res.json({ sucesso: false, erro: "CEP não encontrado." });
   }
 });
 
