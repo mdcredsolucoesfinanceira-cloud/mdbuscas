@@ -75,33 +75,7 @@ app.post('/api/pagamento/pix', async (req, res) => {
     }
 });
 
-// WEBHOOK CORRIGIDO (Lê referenceId, id e trata pagamentos ou cancelamentos)
-app.post('/api/webhook/goatpay', (req, res) => {
-    try {
-        const p = req.body || {};
-        console.log("Webhook recebido da GoatPay:", JSON.stringify(p));
-
-        const status = (p.status || p.data?.status || "").toString().toLowerCase();
-        // A GoatPay envia o identificador no referenceId, id ou txid
-        const refId = p.referenceId || p.id || p.txid || p.data?.referenceId || p.data?.id || p.data?.txid;
-
-        if (db && refId) {
-            if (status.includes('paid') || status.includes('approved') || status.includes('sucesso') || status.includes('concluido')) {
-                db.run("UPDATE pedidos SET status = 'aprovado' WHERE txid = ? OR alvo = ?", [refId, refId]);
-                salvarBanco();
-                console.log(`SUCESSO: Pedido ${refId} aprovado via Webhook!`);
-            } else if (status.includes('canceled') || status.includes('cancelled') || status.includes('expired')) {
-                db.run("UPDATE pedidos SET status = 'cancelado' WHERE txid = ? OR alvo = ?", [refId, refId]);
-                salvarBanco();
-                console.log(`CANCELADO: Pedido ${refId} marcado como cancelado.`);
-            }
-        }
-    } catch (err) {
-        console.log("Erro interno no processamento do webhook:", err.message);
-    }
-    return res.status(200).json({ received: true });
-});
-
+// Listar pedidos pendentes no painel admin
 app.get('/api/admin/pedidos', (req, res) => {
     if (!db) return res.json([]);
     const result = db.exec(`SELECT * FROM pedidos WHERE status = 'pendente'`);
@@ -116,6 +90,18 @@ app.get('/api/admin/pedidos', (req, res) => {
     res.json(rows);
 });
 
+// Rota para o Admin aprovar manualmente com um clique
+app.get('/api/admin/aprovar/:txid', (req, res) => {
+    const txid = req.params.txid;
+    if (db) {
+        db.run("UPDATE pedidos SET status = 'aprovado' WHERE txid = ? OR alvo = ?", [txid, txid]);
+        salvarBanco();
+        console.log(`MANUAL: Pedido ${txid} aprovado pelo Admin.`);
+    }
+    res.json({ sucesso: true });
+});
+
+// Checagem de status na tela do cliente
 app.get('/api/pagamento/status/:txid', (req, res) => {
     const txid = req.params.txid;
     let status = 'pendente';
@@ -125,7 +111,7 @@ app.get('/api/pagamento/status/:txid', (req, res) => {
         if (stmt.step()) status = stmt.get()[0];
         stmt.free();
     }
-    const isAprovado = ['aprovado', 'paid', 'approved', 'completed', 'sucesso'].includes(String(status).toLowerCase().trim());
+    const isAprovado = String(status).toLowerCase().trim() === 'aprovado';
     res.json({ pago: isAprovado, liberadoAdmin: isAprovado });
 });
 

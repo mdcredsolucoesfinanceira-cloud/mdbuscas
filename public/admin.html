@@ -6,40 +6,45 @@
   <style>
     body { background: #000; color: #fff; font-family: sans-serif; padding: 20px; }
     .card { border: 1px solid #00ffcc; padding: 15px; margin-bottom: 10px; border-radius: 8px; }
+    button { background: #00ffcc; color: #000; border: none; padding: 10px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; border-radius: 5px; }
+    button:hover { background: #00b38f; }
   </style>
 </head>
 <body>
     <h1>[ PAINEL ADMIN ]</h1>
-    <p>Monitorando pagamentos em tempo real...</p>
+    <p>Aprove os pagamentos após confirmar na sua conta:</p>
     <div id="listaPedidos">Carregando...</div>
 
     <script>
-        // Função que busca os pedidos no servidor
         async function carregarPedidos() {
             try {
                 let res = await fetch('/api/admin/pedidos');
                 let lista = await res.json();
                 let container = document.getElementById('listaPedidos');
                 
-                // Se a lista estiver vazia, avisa que não tem nada pendente
                 if(!lista || lista.length === 0) {
-                    container.innerHTML = '<p>Nenhum pedido pendente.</p>';
+                    container.innerHTML = '<p>Nenhum pedido pendente no momento.</p>';
                     return;
                 }
 
-                // Renderiza os pedidos pendentes
                 container.innerHTML = lista.map(p => `
                     <div class="card">
-                        ID: ${p.txid} | Alvo: ${p.alvo} <br>
-                        Status: <span style="color:orange">AGUARDANDO PAGAMENTO</span>
+                        <b>ID do Pedido:</b> ${p.txid} <br>
+                        <b>Referência:</b> ${p.alvo} <br>
+                        <b>Data:</b> ${p.data} <br>
+                        <button onclick="aprovarPedido('${p.txid}')">APROVAR PAGAMENTO ✅</button>
                     </div>
                 `).join('');
             } catch (e) { console.error(e); }
         }
 
-        // O SEGREDO: Atualiza a lista a cada 3 segundos
-        // Assim que o Webhook do servidor mudar o status para 'aprovado',
-        // o servidor deixa de enviar esse pedido para a lista, e ele some da tela sozinho!
+        async function aprovarPedido(txid) {
+            if(confirm("Tem certeza que o Pix caiu na conta e deseja liberar?")) {
+                await fetch('/api/admin/aprovar/' + txid);
+                carregarPedidos();
+            }
+        }
+
         setInterval(carregarPedidos, 3000);
         carregarPedidos();
     </script>
