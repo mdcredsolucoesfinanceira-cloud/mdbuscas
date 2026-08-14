@@ -24,6 +24,7 @@ async function iniciarBanco() {
         db.run(`CREATE TABLE IF NOT EXISTS pedidos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             txid TEXT,
+            goatpay_id TEXT,
             modulo TEXT,
             alvo TEXT,
             status TEXT,
@@ -38,7 +39,7 @@ function salvarBanco() {
     if (db) fs.writeFileSync('./banco.sqlite', Buffer.from(db.export()));
 }
 
-// ROTA DO PIX — agora recebe modulo e alvo do front
+// ROTA DO PIX
 app.post('/api/pagamento/pix', async (req, res) => {
     try {
         const { modulo, alvo } = req.body;
@@ -56,20 +57,25 @@ app.post('/api/pagamento/pix', async (req, res) => {
         });
 
         const data = response.data.data || response.data;
-        const qrcode = data.copyPaste || data.pixCode || data.qrcode || "";
-        const txid = data.txid || externalRef;
+        const copyPaste = data.copyPaste || "";
+        const goatpayId = data.id || "";
+
+        // usa a imagem que a GoatPay já manda pronta; só usa qrserver como fallback
+        const qrcodeImage = data.qrCodeImage 
+            ? data.qrCodeImage 
+            : `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(copyPaste)}`;
 
         if (db) {
-            db.run("INSERT INTO pedidos (txid, modulo, alvo, status, data) VALUES (?, ?, ?, ?, ?)",
-                [txid, modulo, alvo, 'pendente', new Date().toLocaleString()]);
+            db.run("INSERT INTO pedidos (txid, goatpay_id, modulo, alvo, status, data) VALUES (?, ?, ?, ?, ?, ?)",
+                [externalRef, goatpayId, modulo, alvo, 'pendente', new Date().toLocaleString()]);
             salvarBanco();
         }
 
         res.json({ 
             sucesso: true, 
-            txid, 
-            qrcode: qrcode, 
-            qrcode_image: `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrcode)}` 
+            txid: externalRef, 
+            qrcode: copyPaste, 
+            qrcode_image: qrcodeImage
         });
     } catch (e) {
         console.error("Erro na API da Goatpay:", e.response?.data || e.message);
@@ -80,9 +86,10 @@ app.post('/api/pagamento/pix', async (req, res) => {
 // WEBHOOK DE CONFIRMAÇÃO AUTOMÁTICA
 app.post('/api/webhook/goatpay', (req, res) => {
     const payload = req.body;
+    console.log("Webhook recebido:", JSON.stringify(payload));
     const status = payload.status || payload.data?.status;
-    const txid = payload.data?.externalReference || payload.txid;
-    if (db && txid && (status === 'PAID' || status === 'approved')) {
+    const txid = payload.data?.externalReference || payload.externalReference || payload.txid;
+    if (db && txid && (status === 'PAID' || status === 'approved' || status === 'CONFIRMED')) {
         db.run("UPDATE pedidos SET status = 'aprovado' WHERE txid = ?", [txid]);
         salvarBanco();
         console.log(`Pedido ${txid} aprovado via webhook!`);
@@ -103,7 +110,7 @@ app.get('/api/pagamento/status/:txid', (req, res) => {
     res.json({ pago: isAprovado, liberadoAdmin: isAprovado });
 });
 
-// NOVA ROTA — consulta só libera se o txid estiver realmente aprovado
+// CONSULTA — só libera se o txid estiver realmente aprovado
 app.get('/api/consulta/:txid', async (req, res) => {
     const { txid } = req.params;
     if (!db) return res.status(500).json({ sucesso: false, erro: "Banco indisponível" });
@@ -140,6 +147,15 @@ app.get('/api/consulta/:txid', async (req, res) => {
         console.error("Erro na consulta:", e.response?.data || e.message);
         res.status(500).json({ sucesso: false, erro: "Erro ao consultar dados" });
     }
+});
+
+// ROTA ADMIN — liberação manual (placeholder, vamos completar com a página admin)
+app.post('/api/admin/aprovar/:txid', (req, res) => {
+    if (db) {
+        db.run("UPDATE pedidos SET status = 'aprovado' WHERE txid = ?", [req.params.txid]);
+        salvarBanco();
+    }
+    res.json({ sucesso: true });
 });
 
 iniciarBanco().then(() => {
