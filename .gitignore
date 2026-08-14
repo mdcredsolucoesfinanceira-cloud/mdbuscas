@@ -1,0 +1,3 @@
+git add .
+git commit -m "remove chave hardcoded, usa variavel de ambiente"
+git push
