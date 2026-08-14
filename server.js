@@ -11,7 +11,6 @@ const GOATPAY_API_KEY = process.env.GOATPAY_API_KEY;
 const GOATPAY_WEBHOOK_SECRET = process.env.GOATPAY_WEBHOOK_SECRET;
 const GOATPAY_ENDPOINT = "https://api.goatpay.com.br/v1/payment-pix/create";
 
-// Captura o raw body só na rota do webhook, ANTES do parse em JSON
 app.use('/api/webhook/goatpay', express.raw({ type: '*/*' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -37,6 +36,15 @@ async function iniciarBanco() {
             status TEXT,
             data TEXT
         );`);
+
+        // Corrige bancos antigos que não tinham a coluna goatpay_id
+        try {
+            db.run(`ALTER TABLE pedidos ADD COLUMN goatpay_id TEXT;`);
+            console.log("Coluna goatpay_id adicionada.");
+        } catch (e) {
+            // já existe, ignora
+        }
+
         salvarBanco();
         console.log("Banco SQLite carregado.");
     } catch (e) { console.log("Erro banco:", e); }
@@ -100,10 +108,10 @@ app.post('/api/pagamento/pix', async (req, res) => {
     }
 });
 
-// WEBHOOK — agora com validação de assinatura
+// WEBHOOK
 app.post('/api/webhook/goatpay', (req, res) => {
     const signatureHeader = req.headers['x-signature'] || req.headers['signature'];
-    const rawBody = req.body; // Buffer, por causa do express.raw()
+    const rawBody = req.body;
 
     if (!GOATPAY_WEBHOOK_SECRET) {
         console.error("GOATPAY_WEBHOOK_SECRET não configurado — recusando webhook.");
@@ -112,7 +120,7 @@ app.post('/api/webhook/goatpay', (req, res) => {
 
     const valido = verificarAssinaturaGoatPay(rawBody, signatureHeader, GOATPAY_WEBHOOK_SECRET);
     if (!valido) {
-        console.warn("Webhook com assinatura inválida — recusado.");
+        console.warn("Webhook com assinatura inválida — recusado. Header recebido:", signatureHeader);
         return res.status(401).send('Assinatura inválida');
     }
 
@@ -136,7 +144,7 @@ app.post('/api/webhook/goatpay', (req, res) => {
     res.status(200).send('OK');
 });
 
-// STATUS PARA O FRONTEND
+// STATUS
 app.get('/api/pagamento/status/:txid', (req, res) => {
     let status = 'pendente';
     if (db) {
@@ -149,7 +157,7 @@ app.get('/api/pagamento/status/:txid', (req, res) => {
     res.json({ pago: isAprovado, liberadoAdmin: isAprovado });
 });
 
-// CONSULTA — só libera se o txid estiver realmente aprovado
+// CONSULTA
 app.get('/api/consulta/:txid', async (req, res) => {
     const { txid } = req.params;
     if (!db) return res.status(500).json({ sucesso: false, erro: "Banco indisponível" });
@@ -188,7 +196,7 @@ app.get('/api/consulta/:txid', async (req, res) => {
     }
 });
 
-// ROTA ADMIN — liberação manual (placeholder até vermos a página admin)
+// ADMIN — aprovação manual
 app.post('/api/admin/aprovar/:txid', (req, res) => {
     if (db) {
         db.run("UPDATE pedidos SET status = 'aprovado' WHERE txid = ?", [req.params.txid]);
