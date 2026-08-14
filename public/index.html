@@ -3,136 +3,154 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MD BUSCAS - Central de Inteligência</title>
+  <title>MD BUSCAS - Consulta de CNPJ</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-    body { background-color: #000; color: #fff; padding: 20px; }
-    
-    /* Animação do Letreiro */
-    #telaIntro { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; transition: opacity 0.8s; }
-    @keyframes neonGlow { 
-      0% { text-shadow: 0 0 5px #00ffcc; transform: scale(1); }
-      50% { text-shadow: 0 0 25px #00ffcc, 0 0 40px #00ffcc; transform: scale(1.05); }
-      100% { text-shadow: 0 0 5px #00ffcc; transform: scale(1); }
-    }
-    .intro-logo { font-size: 2.5rem; font-weight: 800; color: #00ffcc; animation: neonGlow 2s infinite ease-in-out; letter-spacing: 4px; }
-    .intro-sub { font-size: 0.95rem; color: #94a3b5; letter-spacing: 3px; text-transform: uppercase; font-weight: 600; opacity: 0.8; margin-top: 10px; }
-    
-    .header { text-align: center; margin-bottom: 30px; }
-    .header h1 { color: #00ffcc; font-size: 1.8rem; letter-spacing: 2px; }
-    .header p { color: #94a3b5; font-size: 0.85rem; }
-    
-    .grid-modules { display: flex; flex-direction: column; gap: 12px; max-width: 600px; margin: 0 auto; }
-    .card-module { background: #101c2e; border-radius: 12px; padding: 16px; display: flex; align-items: center; justify-content: space-between; border: 1px solid rgba(0,255,204,0.2); }
-    .btn-consultar { background: #00ffcc; color: #000; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; }
-    .btn-bloqueado { background: #284b7a; color: #94a3b5; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: not-allowed; }
-    
-    .modalConsultas { display: none; position: fixed; z-index: 10; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; padding: 20px; }
-    .modal-conteudo { background: #0b1626; padding: 20px; border-radius: 12px; width: 100%; max-width: 400px; border: 1px solid #00ffcc; text-align: center; }
-    .btn-copiar { background: #f39c12; color: #000; border: none; padding: 10px; border-radius: 6px; width: 100%; margin-top: 10px; font-weight: bold; }
-    .btn-whatsapp { display: block; background: #25d366; color: white; padding: 10px; border-radius: 6px; text-decoration: none; font-weight: bold; margin-top: 10px; }
-    .btn-fechar { background: #e74c3c; border: none; color: #fff; padding: 10px; border-radius: 6px; width: 100%; margin-top: 10px; }
-    #resultadosDados { display: none; background: #03070c; padding: 15px; border-radius: 8px; color: #00ffcc; margin-top: 15px; text-align: left; font-size: 0.8rem; overflow-x: auto; }
+    body { background: #000; color: #fff; font-family: sans-serif; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+    .box { background: #111; border: 1px solid #00ffcc; padding: 20px; border-radius: 10px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 0 10px rgba(0,255,204,0.2); }
+    input { width: 90%; padding: 12px; margin: 10px 0; background: #222; border: 1px solid #444; color: #fff; border-radius: 5px; font-size: 16px; }
+    button { background: #00ffcc; color: #000; border: none; padding: 12px; width: 100%; cursor: pointer; font-weight: bold; border-radius: 5px; font-size: 16px; margin-top: 10px; }
+    button:hover { background: #00b38f; }
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; }
+    .modal-conteudo { background: #111; border: 1px solid #00ffcc; padding: 20px; border-radius: 10px; width: 90%; max-width: 400px; text-align: center; }
+    pre { background: #1a1a1a; color: #00ffcc; padding: 10px; border-radius: 5px; text-align: left; font-size: 12px; overflow-x: auto; white-space: pre-wrap; word-wrap: break-word; }
   </style>
 </head>
 <body>
 
-  <div id="telaIntro">
-    <div class="intro-logo">MD BUSCAS</div>
-    <div class="intro-sub">Informação é Poder</div>
-  </div>
-
-  <div class="header">
-    <h1>MD BUSCAS</h1>
-    <p>Central de Inteligência e Consultas Automatizadas</p>
-  </div>
-
-  <div class="grid-modules">
-    <div class="card-module"><div>CPF <br><small style="color:red">EM MANUTENÇÃO</small></div><button class="btn-bloqueado">EM BREVE</button></div>
-    <div class="card-module"><div>CNPJ <br><small style="color:green">R$ 10,00</small></div><button class="btn-consultar" onclick="abrirModal('CNPJ')">ACESSAR</button></div>
-    <div class="card-module"><div>CEP <br><small style="color:green">R$ 10,00</small></div><button class="btn-consultar" onclick="abrirModal('CEP')">ACESSAR</button></div>
-  </div>
-
-  <div id="modalConsulta" class="modalConsultas">
-    <div class="modal-conteudo">
-      <h3 id="modalTitulo" style="color:#00ffcc">CONSULTA</h3>
-      <input type="text" id="inputAlvo" placeholder="Digite o dado..." style="width:100%; padding:10px; margin:10px 0; border-radius:5px; border:none;">
-      
-      <div id="areaPix" style="display:none;">
-        <img id="imgQrCode" style="width:160px; background:#fff; border:2px solid #00ffcc; border-radius:5px;">
-        <input type="text" id="copiaCola" readonly style="width:100%; margin-top:10px; font-size:10px; padding:5px;">
-        <button class="btn-copiar" onclick="copiarPix()">Copiar Código Pix</button>
-        <a id="linkWpp" class="btn-whatsapp">Já fez o pagamento? Informe ao suporte</a>
-        <p id="msgStatus" style="margin-top:10px; font-size:0.8rem; color:#00ffcc; font-weight:bold;">⏳ Aguardando liberação automática...</p>
-      </div>
-
-      <pre id="resultadosDados"></pre>
-      <button class="btn-acao" id="btnGerar" onclick="solicitarPagamento()" style="background:#00ffcc; border:none; padding:10px; width:100%; margin-top:10px; font-weight:bold; border-radius:5px;">Gerar PIX R$ 10,00</button>
-      <button class="btn-fechar" onclick="fecharModal()">Fechar</button>
+    <div class="box">
+        <h2>MD BUSCAS</h2>
+        <p>Digite o CNPJ para consultar:</p>
+        <input type="text" id="inputCnpj" placeholder="00.000.000/0001-00">
+        <button onclick="gerarPagamento()">Consultar (Pix R$ 10,00)</button>
     </div>
-  </div>
 
-  <script>
-    window.addEventListener('DOMContentLoaded', () => {
-      setTimeout(() => {
-        let intro = document.getElementById('telaIntro');
-        intro.style.opacity = '0';
-        setTimeout(() => intro.style.display = 'none', 800);
-      }, 2000);
-    });
+    <!-- MODAL DE PAGAMENTO E RESULTADO -->
+    <div id="modalPagamento" class="modal">
+        <div class="modal-conteudo" id="modalConteudoInterno">
+            <h3 style="color:#00ffcc">Pague o Pix para Liberar</h3>
+            <div id="areaQrCode">
+                <img id="imgQrCode" src="" alt="QR Code Pix" style="width:150px; height:150px; background:#fff; padding:5px; border-radius:5px;"><br><br>
+                <input type="text" id="copiaCola" readonly style="font-size:12px; text-align:center;">
+                <button onclick="copiarPix()">Copiar Código Pix</button>
+            </div>
+            <p id="statusPagamento" style="color:orange; margin-top:15px; font-weight:bold;">Aguardando confirmação do pagamento...</p>
+            <a id="btnSuporte" href="https://wa.me/" target="_blank" style="display:block; margin-top:10px; color:#00ffcc; text-decoration:underline; font-size:14px;">Já fez o pagamento? Informe ao suporte</a>
+            <button onclick="fecharModal()" style="background:#ff4d4d; color:#fff; margin-top:15px;">Fechar</button>
+        </div>
+    </div>
 
-    let txidAtual = '', intervalChecagem, moduloAtual = '';
+    <script>
+        let intervaloChecagem = null;
+        let txidAtual = null;
+        let cnpjAtual = null;
 
-    function abrirModal(m) { 
-      moduloAtual = m; 
-      document.getElementById('modalConsulta').style.display = 'flex'; 
-    }
-    
-    function fecharModal() { 
-      document.getElementById('modalConsulta').style.display = 'none'; 
-      clearInterval(intervalChecagem); 
-    }
+        async function gerarPagamento() {
+            cnpjAtual = document.getElementById('inputCnpj').value.replace(/\D/g, '');
+            if (!cnpjAtual || cnpjAtual.length !== 14) {
+                alert('Digite um CNPJ válido com 14 dígitos!');
+                return;
+            }
 
-    async function solicitarPagamento() {
-      let alvo = document.getElementById('inputAlvo').value;
-      if(!alvo) return alert('Digite o dado!');
-      
-      let res = await fetch('/api/pagamento/pix', { method: 'POST' });
-      let data = await res.json();
-      txidAtual = data.txid;
-      
-      document.getElementById('inputAlvo').style.display = 'none';
-      document.getElementById('btnGerar').style.display = 'none';
-      document.getElementById('areaPix').style.display = 'block';
-      document.getElementById('imgQrCode').src = data.qrcode_image;
-      document.getElementById('copiaCola').value = data.qrcode;
-      document.getElementById('linkWpp').href = `https://wa.me/5585998021364?text=Paguei o pedido ${txidAtual} referente a ${moduloAtual} ${alvo}`;
-      
-      intervalChecagem = setInterval(checarAutomatico, 3000);
-    }
+            document.getElementById('modalPagamento').style.display = 'flex';
+            document.getElementById('statusPagamento').innerText = 'Gerando Pix...';
 
-    async function checarAutomatico() {
-      if(!txidAtual) return;
-      let res = await fetch(`/api/pagamento/status/${txidAtual}`);
-      let data = await res.json();
-      if (data.liberadoAdmin === true || data.pago === true) {
-        clearInterval(intervalChecagem);
-        liberarDados();
-      }
-    }
+            try {
+                let res = await fetch('/api/pagamento/pix', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ cnpj: cnpjAtual })
+                });
+                let data = await res.json();
 
-    async function liberarDados() {
-      document.getElementById('msgStatus').innerText = '✅ Pagamento confirmado! Buscando dados...';
-      let alvo = document.getElementById('inputAlvo').value;
-      let rota = `/api/consulta/${moduloAtual.toLowerCase()}/${alvo}`;
-      let resBusca = await fetch(rota);
-      let dataBusca = await resBusca.json();
-      let resDiv = document.getElementById('resultadosDados');
-      resDiv.style.display = 'block';
-      resDiv.innerHTML = dataBusca.sucesso ? JSON.stringify(dataBusca.dados, null, 2) : 'Erro na busca.';
-    }
+                if (data.sucesso) {
+                    txidAtual = data.txid;
+                    document.getElementById('imgQrCode').src = data.qrcode_image;
+                    document.getElementById('copiaCola').value = data.qrcode;
+                    document.getElementById('statusPagamento').innerText = 'Aguardando confirmação do pagamento...';
+                    
+                    // Inicia a checagem se o Admin aprovou
+                    if (intervaloChecagem) clearInterval(intervaloChecagem);
+                    intervaloChecagem = setInterval(checarStatusPagamento, 3000);
+                } else {
+                    alert('Erro ao gerar Pix');
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Erro de conexão ao gerar Pix.');
+            }
+        }
 
-    function copiarPix() { navigator.clipboard.writeText(document.getElementById('copiaCola').value); alert('Código copiado!'); }
-  </script>
+        function copiarPix() {
+            let inputCp = document.getElementById('copiaCola');
+            inputCp.select();
+            document.execCommand('copy');
+            alert('Código Pix copiado com sucesso!');
+        }
+
+        async function checarStatusPagamento() {
+            if (!txidAtual) return;
+            try {
+                let res = await fetch('/api/pagamento/status/' + txidAtual);
+                let data = await res.json();
+
+                if (data.pago) {
+                    clearInterval(intervaloChecagem);
+                    document.getElementById('statusPagamento').innerText = 'Pagamento confirmado! Buscando dados...';
+                    
+                    // Busca os dados do CNPJ nas APIs unificadas
+                    buscarDadosCnpj();
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function buscarDadosCnpj() {
+            try {
+                let res = await fetch('/api/consulta/cnpj/' + cnpjAtual);
+                let dados = await res.json();
+
+                if (dados.sucesso) {
+                    let textoFormatado = `
+=== DADOS DA EMPRESA ===
+Razão Social: ${dados.razao_social || 'N/A'}
+Nome Fantasia: ${dados.nome_fantasia || 'N/A'}
+CNPJ: ${dados.cnpj || 'N/A'}
+Situação: ${dados.situacao || 'N/A'}
+Abertura: ${dados.abertura || 'N/A'}
+Atividade: ${dados.atividade_principal || 'N/A'}
+Endereço: ${dados.logradouro || 'N/A'}
+Telefone: ${dados.telefone || 'N/A'}
+E-mail: ${dados.email || 'N/A'}
+                    `.trim();
+
+                    document.getElementById('modalConteudoInterno').innerHTML = `
+                        <h3 style="color:#00ffcc">Consulta Realizada!</h3>
+                        <pre>${textoFormatado}</pre>
+                        <button onclick="copiarDados('${btoa(unescape(encodeURIComponent(textoFormatado)))}')">📋 COPIAR TODOS OS DADOS</button>
+                        <button onclick="fecharModal()" style="background:#444; color:#fff; margin-top:10px;">Fechar</button>
+                    `;
+                } else {
+                    document.getElementById('statusPagamento').innerText = 'Erro ao buscar dados do CNPJ.';
+                }
+            } catch (e) {
+                console.error(e);
+                document.getElementById('statusPagamento').innerText = 'Erro ao carregar dados.';
+            }
+        }
+
+        function copiarDados(base64Text) {
+            let textoOriginal = decodeURIComponent(escape(atob(base64Text)));
+            navigator.clipboard.writeText(textoOriginal).then(() => {
+                alert('Dados copiados para a área de transferência!');
+            });
+        }
+
+        function fecharModal() {
+            if (intervaloChecagem) clearInterval(intervaloChecagem);
+            document.getElementById('modalPagamento').style.display = 'none';
+            location.reload();
+        }
+    </script>
 </body>
 </html>

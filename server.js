@@ -42,12 +42,14 @@ function salvarBanco() {
     if (db) fs.writeFileSync('./banco.sqlite', Buffer.from(db.export()));
 }
 
+// Criar Pix
 app.post('/api/pagamento/pix', async (req, res) => {
     try {
+        const { cnpj } = req.body;
         const externalRef = 'pedido_' + Math.random().toString(36).substring(2, 12);
         const response = await axios.post(GOATPAY_ENDPOINT, {
             amount: 10.00,
-            description: "Consulta MD BUSCAS",
+            description: "Consulta CNPJ MD BUSCAS",
             externalReference: externalRef
         }, {
             headers: { 'X-API-Key': GOATPAY_API_KEY, 'Content-Type': 'application/json' }
@@ -59,7 +61,7 @@ app.post('/api/pagamento/pix', async (req, res) => {
 
         if (db) {
             db.run("INSERT INTO pedidos (txid, modulo, alvo, status, data) VALUES (?, ?, ?, ?, ?)",
-                [txid, "CONSULTA", externalRef, 'pendente', new Date().toLocaleString()]);
+                [txid, "CNPJ", cnpj || externalRef, 'pendente', new Date().toLocaleString()]);
             salvarBanco();
         }
 
@@ -75,7 +77,7 @@ app.post('/api/pagamento/pix', async (req, res) => {
     }
 });
 
-// Listar pedidos pendentes no painel admin
+// Listar pedidos pendentes no admin
 app.get('/api/admin/pedidos', (req, res) => {
     if (!db) return res.json([]);
     const result = db.exec(`SELECT * FROM pedidos WHERE status = 'pendente'`);
@@ -90,18 +92,17 @@ app.get('/api/admin/pedidos', (req, res) => {
     res.json(rows);
 });
 
-// Rota para o Admin aprovar manualmente com um clique
+// Aprovar pedido manual
 app.get('/api/admin/aprovar/:txid', (req, res) => {
     const txid = req.params.txid;
     if (db) {
         db.run("UPDATE pedidos SET status = 'aprovado' WHERE txid = ? OR alvo = ?", [txid, txid]);
         salvarBanco();
-        console.log(`MANUAL: Pedido ${txid} aprovado pelo Admin.`);
     }
     res.json({ sucesso: true });
 });
 
-// Checagem de status na tela do cliente
+// Status para o cliente checar
 app.get('/api/pagamento/status/:txid', (req, res) => {
     const txid = req.params.txid;
     let status = 'pendente';
@@ -113,6 +114,69 @@ app.get('/api/pagamento/status/:txid', (req, res) => {
     }
     const isAprovado = String(status).toLowerCase().trim() === 'aprovado';
     res.json({ pago: isAprovado, liberadoAdmin: isAprovado });
+});
+
+// Consulta CNPJ combinando ReceitaWS + BrasilAPI
+app.get('/api/consulta/cnpj/:cnpj', async (req, res) => {
+    let cnpjLimpo = req.params.cnpj.replace(/\D/g, '');
+    let resultadoFinal = { sucesso: false };
+
+    // Tenta BrasilAPI primeiro
+    try {
+        const respBrasil = await axios.get(`https://brasilapi.com.br/api/cnpj/v1/${cnpjLimpo}`);
+        if (respBrasil.data) {
+            resultadoFinal = {
+                sucesso: true,
+                fonte: "BrasilAPI + ReceitaWS",
+                razao_social: respBrasil.data.razao_social || respBrasil.data.nome_fantasia,
+                nome_fantasia: respBrasil.data.nome_fantasia,
+                cnpj: respBrasil.data.cnpj,
+                situacao: respBrasil.data.descricao_situacao_cadastral || respBrasil.data.situacao,
+                abertura: respBrasil.data.data_inicio_atividade,
+                porte: respBrasil.data.porte,
+                natureza_juridica: respBrasil.data.natureza_juridica,
+                atividade_principal: respBrasil.data.cnae_fiscal_descricao,
+                logradouro: `${respBrasil.data.descricao_tipo_de_logradouro || ''} ${respBrasil.data.logradouro}, ${respBrasil.data.numero} - ${respBrasil.data.bairro}, ${respBrasil.data.municipio} - ${respBrasil.data.uf}`,
+                cep: respBrasil.data.cep,
+                telefone: respBrasil.data.ddd_telefone_1,
+                email: respBrasil.data.email
+            };
+        }
+    } catch (err) {
+        console.log("BrasilAPI falhou, tentando ReceitaWS...");
+    }
+
+    // Se falhou ou complementando, tenta ReceitaWS
+    try {
+        const respReceita = await axios.get(`https://www.receitaws.com.br/v1/cnpj/${cnpjLimpo}`);
+        if (respReceita.data && respReceita.data.status === "OK") {
+            const r = respReceita.data;
+            resultadoFinal = {
+                sucesso: true,
+                fonte: "ReceitaWS",
+                razao_social: r.nome,
+                nome_fantasia: r.fantasia,
+                cnpj: r.cnpj,
+                situacao: r.situacao,
+                abertura: r.abertura,
+                porte: r.porte,
+                natureza_juridica: r.natureza_juridica,
+                atividade_principal: r.atividade_principal?.[0]?.text || "",
+                logradouro: `${r.logradouro}, ${r.numero} - ${r.bairro}, ${r.municipio} - ${r.uf}`,
+                cep: r.cep,
+                telefone: r.telefone,
+                email: r.email
+            };
+        }
+    } catch (err2) {
+        console.log("ReceitaWS também falhou.");
+    }
+
+    if (resultadoFinal.sucesso) {
+        res.json(resultadoFinal);
+    } else {
+        res.status(400).json({ sucesso: false, erro: "CNPJ não encontrado nas bases de dados." });
+    }
 });
 
 iniciarBanco().then(() => {
