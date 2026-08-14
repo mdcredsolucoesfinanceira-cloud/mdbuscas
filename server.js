@@ -42,11 +42,12 @@ function salvarBanco() {
     if (db) fs.writeFileSync('./banco.sqlite', Buffer.from(db.export()));
 }
 
-// Criar Pix
+// Criar Pix corrigido para extrair o código de qualquer formato da GoatPay
 app.post('/api/pagamento/pix', async (req, res) => {
     try {
         const { cnpj } = req.body;
         const externalRef = 'pedido_' + Math.random().toString(36).substring(2, 12);
+        
         const response = await axios.post(GOATPAY_ENDPOINT, {
             amount: 10.00,
             description: "Consulta CNPJ MD BUSCAS",
@@ -55,9 +56,13 @@ app.post('/api/pagamento/pix', async (req, res) => {
             headers: { 'X-API-Key': GOATPAY_API_KEY, 'Content-Type': 'application/json' }
         });
 
-        const data = response.data.data || response.data;
-        const qrcode = data.copyPaste || data.pixCode || data.qrcode || "";
-        const txid = data.txid || data.referenceId || data.id || externalRef;
+        console.log("Resposta GoatPay:", JSON.stringify(response.data));
+
+        const resData = response.data.data || response.data;
+        // Varre todas as possibilidades de onde a GoatPay pode colocar o código Pix e a imagem
+        const qrcode = resData.copyPaste || resData.pixCode || resData.qrcode || resData.emv || "";
+        const qrImage = resData.qrCodeBase64 || resData.qrcode_image || `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrcode)}`;
+        const txid = resData.txid || resData.id || resData.referenceId || externalRef;
 
         if (db) {
             db.run("INSERT INTO pedidos (txid, modulo, alvo, status, data) VALUES (?, ?, ?, ?, ?)",
@@ -69,7 +74,7 @@ app.post('/api/pagamento/pix', async (req, res) => {
             sucesso: true, 
             txid, 
             qrcode: qrcode, 
-            qrcode_image: `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrcode)}` 
+            qrcode_image: qrImage 
         });
     } catch (e) {
         console.error("Erro na API da Goatpay:", e.response?.data || e.message);
@@ -121,7 +126,6 @@ app.get('/api/consulta/cnpj/:cnpj', async (req, res) => {
     let cnpjLimpo = req.params.cnpj.replace(/\D/g, '');
     let resultadoFinal = { sucesso: false };
 
-    // Tenta BrasilAPI primeiro
     try {
         const respBrasil = await axios.get(`https://brasilapi.com.br/api/cnpj/v1/${cnpjLimpo}`);
         if (respBrasil.data) {
@@ -142,11 +146,8 @@ app.get('/api/consulta/cnpj/:cnpj', async (req, res) => {
                 email: respBrasil.data.email
             };
         }
-    } catch (err) {
-        console.log("BrasilAPI falhou, tentando ReceitaWS...");
-    }
+    } catch (err) {}
 
-    // Se falhou ou complementando, tenta ReceitaWS
     try {
         const respReceita = await axios.get(`https://www.receitaws.com.br/v1/cnpj/${cnpjLimpo}`);
         if (respReceita.data && respReceita.data.status === "OK") {
@@ -168,14 +169,12 @@ app.get('/api/consulta/cnpj/:cnpj', async (req, res) => {
                 email: r.email
             };
         }
-    } catch (err2) {
-        console.log("ReceitaWS também falhou.");
-    }
+    } catch (err2) {}
 
     if (resultadoFinal.sucesso) {
         res.json(resultadoFinal);
     } else {
-        res.status(400).json({ sucesso: false, erro: "CNPJ não encontrado nas bases de dados." });
+        res.status(400).json({ sucesso: false, erro: "CNPJ não encontrado." });
     }
 });
 
