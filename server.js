@@ -36,15 +36,9 @@ async function iniciarBanco() {
             status TEXT,
             data TEXT
         );`);
-
-        // Corrige bancos antigos que não tinham a coluna goatpay_id
         try {
             db.run(`ALTER TABLE pedidos ADD COLUMN goatpay_id TEXT;`);
-            console.log("Coluna goatpay_id adicionada.");
-        } catch (e) {
-            // já existe, ignora
-        }
-
+        } catch (e) { /* já existe */ }
         salvarBanco();
         console.log("Banco SQLite carregado.");
     } catch (e) { console.log("Erro banco:", e); }
@@ -108,9 +102,10 @@ app.post('/api/pagamento/pix', async (req, res) => {
     }
 });
 
-// WEBHOOK
+// WEBHOOK — header e payload corrigidos
 app.post('/api/webhook/goatpay', (req, res) => {
-    const signatureHeader = req.headers['x-signature'] || req.headers['signature'];
+    const signatureHeader = req.headers['x-goatpay-signature'];
+    const eventType = req.headers['x-goatpay-event'];
     const rawBody = req.body;
 
     if (!GOATPAY_WEBHOOK_SECRET) {
@@ -120,7 +115,7 @@ app.post('/api/webhook/goatpay', (req, res) => {
 
     const valido = verificarAssinaturaGoatPay(rawBody, signatureHeader, GOATPAY_WEBHOOK_SECRET);
     if (!valido) {
-        console.warn("Webhook com assinatura inválida — recusado. Header recebido:", signatureHeader);
+        console.warn("Webhook com assinatura inválida — recusado. Evento:", eventType);
         return res.status(401).send('Assinatura inválida');
     }
 
@@ -131,20 +126,23 @@ app.post('/api/webhook/goatpay', (req, res) => {
         return res.status(400).send('JSON inválido');
     }
 
-    console.log("Webhook válido recebido:", JSON.stringify(payload));
-    const status = payload.status || payload.data?.status;
-    const txid = payload.data?.externalReference || payload.externalReference || payload.txid;
+    console.log("Webhook válido recebido:", eventType, JSON.stringify(payload));
 
-    if (db && txid && (status === 'PAID' || status === 'approved' || status === 'CONFIRMED')) {
-        db.run("UPDATE pedidos SET status = 'aprovado' WHERE txid = ?", [txid]);
+    const evento = payload.event || eventType;
+    const eventData = payload.data || {};
+    // referenceId aqui é o ID da transação na GoatPay (goatpay_id), não o nosso txid
+    const goatpayId = eventData.id || eventData.referenceId;
+
+    if (db && goatpayId && (evento === 'payment.paid' || eventData.status === 'PAID')) {
+        db.run("UPDATE pedidos SET status = 'aprovado' WHERE goatpay_id = ?", [goatpayId]);
         salvarBanco();
-        console.log(`Pedido ${txid} aprovado via webhook!`);
+        console.log(`Pedido com goatpay_id ${goatpayId} aprovado via webhook!`);
     }
 
     res.status(200).send('OK');
 });
 
-// STATUS
+// STATUS — agora aceita consultar por txid (nosso) OU goatpay_id
 app.get('/api/pagamento/status/:txid', (req, res) => {
     let status = 'pendente';
     if (db) {
