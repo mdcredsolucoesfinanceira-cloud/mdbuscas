@@ -60,12 +60,38 @@ function verificarAssinaturaGoatPay(rawBody, signatureHeader, secret) {
     return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
-// ROTA DO PIX
+// ROTA DO PIX — valida o dado ANTES de cobrar
 app.post('/api/pagamento/pix', async (req, res) => {
     try {
         const { modulo, alvo } = req.body;
         if (!modulo || !alvo) {
             return res.status(400).json({ sucesso: false, erro: "Módulo e alvo são obrigatórios" });
+        }
+
+        const moduloUpper = modulo.toUpperCase();
+
+        if (moduloUpper === 'CNPJ') {
+            const cnpjLimpo = alvo.replace(/\D/g, '');
+            if (cnpjLimpo.length !== 14) {
+                return res.status(400).json({ sucesso: false, erro: "CNPJ inválido. Digite os 14 números." });
+            }
+            try {
+                await axios.get(`https://receitaws.com.br/v1/cnpj/${cnpjLimpo}`);
+            } catch (e) {
+                return res.status(400).json({ sucesso: false, erro: "CNPJ não encontrado. Confira o número digitado." });
+            }
+        } else if (moduloUpper === 'CEP') {
+            const cepLimpo = alvo.replace(/\D/g, '');
+            if (cepLimpo.length !== 8) {
+                return res.status(400).json({ sucesso: false, erro: "CEP inválido. Digite os 8 números." });
+            }
+            try {
+                await axios.get(`https://brasilapi.com.br/api/cep/v1/${cepLimpo}`);
+            } catch (e) {
+                return res.status(400).json({ sucesso: false, erro: "CEP não encontrado. Confira o número digitado." });
+            }
+        } else {
+            return res.status(400).json({ sucesso: false, erro: "Módulo inválido" });
         }
 
         const externalRef = 'pedido_' + Math.random().toString(36).substring(2, 12);
@@ -102,7 +128,7 @@ app.post('/api/pagamento/pix', async (req, res) => {
     }
 });
 
-// WEBHOOK — header e payload corrigidos
+// WEBHOOK
 app.post('/api/webhook/goatpay', (req, res) => {
     const signatureHeader = req.headers['x-goatpay-signature'];
     const eventType = req.headers['x-goatpay-event'];
@@ -130,7 +156,6 @@ app.post('/api/webhook/goatpay', (req, res) => {
 
     const evento = payload.event || eventType;
     const eventData = payload.data || {};
-    // referenceId aqui é o ID da transação na GoatPay (goatpay_id), não o nosso txid
     const goatpayId = eventData.id || eventData.referenceId;
 
     if (db && goatpayId && (evento === 'payment.paid' || eventData.status === 'PAID')) {
@@ -142,7 +167,7 @@ app.post('/api/webhook/goatpay', (req, res) => {
     res.status(200).send('OK');
 });
 
-// STATUS — agora aceita consultar por txid (nosso) OU goatpay_id
+// STATUS
 app.get('/api/pagamento/status/:txid', (req, res) => {
     let status = 'pendente';
     if (db) {
