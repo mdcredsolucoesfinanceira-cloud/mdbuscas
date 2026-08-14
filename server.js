@@ -11,7 +11,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-const GOATPAY_API_KEY = "gp_live_a72b7c637ca2f36be3b5e5599745271d20fc7d5663a7d";
+const GOATPAY_API_KEY = "gp_live_38201e0d636cc281aa189a71a4d562d520988bb75e77c8ca";
 const GOATPAY_ENDPOINT = "https://api.goatpay.com.br/v1/payment-pix/create";
 
 let db = null;
@@ -42,7 +42,7 @@ function salvarBanco() {
     if (db) fs.writeFileSync('./banco.sqlite', Buffer.from(db.export()));
 }
 
-// ROTA DO PIX (Onde o seu estava dando erro)
+// ROTA DO PIX COM A CHAVE NOVA
 app.post('/api/pagamento/pix', async (req, res) => {
     try {
         const externalRef = 'pedido_' + Math.random().toString(36).substring(2, 12);
@@ -54,7 +54,6 @@ app.post('/api/pagamento/pix', async (req, res) => {
             headers: { 'X-API-Key': GOATPAY_API_KEY, 'Content-Type': 'application/json' }
         });
 
-        // Esta lógica garante que o servidor entenda a resposta da GoatPay
         const data = response.data.data || response.data;
         const qrcode = data.copyPaste || data.pixCode || data.qrcode || "";
         const txid = data.txid || externalRef;
@@ -65,19 +64,28 @@ app.post('/api/pagamento/pix', async (req, res) => {
             salvarBanco();
         }
 
-        res.json({ sucesso: true, txid, qrcode: qrcode, qrcode_image: `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrcode)}` });
+        res.json({ 
+            sucesso: true, 
+            txid, 
+            qrcode: qrcode, 
+            qrcode_image: `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrcode)}` 
+        });
     } catch (e) {
-        console.error(e);
+        console.error("Erro na API da Goatpay:", e.response?.data || e.message);
         res.status(500).json({ sucesso: false, erro: "Erro na API da Goatpay" });
     }
 });
 
-// WEBHOOK
+// WEBHOOK DE CONFIRMAÇÃO AUTOMÁTICA
 app.post('/api/webhook/goatpay', (req, res) => {
-    const { status, txid } = req.body;
+    const payload = req.body;
+    const status = payload.status || payload.data?.status;
+    const txid = payload.data?.externalReference || payload.txid;
+
     if (db && txid && (status === 'PAID' || status === 'approved')) {
         db.run("UPDATE pedidos SET status = 'aprovado' WHERE txid = ?", [txid]);
         salvarBanco();
+        console.log(`Pedido ${txid} aprovado via webhook!`);
     }
     res.status(200).send('OK');
 });
@@ -91,7 +99,8 @@ app.get('/api/pagamento/status/:txid', (req, res) => {
         if (stmt.step()) status = stmt.get()[0];
         stmt.free();
     }
-    res.json({ pago: status === 'aprovado' });
+    const isAprovado = ['aprovado', 'paid', 'approved', 'completed', 'sucesso'].includes(status);
+    res.json({ pago: isAprovado, liberadoAdmin: isAprovado });
 });
 
 iniciarBanco().then(() => {
