@@ -9,8 +9,6 @@
     body { background-color: #000; color: #fff; padding: 20px; }
     
     #telaIntro { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; transition: opacity 0.8s; }
-    
-    /* Logo maior e sem nenhum efeito neon ou sombra */
     .intro-logo-img { max-width: 320px; width: 80%; height: auto; object-fit: contain; }
     
     .header { text-align: center; margin-bottom: 30px; }
@@ -19,6 +17,9 @@
     
     .grid-modules { display: flex; flex-direction: column; gap: 12px; max-width: 600px; margin: 0 auto; }
     .card-module { background: #101c2e; border-radius: 12px; padding: 16px; display: flex; align-items: center; justify-content: space-between; border: 1px solid rgba(0,255,204,0.2); }
+    .card-info { display: flex; align-items: center; gap: 12px; font-size: 1.1rem; font-weight: bold; }
+    .card-info span { font-size: 1.4rem; }
+    
     .btn-consultar { background: #00ffcc; color: #000; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; }
     .btn-bloqueado { background: #284b7a; color: #94a3b5; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: not-allowed; }
     
@@ -70,9 +71,47 @@
   </div>
 
   <div class="grid-modules">
-    <div class="card-module"><div>CPF <br><small style="color:red">EM MANUTENÇÃO</small></div><button class="btn-bloqueado">EM BREVE</button></div>
-    <div class="card-module"><div>CNPJ <br><small style="color:green">R$ 10,00</small></div><button class="btn-consultar" onclick="abrirModal('CNPJ')">ACESSAR</button></div>
-    <div class="card-module"><div>CEP <br><small style="color:green">R$ 10,00</small></div><button class="btn-consultar" onclick="abrirModal('CEP')">ACESSAR</button></div>
+    <!-- FUNCIONANDO NO TOPO -->
+    <div class="card-module">
+      <div class="card-info"><span>🏢</span> <div>CNPJ <br><small style="color:green">R$ 10,00</small></div></div>
+      <button class="btn-consultar" onclick="abrirModal('CNPJ')">ACESSAR</button>
+    </div>
+    
+    <div class="card-module">
+      <div class="card-info"><span>📍</span> <div>CEP <br><small style="color:green">R$ 5,00</small></div></div>
+      <button class="btn-consultar" onclick="abrirModal('CEP')">ACESSAR</button>
+    </div>
+
+    <!-- EM MANUTENÇÃO EMBAIXO -->
+    <div class="card-module">
+      <div class="card-info"><span>👤</span> <div>CPF <br><small style="color:red">EM MANUTENÇÃO</small></div></div>
+      <button class="btn-bloqueado">EM BREVE</button>
+    </div>
+
+    <div class="card-module">
+      <div class="card-info"><span>📞</span> <div>TELEFONE <br><small style="color:red">EM MANUTENÇÃO</small></div></div>
+      <button class="btn-bloqueado">EM BREVE</button>
+    </div>
+
+    <div class="card-module">
+      <div class="card-info"><span>🪪</span> <div>NOME <br><small style="color:red">EM MANUTENÇÃO</small></div></div>
+      <button class="btn-bloqueado">EM BREVE</button>
+    </div>
+
+    <div class="card-module">
+      <div class="card-info"><span>🚗</span> <div>PLACA <br><small style="color:red">EM MANUTENÇÃO</small></div></div>
+      <button class="btn-bloqueado">EM BREVE</button>
+    </div>
+
+    <div class="card-module">
+      <div class="card-info"><span>📄</span> <div>RENAVAM <br><small style="color:red">EM MANUTENÇÃO</small></div></div>
+      <button class="btn-bloqueado">EM BREVE</button>
+    </div>
+
+    <div class="card-module">
+      <div class="card-info"><span>🆔</span> <div>CNH <br><small style="color:red">EM MANUTENÇÃO</small></div></div>
+      <button class="btn-bloqueado">EM BREVE</button>
+    </div>
   </div>
 
   <div id="modalConsulta" class="modalConsultas">
@@ -89,7 +128,7 @@
       </div>
 
       <pre id="resultadosDados"></pre>
-      <button class="btn-acao" id="btnGerar" onclick="solicitarPagamento()" style="background:#00ffcc; border:none; padding:10px; width:100%; margin-top:10px; font-weight:bold; border-radius:5px;">Gerar PIX R$ 10,00</button>
+      <button class="btn-acao" id="btnGerar" onclick="solicitarPagamento()" style="background:#00ffcc; border:none; padding:10px; width:100%; margin-top:10px; font-weight:bold; border-radius:5px;">Gerar PIX</button>
       <button class="btn-fechar" onclick="fecharModal()">Fechar</button>
     </div>
   </div>
@@ -119,6 +158,8 @@
     function abrirModal(m) { 
       moduloAtual = m; 
       document.getElementById('modalTitulo').innerText = 'CONSULTA ' + m;
+      let precoTxt = m === 'CEP' ? 'R$ 5,00' : 'R$ 10,00';
+      document.getElementById('btnGerar').innerText = 'Gerar PIX ' + precoTxt;
       document.getElementById('modalConsulta').style.display = 'flex'; 
     }
     
@@ -167,7 +208,7 @@
 
     async function liberarDados() {
       document.getElementById('msgStatus').innerText = '✅ Pagamento confirmado! Buscando dados...';
-      let resBusca = await fetch(`/api/consulta/${txidAtual}`);
+      let resBusca = await fetch(`/api/consulta/${moduloAtual.toLowerCase()}/${txidAtual}`);
       let dataBusca = await resBusca.json();
 
       if (dataBusca.sucesso) {
