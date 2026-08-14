@@ -55,7 +55,7 @@ app.post('/api/pagamento/pix', async (req, res) => {
 
         const data = response.data.data || response.data;
         const qrcode = data.copyPaste || data.pixCode || data.qrcode || "";
-        const txid = data.txid || data.id || externalRef;
+        const txid = data.txid || data.referenceId || data.id || externalRef;
 
         if (db) {
             db.run("INSERT INTO pedidos (txid, modulo, alvo, status, data) VALUES (?, ?, ?, ?, ?)",
@@ -75,26 +75,30 @@ app.post('/api/pagamento/pix', async (req, res) => {
     }
 });
 
-// WEBHOOK BLINDADO (Lê qualquer formato que a GoatPay mandar e nunca dá erro 5xx)
+// WEBHOOK CORRIGIDO (Lê referenceId, id e trata pagamentos ou cancelamentos)
 app.post('/api/webhook/goatpay', (req, res) => {
     try {
         const p = req.body || {};
         console.log("Webhook recebido da GoatPay:", JSON.stringify(p));
 
-        const status = (p.status || p.data?.status || p.event || "").toString().toLowerCase();
-        const txid = p.txid || p.data?.txid || p.externalReference || p.data?.externalReference;
+        const status = (p.status || p.data?.status || "").toString().toLowerCase();
+        // A GoatPay envia o identificador no referenceId, id ou txid
+        const refId = p.referenceId || p.id || p.txid || p.data?.referenceId || p.data?.id || p.data?.txid;
 
-        if (db && txid) {
+        if (db && refId) {
             if (status.includes('paid') || status.includes('approved') || status.includes('sucesso') || status.includes('concluido')) {
-                db.run("UPDATE pedidos SET status = 'aprovado' WHERE txid = ? OR alvo = ?", [txid, txid]);
+                db.run("UPDATE pedidos SET status = 'aprovado' WHERE txid = ? OR alvo = ?", [refId, refId]);
                 salvarBanco();
-                console.log(`SUCESSO: Pedido ${txid} atualizado para APROVADO via Webhook!`);
+                console.log(`SUCESSO: Pedido ${refId} aprovado via Webhook!`);
+            } else if (status.includes('canceled') || status.includes('cancelled') || status.includes('expired')) {
+                db.run("UPDATE pedidos SET status = 'cancelado' WHERE txid = ? OR alvo = ?", [refId, refId]);
+                salvarBanco();
+                console.log(`CANCELADO: Pedido ${refId} marcado como cancelado.`);
             }
         }
     } catch (err) {
         console.log("Erro interno no processamento do webhook:", err.message);
     }
-    // Sempre responde 200 OK para a GoatPay parar de reenviar e dar erro de falha
     return res.status(200).json({ received: true });
 });
 
