@@ -1,74 +1,45 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MD BUSCAS - Painel Admin</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: monospace; }
-        body { background: #050b14; color: #00ffcc; padding: 20px; }
-        h1 { margin-bottom: 20px; text-shadow: 0 0 10px rgba(0,255,204,0.4); font-size: 1.5rem; }
-        .pedido-card { background: #0f1c2e; border: 1px solid #00ffcc; padding: 15px; border-radius: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-        .btn-aprovar { background: #25d366; color: #050b14; border: none; padding: 10px 20px; font-weight: bold; cursor: pointer; border-radius: 5px; font-size: 0.9rem; }
-        .btn-aprovar:hover { background: #20ba5a; }
-        .info-pedido { font-size: 0.9rem; line-height: 1.5; color: #fff; }
-        .info-pedido b { color: #00ffcc; }
-    </style>
+  <meta charset="UTF-8">
+  <title>Painel Admin - MD BUSCAS</title>
+  <style>
+    body { background: #000; color: #fff; font-family: sans-serif; padding: 20px; }
+    .card { border: 1px solid #00ffcc; padding: 15px; margin-bottom: 10px; border-radius: 8px; }
+  </style>
 </head>
 <body>
-    <h1>[ PAINEL ADMIN - CONSULTAS PENDENTES ]</h1>
-    <p style="color: #8a99ad; margin-bottom: 20px; font-size: 0.85rem;">Os pedidos aparecem aqui assim que o cliente clica no botão de enviar o comprovante no WhatsApp.</p>
-    
-    <div id="listaPedidos">Carregando pedidos...</div>
+    <h1>[ PAINEL ADMIN ]</h1>
+    <p>Monitorando pagamentos em tempo real...</p>
+    <div id="listaPedidos">Carregando...</div>
 
     <script>
+        // Função que busca os pedidos no servidor
         async function carregarPedidos() {
             try {
                 let res = await fetch('/api/admin/pedidos');
-                let pedidos = await res.json();
-                let div = document.getElementById('listaPedidos');
+                let lista = await res.json();
+                let container = document.getElementById('listaPedidos');
                 
-                if(pedidos.length === 0) {
-                    div.innerHTML = '<p style="color: #8a99ad;">Nenhum pedido pendente no momento.</p>';
+                // Se a lista estiver vazia, avisa que não tem nada pendente
+                if(!lista || lista.length === 0) {
+                    container.innerHTML = '<p>Nenhum pedido pendente.</p>';
                     return;
                 }
 
-                div.innerHTML = '';
-                pedidos.forEach(p => {
-                    div.innerHTML += `
-                        <div class="pedido-card">
-                            <div class="info-pedido">
-                                <b>Módulo:</b> ${p.modulo} | <b>Alvo:</b> ${p.alvo}<br>
-                                <b>ID/TXID:</b> ${p.txid} | <b>Hora:</b> ${p.data}<br>
-                                <b>Status:</b> <span style="color: ${p.status === 'pendente' ? '#ffaa00' : '#25d366'}">${p.status.toUpperCase()}</span>
-                            </div>
-                            <div>
-                                ${p.status === 'pendente' ? `<button class="btn-aprovar" onclick="liberar('${p.txid}')">LIBERAR CONSULTA</button>` : '<span style="color: #25d366; font-weight: bold;">APROVADO ✅</span>'}
-                            </div>
-                        </div>
-                    `;
-                });
-            } catch(e) {
-                console.log("Erro ao carregar admin");
-            }
+                // Renderiza os pedidos pendentes
+                container.innerHTML = lista.map(p => `
+                    <div class="card">
+                        ID: ${p.txid} | Alvo: ${p.alvo} <br>
+                        Status: <span style="color:orange">AGUARDANDO PAGAMENTO</span>
+                    </div>
+                `).join('');
+            } catch (e) { console.error(e); }
         }
 
-        async function liberar(txid) {
-            let res = await fetch('/api/admin/liberar', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ txid })
-            });
-            let data = await res.json();
-            if(data.sucesso) {
-                alert('✅ Consulta liberada com sucesso para o cliente!');
-                carregarPedidos();
-            } else {
-                alert('❌ Erro ao liberar.');
-            }
-        }
-
-        // Atualiza a cada 3 segundos automaticamente
+        // O SEGREDO: Atualiza a lista a cada 3 segundos
+        // Assim que o Webhook do servidor mudar o status para 'aprovado',
+        // o servidor deixa de enviar esse pedido para a lista, e ele some da tela sozinho!
         setInterval(carregarPedidos, 3000);
         carregarPedidos();
     </script>
