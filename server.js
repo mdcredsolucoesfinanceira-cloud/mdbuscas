@@ -60,12 +60,15 @@ app.post('/api/pagamento/pix', async (req, res) => {
             headers: { 'X-API-Key': GOATPAY_API_KEY, 'Content-Type': 'application/json' }
         });
 
-        const respData = respostaGoat.data;
-        const dados = respData.data || respData;
-        const qrcodeCopiaColula = dados.copyPaste || dados.qrCodeCopyPaste || dados.pixCode || dados.pix_code;
-        const txid = dados.txid || dados.id || externalRef;
+        const d = respostaGoat.data.data || respostaGoat.data;
+        
+        const qrcodeCopiaCola = d.copyPaste || d.qrCodeCopyPaste || d.pixCode || d.pix_code || d.qrcode;
+        const qrCodeUrl = d.qrCodeUrl || d.encodedImage || d.qrCodeImage || `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrcodeCopiaCola)}`;
+        const txid = d.txid || d.id || externalRef;
 
-        if (!qrcodeCopiaColula) return res.status(500).json({ sucesso: false, erro: "Erro ao extrair o QR Code." });
+        if (!qrcodeCopiaCola) {
+            return res.status(500).json({ sucesso: false, erro: "A GoatPay não retornou o código Pix." });
+        }
 
         if (db) {
             db.run(`INSERT INTO pedidos (txid, modulo, alvo, status, data) VALUES (?, ?, ?, ?, ?)`,
@@ -73,8 +76,14 @@ app.post('/api/pagamento/pix', async (req, res) => {
             salvarBanco();
         }
 
-        res.json({ sucesso: true, txid: txid, qrcode: qrcodeCopiaColula, qrcode_image: dados.qrCodeUrl || `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrcodeCopiaColula)}` });
+        res.json({ 
+            sucesso: true, 
+            txid: txid, 
+            qrcode: qrcodeCopiaCola, 
+            qrcode_image: qrCodeUrl 
+        });
     } catch (err) {
+        console.error("Erro na API da Goatpay:", err.response?.data || err.message);
         res.status(500).json({ sucesso: false, erro: "Erro ao gerar Pix na Goatpay." });
     }
 });
@@ -89,7 +98,6 @@ app.post('/api/notificar-whatsapp', async (req, res) => {
     res.json({ sucesso: true });
 });
 
-// WEBHOOK ATUALIZADO PARA ACEITAR A CONFIRMAÇÃO DA GOATPAY AUTOMATICAMENTE
 app.post('/api/webhook/goatpay', async (req, res) => {
     const payload = req.body;
     const statusPagamento = payload.status || payload.data?.status;
