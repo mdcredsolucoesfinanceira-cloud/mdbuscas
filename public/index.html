@@ -153,7 +153,7 @@
       }, 5000);
     });
 
-    let txidAtual = '', intervalChecagem, moduloAtual = '', ultimoResultadoTexto = '';
+    let txidAtual = '', intervalChecagem, moduloAtual = '', ultimoResultadoTexto = '', alvoSalvo = '';
 
     function abrirModal(m) { 
       moduloAtual = m; 
@@ -169,13 +169,13 @@
     }
 
     async function solicitarPagamento() {
-      let alvo = document.getElementById('inputAlvo').value;
-      if(!alvo) return alert('Digite o dado!');
+      alvoSalvo = document.getElementById('inputAlvo').value;
+      if(!alvoSalvo) return alert('Digite o dado!');
       
       let res = await fetch('/api/pagamento/pix', { 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ modulo: moduloAtual, alvo: alvo })
+        body: JSON.stringify({ modulo: moduloAtual, alvo: alvoSalvo })
       });
       let data = await res.json();
 
@@ -208,11 +208,14 @@
 
     async function liberarDados() {
       document.getElementById('msgStatus').innerText = '✅ Pagamento confirmado! Buscando dados...';
-      let resBusca = await fetch(`/api/consulta/${moduloAtual.toLowerCase()}/${txidAtual}`);
+      let limpo = alvoSalvo.replace(/\D/g, '');
+      let rota = moduloAtual.toLowerCase() === 'cnpj' ? `/api/consulta/cnpj/${limpo}` : `/api/consulta/cep/${limpo}`;
+      
+      let resBusca = await fetch(rota);
       let dataBusca = await resBusca.json();
 
       if (dataBusca.sucesso) {
-        ultimoResultadoTexto = JSON.stringify(dataBusca.dados, null, 2);
+        ultimoResultadoTexto = JSON.stringify(dataBusca.dados || dataBusca, null, 2);
         document.getElementById('resultadoConteudoFull').innerText = ultimoResultadoTexto;
         fecharModal();
         document.getElementById('telaResultado').style.display = 'flex';
