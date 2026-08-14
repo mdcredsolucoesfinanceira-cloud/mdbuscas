@@ -2,14 +2,21 @@ const express = require('express');
 const path = require('path');
 const axios = require('axios');
 const fs = require('fs');
+const crypto = require('crypto');
 const initSqlJs = require('sql.js');
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+const GOATPAY_API_KEY = process.env.GOATPAY_API_KEY;
+const GOATPAY_WEBHOOK_SECRET = process.env.GOATPAY_WEBHOOK_SECRET;
+const GOATPAY_ENDPOINT = "https://api.goatpay.com.br/v1/payment-pix/create";
+
+// Captura o raw body só na rota do webhook, ANTES do parse em JSON
+app.use('/api/webhook/goatpay', express.raw({ type: '*/*' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
-const GOATPAY_API_KEY = process.env.GOATPAY_API_KEY;
-const GOATPAY_ENDPOINT = "https://api.goatpay.com.br/v1/payment-pix/create";
+
 let db = null;
 
 async function iniciarBanco() {
@@ -39,6 +46,18 @@ function salvarBanco() {
     if (db) fs.writeFileSync('./banco.sqlite', Buffer.from(db.export()));
 }
 
+function verificarAssinaturaGoatPay(rawBody, signatureHeader, secret) {
+    if (!signatureHeader || !signatureHeader.startsWith("sha256=")) return false;
+    const received = signatureHeader.slice("sha256=".length);
+    const expected = crypto
+        .createHmac("sha256", secret)
+        .update(rawBody)
+        .digest("hex");
+    const a = Buffer.from(expected, "hex");
+    const b = Buffer.from(received, "hex");
+    return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
 // ROTA DO PIX
 app.post('/api/pagamento/pix', async (req, res) => {
     try {
@@ -59,8 +78,6 @@ app.post('/api/pagamento/pix', async (req, res) => {
         const data = response.data.data || response.data;
         const copyPaste = data.copyPaste || "";
         const goatpayId = data.id || "";
-
-        // usa a imagem que a GoatPay já manda pronta; só usa qrserver como fallback
         const qrcodeImage = data.qrCodeImage 
             ? data.qrCodeImage 
             : `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(copyPaste)}`;
@@ -83,17 +100,39 @@ app.post('/api/pagamento/pix', async (req, res) => {
     }
 });
 
-// WEBHOOK DE CONFIRMAÇÃO AUTOMÁTICA
+// WEBHOOK — agora com validação de assinatura
 app.post('/api/webhook/goatpay', (req, res) => {
-    const payload = req.body;
-    console.log("Webhook recebido:", JSON.stringify(payload));
+    const signatureHeader = req.headers['x-signature'] || req.headers['signature'];
+    const rawBody = req.body; // Buffer, por causa do express.raw()
+
+    if (!GOATPAY_WEBHOOK_SECRET) {
+        console.error("GOATPAY_WEBHOOK_SECRET não configurado — recusando webhook.");
+        return res.status(500).send('Webhook secret não configurado');
+    }
+
+    const valido = verificarAssinaturaGoatPay(rawBody, signatureHeader, GOATPAY_WEBHOOK_SECRET);
+    if (!valido) {
+        console.warn("Webhook com assinatura inválida — recusado.");
+        return res.status(401).send('Assinatura inválida');
+    }
+
+    let payload;
+    try {
+        payload = JSON.parse(rawBody.toString('utf8'));
+    } catch (e) {
+        return res.status(400).send('JSON inválido');
+    }
+
+    console.log("Webhook válido recebido:", JSON.stringify(payload));
     const status = payload.status || payload.data?.status;
     const txid = payload.data?.externalReference || payload.externalReference || payload.txid;
+
     if (db && txid && (status === 'PAID' || status === 'approved' || status === 'CONFIRMED')) {
         db.run("UPDATE pedidos SET status = 'aprovado' WHERE txid = ?", [txid]);
         salvarBanco();
         console.log(`Pedido ${txid} aprovado via webhook!`);
     }
+
     res.status(200).send('OK');
 });
 
@@ -149,7 +188,7 @@ app.get('/api/consulta/:txid', async (req, res) => {
     }
 });
 
-// ROTA ADMIN — liberação manual (placeholder, vamos completar com a página admin)
+// ROTA ADMIN — liberação manual (placeholder até vermos a página admin)
 app.post('/api/admin/aprovar/:txid', (req, res) => {
     if (db) {
         db.run("UPDATE pedidos SET status = 'aprovado' WHERE txid = ?", [req.params.txid]);
