@@ -42,7 +42,6 @@ function salvarBanco() {
     if (db) fs.writeFileSync('./banco.sqlite', Buffer.from(db.export()));
 }
 
-// ROTA DO PIX COM A CHAVE NOVA
 app.post('/api/pagamento/pix', async (req, res) => {
     try {
         const externalRef = 'pedido_' + Math.random().toString(36).substring(2, 12);
@@ -56,7 +55,7 @@ app.post('/api/pagamento/pix', async (req, res) => {
 
         const data = response.data.data || response.data;
         const qrcode = data.copyPaste || data.pixCode || data.qrcode || "";
-        const txid = data.txid || externalRef;
+        const txid = data.txid || data.id || externalRef;
 
         if (db) {
             db.run("INSERT INTO pedidos (txid, modulo, alvo, status, data) VALUES (?, ?, ?, ?, ?)",
@@ -72,34 +71,57 @@ app.post('/api/pagamento/pix', async (req, res) => {
         });
     } catch (e) {
         console.error("Erro na API da Goatpay:", e.response?.data || e.message);
-        res.status(500).json({ sucesso: false, erro: "Erro na API da Goatpay" });
+        res.status(500).json({ sucesso: false, erro: "Erro na API da goatpay" });
     }
 });
 
-// WEBHOOK DE CONFIRMAÇÃO AUTOMÁTICA
+// WEBHOOK BLINDADO (Lê qualquer formato que a GoatPay mandar e nunca dá erro 5xx)
 app.post('/api/webhook/goatpay', (req, res) => {
-    const payload = req.body;
-    const status = payload.status || payload.data?.status;
-    const txid = payload.data?.externalReference || payload.txid;
+    try {
+        const p = req.body || {};
+        console.log("Webhook recebido da GoatPay:", JSON.stringify(p));
 
-    if (db && txid && (status === 'PAID' || status === 'approved')) {
-        db.run("UPDATE pedidos SET status = 'aprovado' WHERE txid = ?", [txid]);
-        salvarBanco();
-        console.log(`Pedido ${txid} aprovado via webhook!`);
+        const status = (p.status || p.data?.status || p.event || "").toString().toLowerCase();
+        const txid = p.txid || p.data?.txid || p.externalReference || p.data?.externalReference;
+
+        if (db && txid) {
+            if (status.includes('paid') || status.includes('approved') || status.includes('sucesso') || status.includes('concluido')) {
+                db.run("UPDATE pedidos SET status = 'aprovado' WHERE txid = ? OR alvo = ?", [txid, txid]);
+                salvarBanco();
+                console.log(`SUCESSO: Pedido ${txid} atualizado para APROVADO via Webhook!`);
+            }
+        }
+    } catch (err) {
+        console.log("Erro interno no processamento do webhook:", err.message);
     }
-    res.status(200).send('OK');
+    // Sempre responde 200 OK para a GoatPay parar de reenviar e dar erro de falha
+    return res.status(200).json({ received: true });
 });
 
-// STATUS PARA O FRONTEND
+app.get('/api/admin/pedidos', (req, res) => {
+    if (!db) return res.json([]);
+    const result = db.exec(`SELECT * FROM pedidos WHERE status = 'pendente'`);
+    if (result.length === 0) return res.json([]);
+    let rows = [];
+    let cols = result[0].columns;
+    result[0].values.forEach(row => {
+        let obj = {};
+        cols.forEach((col, idx) => { obj[col] = row[idx]; });
+        rows.push(obj);
+    });
+    res.json(rows);
+});
+
 app.get('/api/pagamento/status/:txid', (req, res) => {
+    const txid = req.params.txid;
     let status = 'pendente';
     if (db) {
-        let stmt = db.prepare("SELECT status FROM pedidos WHERE txid = ?");
-        stmt.bind([req.params.txid]);
+        let stmt = db.prepare("SELECT status FROM pedidos WHERE txid = ? OR alvo = ?");
+        stmt.bind([txid, txid]);
         if (stmt.step()) status = stmt.get()[0];
         stmt.free();
     }
-    const isAprovado = ['aprovado', 'paid', 'approved', 'completed', 'sucesso'].includes(status);
+    const isAprovado = ['aprovado', 'paid', 'approved', 'completed', 'sucesso'].includes(String(status).toLowerCase().trim());
     res.json({ pago: isAprovado, liberadoAdmin: isAprovado });
 });
 
