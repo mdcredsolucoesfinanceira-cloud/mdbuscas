@@ -10,6 +10,7 @@ const PORT = process.env.PORT || 3000;
 const GOATPAY_API_KEY = process.env.GOATPAY_API_KEY;
 const GOATPAY_WEBHOOK_SECRET = process.env.GOATPAY_WEBHOOK_SECRET;
 const GOATPAY_ENDPOINT = "https://api.goatpay.com.br/v1/payment-pix/create";
+const VALOR_CONSULTA = 10.00;
 
 app.use('/api/webhook/goatpay', express.raw({ type: '*/*' }));
 app.use(express.json());
@@ -60,6 +61,10 @@ function verificarAssinaturaGoatPay(rawBody, signatureHeader, secret) {
     return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
+function statusAprovado(status) {
+    return ['aprovado', 'paid', 'approved', 'completed', 'sucesso'].includes(status);
+}
+
 // ROTA DO PIX — valida o dado ANTES de cobrar
 app.post('/api/pagamento/pix', async (req, res) => {
     try {
@@ -96,7 +101,7 @@ app.post('/api/pagamento/pix', async (req, res) => {
 
         const externalRef = 'pedido_' + Math.random().toString(36).substring(2, 12);
         const response = await axios.post(GOATPAY_ENDPOINT, {
-            amount: 10.00,
+            amount: VALOR_CONSULTA,
             description: "Consulta MD BUSCAS",
             externalReference: externalRef
         }, {
@@ -176,8 +181,7 @@ app.get('/api/pagamento/status/:txid', (req, res) => {
         if (stmt.step()) status = stmt.get()[0];
         stmt.free();
     }
-    const isAprovado = ['aprovado', 'paid', 'approved', 'completed', 'sucesso'].includes(status);
-    res.json({ pago: isAprovado, liberadoAdmin: isAprovado });
+    res.json({ pago: statusAprovado(status), liberadoAdmin: statusAprovado(status) });
 });
 
 // CONSULTA
@@ -194,8 +198,7 @@ app.get('/api/consulta/:txid', async (req, res) => {
     const [modulo, alvo, status] = stmt.get();
     stmt.free();
 
-    const aprovado = ['aprovado', 'paid', 'approved', 'completed', 'sucesso'].includes(status);
-    if (!aprovado) {
+    if (!statusAprovado(status)) {
         return res.status(403).json({ sucesso: false, erro: "Pagamento ainda não confirmado" });
     }
 
@@ -219,6 +222,19 @@ app.get('/api/consulta/:txid', async (req, res) => {
     }
 });
 
+// ADMIN — lista todos os pedidos
+app.get('/api/admin/pedidos', (req, res) => {
+    if (!db) return res.status(500).json({ sucesso: false, erro: "Banco indisponível" });
+    let resultado = [];
+    let stmt = db.prepare("SELECT txid, modulo, alvo, status, data FROM pedidos ORDER BY id DESC LIMIT 200");
+    while (stmt.step()) {
+        const [txid, modulo, alvo, status, data] = stmt.get();
+        resultado.push({ txid, modulo, alvo, status, data });
+    }
+    stmt.free();
+    res.json(resultado);
+});
+
 // ADMIN — aprovação manual
 app.post('/api/admin/aprovar/:txid', (req, res) => {
     if (db) {
@@ -226,6 +242,56 @@ app.post('/api/admin/aprovar/:txid', (req, res) => {
         salvarBanco();
     }
     res.json({ sucesso: true });
+});
+
+// ADMIN — estatísticas / dashboard
+app.get('/api/admin/estatisticas', (req, res) => {
+    if (!db) return res.status(500).json({ sucesso: false, erro: "Banco indisponível" });
+
+    let stmt = db.prepare("SELECT modulo, status, data FROM pedidos");
+    const todos = [];
+    while (stmt.step()) {
+        const [modulo, status, data] = stmt.get();
+        todos.push({ modulo, status, data });
+    }
+    stmt.free();
+
+    const aprovados = todos.filter(p => statusAprovado(p.status));
+    const pendentes = todos.filter(p => !statusAprovado(p.status));
+
+    const porModulo = {};
+    aprovados.forEach(p => {
+        const m = (p.modulo || 'OUTRO').toUpperCase();
+        porModulo[m] = (porModulo[m] || 0) + 1;
+    });
+
+    // Agrupa por dia (extrai a parte da data antes da vírgula do toLocaleString)
+    const porDiaMap = {};
+    aprovados.forEach(p => {
+        const diaStr = (p.data || '').split(',')[0].trim() || 'Data desconhecida';
+        if (!porDiaMap[diaStr]) porDiaMap[diaStr] = 0;
+        porDiaMap[diaStr] += 1;
+    });
+    const porDia = Object.entries(porDiaMap)
+        .map(([dia, quantidade]) => ({ dia, quantidade, receita: quantidade * VALOR_CONSULTA }))
+        .sort((a, b) => {
+            // ordena por data (formato dd/mm/aaaa)
+            const [da, ma, aa] = a.dia.split('/');
+            const [db_, mb, ab] = b.dia.split('/');
+            if (!da || !db_) return 0;
+            return new Date(`${ab}-${mb}-${db_}`) - new Date(`${aa}-${ma}-${da}`);
+        });
+
+    res.json({
+        sucesso: true,
+        totalPedidos: todos.length,
+        totalAprovados: aprovados.length,
+        totalPendentes: pendentes.length,
+        receitaTotal: aprovados.length * VALOR_CONSULTA,
+        valorConsulta: VALOR_CONSULTA,
+        porModulo,
+        porDia
+    });
 });
 
 iniciarBanco().then(() => {
