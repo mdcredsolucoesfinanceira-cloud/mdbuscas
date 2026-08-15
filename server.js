@@ -41,8 +41,6 @@ async function iniciarBanco() {
         } catch (e) { /* já existe */ }
         salvarBanco();
         console.log("Banco SQLite carregado.");
-        console.log("DEBUG - GOATPAY_WEBHOOK_SECRET está definido?", !!GOATPAY_WEBHOOK_SECRET);
-        console.log("DEBUG - tamanho do secret carregado:", GOATPAY_WEBHOOK_SECRET ? GOATPAY_WEBHOOK_SECRET.length : 0);
     } catch (e) { console.log("Erro banco:", e); }
 }
 
@@ -57,8 +55,6 @@ function verificarAssinaturaGoatPay(rawBody, signatureHeader, secret) {
         .createHmac("sha256", secret)
         .update(rawBody)
         .digest("hex");
-    console.log("DEBUG - assinatura esperada:", expected);
-    console.log("DEBUG - assinatura recebida:", received);
     const a = Buffer.from(expected, "hex");
     const b = Buffer.from(received, "hex");
     return a.length === b.length && crypto.timingSafeEqual(a, b);
@@ -137,8 +133,6 @@ app.post('/api/webhook/goatpay', (req, res) => {
     const signatureHeader = req.headers['x-goatpay-signature'];
     const eventType = req.headers['x-goatpay-event'];
     const rawBody = req.body;
-
-    console.log("DEBUG - header recebido:", signatureHeader);
 
     if (!GOATPAY_WEBHOOK_SECRET) {
         console.error("GOATPAY_WEBHOOK_SECRET não configurado — recusando webhook.");
