@@ -1,52 +1,8 @@
-<a href="#" onclick="fetch('/api/logout',{method:'POST'}).then(()=>location.href='/login.html')" style="color:#94a3b5;font-size:0.8rem;">← Sair</a><!DOCTYPE html>
-<html lang="pt-BR">
+<!DOCTYPE html>
+<html>
 <head>
   <meta charset="UTF-8">
-  <title>Painel Admin - MD BUSCAS</title>
-  <style>
-    body { background: #000; color: #fff; font-family: sans-serif; padding: 20px; }
-    .card { border: 1px solid #00ffcc; padding: 15px; margin-bottom: 10px; border-radius: 8px; }
-    button { background: #00ffcc; color: #000; border: none; padding: 10px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; border-radius: 5px; }
-    button:hover { background: #00b38f; }
-  </style>
+  <meta http-equiv="refresh" content="0; url=/dashboard.html">
 </head>
-<body>
-    <h1>[ PAINEL ADMIN ]</h1>
-    <p>Aprove os pagamentos após confirmar na sua conta:</p>
-    <div id="listaPedidos">Carregando...</div>
-
-    <script>
-        async function carregarPedidos() {
-            try {
-                let res = await fetch('/api/admin/pedidos');
-                let lista = await res.json();
-                let container = document.getElementById('listaPedidos');
-                
-                if(!lista || lista.length === 0) {
-                    container.innerHTML = '<p>Nenhum pedido pendente no momento.</p>';
-                    return;
-                }
-
-                container.innerHTML = lista.map(p => `
-                    <div class="card">
-                        <b>ID do Pedido:</b> ${p.txid} <br>
-                        <b>Referência:</b> ${p.alvo} <br>
-                        <b>Data:</b> ${p.data} <br>
-                        <button onclick="aprovarPedido('${p.txid}')">APROVAR PAGAMENTO ✅</button>
-                    </div>
-                `).join('');
-            } catch (e) { console.error(e); }
-        }
-
-        async function aprovarPedido(txid) {
-            if(confirm("Tem certeza que o Pix caiu na conta e deseja liberar?")) {
-                await fetch('/api/admin/aprovar/' + txid);
-                carregarPedidos();
-            }
-        }
-
-        setInterval(carregarPedidos, 3000);
-        carregarPedidos();
-    </script>
-</body>
+<body></body>
 </html>

@@ -17,9 +17,6 @@ const ADMIN_USER = process.env.ADMIN_USER;
 const ADMIN_PASS = process.env.ADMIN_PASS;
 const SESSION_SECRET = process.env.SESSION_SECRET || 'mude_essa_chave_no_render';
 
-console.log("DEBUG - ADMIN_USER definido?", !!ADMIN_USER, "| valor:", JSON.stringify(ADMIN_USER));
-console.log("DEBUG - ADMIN_PASS definido?", !!ADMIN_PASS, "| tamanho:", ADMIN_PASS ? ADMIN_PASS.length : 0);
-
 app.use('/api/webhook/goatpay', express.raw({ type: '*/*' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -94,7 +91,6 @@ function exigirLogin(req, res, next) {
 // LOGIN
 app.post('/api/login', (req, res) => {
     const { usuario, senha } = req.body;
-    console.log("DEBUG - tentativa de login. usuario recebido:", JSON.stringify(usuario), "| senha recebida (tamanho):", senha ? senha.length : 0);
     if (!ADMIN_USER || !ADMIN_PASS) {
         return res.status(500).json({ sucesso: false, erro: "Login não configurado no servidor" });
     }

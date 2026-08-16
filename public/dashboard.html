@@ -3,12 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard - MD BUSCAS</title>
+  <title>Painel Admin - MD BUSCAS</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
     body { background: #000; color: #fff; padding: 20px; }
     h1 { color: #00ffcc; font-size: 1.4rem; margin-bottom: 4px; }
     .subtitulo { color: #94a3b5; font-size: 0.8rem; margin-bottom: 20px; }
+
+    .topo { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .topo a { color: #94a3b5; font-size: 0.8rem; text-decoration: none; }
+
+    #btnAtualizar {
+      background: #284b7a; color: #fff; border: none; padding: 8px 14px;
+      border-radius: 6px; cursor: pointer; margin-bottom: 20px;
+    }
 
     .cards-resumo {
       display: grid;
@@ -22,73 +30,48 @@
       border-radius: 10px;
       padding: 14px;
     }
-    .card-resumo .valor {
-      font-size: 1.5rem;
-      font-weight: bold;
-      color: #00ffcc;
-    }
-    .card-resumo .rotulo {
-      font-size: 0.75rem;
-      color: #94a3b5;
-      margin-top: 4px;
-    }
+    .card-resumo .valor { font-size: 1.5rem; font-weight: bold; color: #00ffcc; }
+    .card-resumo .rotulo { font-size: 0.75rem; color: #94a3b5; margin-top: 4px; }
 
-    .secao {
-      margin-bottom: 25px;
-    }
-    .secao h2 {
-      font-size: 1rem;
-      color: #00ffcc;
-      margin-bottom: 10px;
-    }
+    .secao { margin-bottom: 25px; }
+    .secao h2 { font-size: 1rem; color: #00ffcc; margin-bottom: 10px; }
 
-    .barra-modulo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 8px;
-      font-size: 0.85rem;
-    }
+    .barra-modulo { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 0.85rem; }
     .barra-modulo .nome { width: 70px; flex-shrink: 0; }
-    .barra-modulo .trilha {
-      flex: 1;
-      background: #101c2e;
-      border-radius: 4px;
-      height: 18px;
-      overflow: hidden;
-    }
-    .barra-modulo .preenchimento {
-      background: #00ffcc;
-      height: 100%;
-    }
+    .barra-modulo .trilha { flex: 1; background: #101c2e; border-radius: 4px; height: 18px; overflow: hidden; }
+    .barra-modulo .preenchimento { background: #00ffcc; height: 100%; }
     .barra-modulo .qtd { width: 40px; text-align: right; flex-shrink: 0; }
 
     table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
     th, td { padding: 8px; text-align: left; border-bottom: 1px solid #222; }
     th { color: #00ffcc; }
 
-    #btnAtualizar {
-      background: #284b7a; color: #fff; border: none; padding: 8px 14px;
-      border-radius: 6px; cursor: pointer; margin-bottom: 20px;
+    .card-pedido {
+      border: 1px solid #00ffcc; padding: 15px; margin-bottom: 10px; border-radius: 8px;
+      font-size: 0.85rem;
     }
-
-    .links-topo { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-    .links-topo a { color: #94a3b5; font-size: 0.8rem; text-decoration: none; }
+    .card-pedido.aprovado { border-color: #2ecc71; opacity: 0.7; }
+    .selo-aprovado { color: #2ecc71; font-weight: bold; display: block; margin-top: 10px; }
+    .btn-aprovar {
+      background: #00ffcc; color: #000; border: none; padding: 10px; cursor: pointer;
+      font-weight: bold; width: 100%; margin-top: 10px; border-radius: 5px;
+    }
+    .btn-aprovar:hover { background: #00b38f; }
   </style>
 </head>
 <body>
 
-  <div class="links-topo">
-    <h1>📊 Dashboard MD BUSCAS</h1>
-    <a href="/admin.html">Ir para Painel de Aprovação →</a>
+  <div class="topo">
+    <h1>[ PAINEL MD BUSCAS ]</h1>
+    <a href="#" onclick="fetch('/api/logout',{method:'POST'}).then(()=>location.href='/login.html')">← Sair</a>
   </div>
-  <p class="subtitulo">Visão geral de consultas e receita</p>
+  <p class="subtitulo">Aprovação de pedidos e estatísticas</p>
 
   <button id="btnAtualizar" onclick="carregar()">Atualizar</button>
 
   <div class="cards-resumo">
     <div class="card-resumo">
-<a href="#" onclick="fetch('/api/logout',{method:'POST'}).then(()=>location.href='/login.html')" style="color:#94a3b5;font-size:0.8rem;">← Sair</a>      <div class="valor" id="valReceita">R$ 0,00</div>
+      <div class="valor" id="valReceita">R$ 0,00</div>
       <div class="rotulo">Receita total (aprovados)</div>
     </div>
     <div class="card-resumo">
@@ -113,48 +96,77 @@
   <div class="secao">
     <h2>Histórico por dia</h2>
     <table>
-      <thead>
-        <tr><th>Data</th><th>Consultas</th><th>Receita</th></tr>
-      </thead>
+      <thead><tr><th>Data</th><th>Consultas</th><th>Receita</th></tr></thead>
       <tbody id="corpoPorDia"></tbody>
     </table>
   </div>
 
+  <div class="secao">
+    <h2>Pedidos — Aprovar pagamentos</h2>
+    <div id="listaPedidos">Carregando...</div>
+  </div>
+
   <script>
-    async function carregar() {
+    async function carregarEstatisticas() {
+      const res = await fetch('/api/admin/estatisticas');
+      const d = await res.json();
+      if (!d.sucesso) return;
+
+      document.getElementById('valReceita').innerText = 'R$ ' + d.receitaTotal.toFixed(2).replace('.', ',');
+      document.getElementById('valAprovados').innerText = d.totalAprovados;
+      document.getElementById('valPendentes').innerText = d.totalPendentes;
+      document.getElementById('valTotal').innerText = d.totalPedidos;
+
+      const maxModulo = Math.max(1, ...Object.values(d.porModulo));
+      document.getElementById('porModulo').innerHTML = Object.entries(d.porModulo).map(([nome, qtd]) => `
+        <div class="barra-modulo">
+          <div class="nome">${nome}</div>
+          <div class="trilha"><div class="preenchimento" style="width:${(qtd / maxModulo) * 100}%"></div></div>
+          <div class="qtd">${qtd}</div>
+        </div>
+      `).join('') || '<p style="color:#94a3b5;font-size:0.85rem;">Nenhuma consulta aprovada ainda.</p>';
+
+      document.getElementById('corpoPorDia').innerHTML = d.porDia.map(item => `
+        <tr><td>${item.dia}</td><td>${item.quantidade}</td><td>R$ ${item.receita.toFixed(2).replace('.', ',')}</td></tr>
+      `).join('') || '<tr><td colspan="3" style="color:#94a3b5;">Sem dados ainda.</td></tr>';
+    }
+
+    async function carregarPedidos() {
       try {
-        const res = await fetch('/api/admin/estatisticas');
-        const d = await res.json();
-        if (!d.sucesso) return;
+        let res = await fetch('/api/admin/pedidos');
+        let lista = await res.json();
+        let container = document.getElementById('listaPedidos');
+        if (!lista || lista.length === 0) {
+          container.innerHTML = '<p>Nenhum pedido no momento.</p>';
+          return;
+        }
+        container.innerHTML = lista.map(p => {
+          const aprovado = ['aprovado','paid','approved','completed','sucesso'].includes(p.status);
+          return `
+            <div class="card-pedido ${aprovado ? 'aprovado' : ''}">
+              <b>ID do Pedido:</b> ${p.txid} <br>
+              <b>Módulo:</b> ${p.modulo || '-'} <br>
+              <b>Referência:</b> ${p.alvo} <br>
+              <b>Data:</b> ${p.data} <br>
+              ${aprovado
+                ? '<span class="selo-aprovado">✅ Aprovado</span>'
+                : `<button class="btn-aprovar" onclick="aprovarPedido('${p.txid}')">APROVAR PAGAMENTO ✅</button>`
+              }
+            </div>`;
+        }).join('');
+      } catch (e) { console.error(e); }
+    }
 
-        document.getElementById('valReceita').innerText =
-          'R$ ' + d.receitaTotal.toFixed(2).replace('.', ',');
-        document.getElementById('valAprovados').innerText = d.totalAprovados;
-        document.getElementById('valPendentes').innerText = d.totalPendentes;
-        document.getElementById('valTotal').innerText = d.totalPedidos;
-
-        const maxModulo = Math.max(1, ...Object.values(d.porModulo));
-        const porModuloDiv = document.getElementById('porModulo');
-        porModuloDiv.innerHTML = Object.entries(d.porModulo).map(([nome, qtd]) => `
-          <div class="barra-modulo">
-            <div class="nome">${nome}</div>
-            <div class="trilha"><div class="preenchimento" style="width:${(qtd / maxModulo) * 100}%"></div></div>
-            <div class="qtd">${qtd}</div>
-          </div>
-        `).join('') || '<p style="color:#94a3b5;font-size:0.85rem;">Nenhuma consulta aprovada ainda.</p>';
-
-        const corpoPorDia = document.getElementById('corpoPorDia');
-        corpoPorDia.innerHTML = d.porDia.map(item => `
-          <tr>
-            <td>${item.dia}</td>
-            <td>${item.quantidade}</td>
-            <td>R$ ${item.receita.toFixed(2).replace('.', ',')}</td>
-          </tr>
-        `).join('') || '<tr><td colspan="3" style="color:#94a3b5;">Sem dados ainda.</td></tr>';
-
-      } catch (e) {
-        console.error(e);
+    async function aprovarPedido(txid) {
+      if (confirm("Tem certeza que o Pix caiu na conta e deseja liberar?")) {
+        await fetch('/api/admin/aprovar/' + txid, { method: 'POST' });
+        carregar();
       }
+    }
+
+    function carregar() {
+      carregarEstatisticas();
+      carregarPedidos();
     }
 
     carregar();
