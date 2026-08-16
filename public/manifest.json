@@ -1,0 +1,30 @@
+{
+  "name": "MD BUSCAS - Central de Inteligência",
+  "short_name": "MD BUSCAS",
+  "description": "Central de Inteligência e Consultas Automatizadas",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#00ffcc",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "logo1.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "logo1.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "logo1.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

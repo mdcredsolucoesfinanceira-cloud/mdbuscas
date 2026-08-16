@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MD BUSCAS - Central de Inteligência</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#00ffcc">
+  <link rel="apple-touch-icon" href="/logo1.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
     body { background-color: #000; color: #fff; padding: 20px; }
@@ -421,6 +426,12 @@
     }
 
     function copiarPix() { navigator.clipboard.writeText(document.getElementById('copiaCola').value); alert('Código copiado!'); }
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW erro:', err));
+      });
+    }
   </script>
 </body>
 </html>
