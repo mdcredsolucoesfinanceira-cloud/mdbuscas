@@ -10,7 +10,6 @@ const PORT = process.env.PORT || 3000;
 const GOATPAY_API_KEY = process.env.GOATPAY_API_KEY;
 const GOATPAY_WEBHOOK_SECRET = process.env.GOATPAY_WEBHOOK_SECRET;
 const GOATPAY_ENDPOINT = "https://api.goatpay.com.br/v1/payment-pix/create";
-const VALOR_CONSULTA = 10.00;
 
 const ADMIN_USER = process.env.ADMIN_USER;
 const ADMIN_PASS = process.env.ADMIN_PASS;
@@ -23,6 +22,18 @@ const db = createClient({
     url: TURSO_DATABASE_URL,
     authToken: TURSO_AUTH_TOKEN
 });
+
+const PRECOS = {
+    CNPJ: 10.00,
+    CEP: 3.00,
+    FIPE: 3.00,
+    CNAE: 3.00,
+    BANCO: 3.00,
+    FERIADOS: 3.00
+};
+function valorPorModulo(moduloUpper) {
+    return PRECOS[moduloUpper] !== undefined ? PRECOS[moduloUpper] : 10.00;
+}
 
 app.use('/api/webhook/goatpay', express.raw({ type: '*/*' }));
 app.use(express.json());
@@ -190,9 +201,10 @@ app.post('/api/pagamento/pix', async (req, res) => {
             return res.status(400).json({ sucesso: false, erro: validacao.erro });
         }
 
+        const valor = valorPorModulo(moduloUpper);
         const externalRef = 'pedido_' + Math.random().toString(36).substring(2, 12);
         const response = await axios.post(GOATPAY_ENDPOINT, {
-            amount: VALOR_CONSULTA,
+            amount: valor,
             description: "Consulta MD BUSCAS",
             externalReference: externalRef
         }, {
@@ -341,13 +353,17 @@ app.get('/api/admin/estatisticas', exigirLogin, async (req, res) => {
             porModulo[m] = (porModulo[m] || 0) + 1;
         });
 
+        const receitaTotal = aprovados.reduce((soma, p) => soma + valorPorModulo((p.modulo || '').toUpperCase()), 0);
+
         const porDiaMap = {};
         aprovados.forEach(p => {
             const diaStr = (p.data || '').split(',')[0].trim() || 'Data desconhecida';
-            porDiaMap[diaStr] = (porDiaMap[diaStr] || 0) + 1;
+            if (!porDiaMap[diaStr]) porDiaMap[diaStr] = { quantidade: 0, receita: 0 };
+            porDiaMap[diaStr].quantidade += 1;
+            porDiaMap[diaStr].receita += valorPorModulo((p.modulo || '').toUpperCase());
         });
         const porDia = Object.entries(porDiaMap)
-            .map(([dia, quantidade]) => ({ dia, quantidade, receita: quantidade * VALOR_CONSULTA }))
+            .map(([dia, v]) => ({ dia, quantidade: v.quantidade, receita: v.receita }))
             .sort((a, b) => {
                 const [da, ma, aa] = a.dia.split('/');
                 const [dB, mb, ab] = b.dia.split('/');
@@ -360,8 +376,8 @@ app.get('/api/admin/estatisticas', exigirLogin, async (req, res) => {
             totalPedidos: todos.length,
             totalAprovados: aprovados.length,
             totalPendentes: pendentes.length,
-            receitaTotal: aprovados.length * VALOR_CONSULTA,
-            valorConsulta: VALOR_CONSULTA,
+            receitaTotal,
+            precos: PRECOS,
             porModulo,
             porDia
         });

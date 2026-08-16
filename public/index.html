@@ -175,7 +175,7 @@
 
     <div class="card-module">
       <span class="card-badge badge-manutencao"></span>
-      <div class="card-icon-wrap icon-cpf">🪪</div>
+      <div class="card-icon-wrap icon-cpf">&#128179;</div>
       <div class="card-nome">CONSULTA CPF</div>
       <div class="card-preco preco-manutencao">Em manutenção</div>
       <button class="btn-bloqueado">EM BREVE</button>
@@ -193,7 +193,7 @@
       <span class="card-badge badge-ativo"></span>
       <div class="card-icon-wrap icon-cep">📍</div>
       <div class="card-nome">CONSULTA CEP</div>
-      <div class="card-preco preco-ativo">R$ 10,00</div>
+      <div class="card-preco preco-ativo">R$ 3,00</div>
       <button class="btn-consultar" onclick="abrirModal('CEP')">ACESSAR</button>
     </div>
 
@@ -225,7 +225,7 @@
       <span class="card-badge badge-ativo"></span>
       <div class="card-icon-wrap icon-fipe">🚙</div>
       <div class="card-nome">TABELA FIPE</div>
-      <div class="card-preco preco-ativo">R$ 10,00</div>
+      <div class="card-preco preco-ativo">R$ 3,00</div>
       <button class="btn-consultar" onclick="abrirModal('FIPE')">ACESSAR</button>
     </div>
 
@@ -233,7 +233,7 @@
       <span class="card-badge badge-ativo"></span>
       <div class="card-icon-wrap icon-cnae">🏷️</div>
       <div class="card-nome">CONSULTA CNAE</div>
-      <div class="card-preco preco-ativo">R$ 10,00</div>
+      <div class="card-preco preco-ativo">R$ 3,00</div>
       <button class="btn-consultar" onclick="abrirModal('CNAE')">ACESSAR</button>
     </div>
 
@@ -241,7 +241,7 @@
       <span class="card-badge badge-ativo"></span>
       <div class="card-icon-wrap icon-banco">🏦</div>
       <div class="card-nome">CONSULTA BANCO</div>
-      <div class="card-preco preco-ativo">R$ 10,00</div>
+      <div class="card-preco preco-ativo">R$ 3,00</div>
       <button class="btn-consultar" onclick="abrirModal('BANCO')">ACESSAR</button>
     </div>
 
@@ -249,7 +249,7 @@
       <span class="card-badge badge-ativo"></span>
       <div class="card-icon-wrap icon-feriados">📅</div>
       <div class="card-nome">FERIADOS NACIONAIS</div>
-      <div class="card-preco preco-ativo">R$ 10,00</div>
+      <div class="card-preco preco-ativo">R$ 3,00</div>
       <button class="btn-consultar" onclick="abrirModal('FERIADOS')">ACESSAR</button>
     </div>
 
@@ -271,7 +271,7 @@
       </div>
 
       <pre id="resultadosDados"></pre>
-      <button class="btn-acao" id="btnGerar" onclick="solicitarPagamento()" style="background:#00ffcc; border:none; padding:10px; width:100%; margin-top:10px; font-weight:bold; border-radius:5px;">Gerar PIX R$ 10,00</button>
+      <button class="btn-acao" id="btnGerar" onclick="solicitarPagamento()" style="background:#00ffcc; border:none; padding:10px; width:100%; margin-top:10px; font-weight:bold; border-radius:5px;">Gerar PIX</button>
       <button class="btn-fechar" onclick="fecharModal()">Fechar</button>
     </div>
   </div>
@@ -337,6 +337,15 @@
       FERIADOS: "Digite o ano (ex: 2026)"
     };
 
+    const precosModulo = {
+      CNPJ: "10,00",
+      CEP: "3,00",
+      FIPE: "3,00",
+      CNAE: "3,00",
+      BANCO: "3,00",
+      FERIADOS: "3,00"
+    };
+
     window.addEventListener('DOMContentLoaded', () => {
       iniciarTerminal();
       setTimeout(() => {
@@ -355,6 +364,8 @@
       moduloAtual = m;
       document.getElementById('modalTitulo').innerText = 'CONSULTA ' + m;
       document.getElementById('inputAlvo').placeholder = placeholders[m] || "Digite o dado...";
+      const preco = precosModulo[m] || "10,00";
+      document.getElementById('btnGerar').innerText = `Gerar PIX R$ ${preco}`;
       document.getElementById('modalConsulta').style.display = 'flex';
     }
 
