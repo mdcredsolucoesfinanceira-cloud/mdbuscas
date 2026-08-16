@@ -88,7 +88,84 @@ function exigirLogin(req, res, next) {
     return res.status(401).json({ sucesso: false, erro: "Não autenticado" });
 }
 
-// LOGIN
+async function validarAlvo(moduloUpper, alvo) {
+    if (moduloUpper === 'CNPJ') {
+        const limpo = alvo.replace(/\D/g, '');
+        if (limpo.length !== 14) return { ok: false, erro: "CNPJ inválido. Digite os 14 números." };
+        try { await axios.get(`https://receitaws.com.br/v1/cnpj/${limpo}`); }
+        catch (e) { return { ok: false, erro: "CNPJ não encontrado. Confira o número digitado." }; }
+        return { ok: true };
+    }
+    if (moduloUpper === 'CEP') {
+        const limpo = alvo.replace(/\D/g, '');
+        if (limpo.length !== 8) return { ok: false, erro: "CEP inválido. Digite os 8 números." };
+        try { await axios.get(`https://brasilapi.com.br/api/cep/v1/${limpo}`); }
+        catch (e) { return { ok: false, erro: "CEP não encontrado. Confira o número digitado." }; }
+        return { ok: true };
+    }
+    if (moduloUpper === 'FIPE') {
+        const codigo = alvo.trim();
+        if (!codigo) return { ok: false, erro: "Digite o código FIPE do veículo." };
+        try { await axios.get(`https://brasilapi.com.br/api/fipe/preco/v1/${encodeURIComponent(codigo)}`); }
+        catch (e) { return { ok: false, erro: "Código FIPE não encontrado. Confira o valor digitado." }; }
+        return { ok: true };
+    }
+    if (moduloUpper === 'CNAE') {
+        const limpo = alvo.replace(/\D/g, '');
+        if (limpo.length !== 7) return { ok: false, erro: "CNAE inválido. Digite os 7 números." };
+        try { await axios.get(`https://brasilapi.com.br/api/cnae/v1/${limpo}`); }
+        catch (e) { return { ok: false, erro: "CNAE não encontrado. Confira o código digitado." }; }
+        return { ok: true };
+    }
+    if (moduloUpper === 'BANCO') {
+        const limpo = alvo.replace(/\D/g, '');
+        if (!limpo) return { ok: false, erro: "Digite o código do banco (ex: 001)." };
+        try { await axios.get(`https://brasilapi.com.br/api/banks/v1/${limpo}`); }
+        catch (e) { return { ok: false, erro: "Código de banco não encontrado. Confira o valor digitado." }; }
+        return { ok: true };
+    }
+    if (moduloUpper === 'FERIADOS') {
+        const ano = alvo.trim();
+        if (!/^\d{4}$/.test(ano)) return { ok: false, erro: "Digite um ano válido, ex: 2026." };
+        try { await axios.get(`https://brasilapi.com.br/api/feriados/v1/${ano}`); }
+        catch (e) { return { ok: false, erro: "Não foi possível buscar feriados desse ano." }; }
+        return { ok: true };
+    }
+    return { ok: false, erro: "Módulo inválido" };
+}
+
+async function buscarDados(moduloUpper, alvo) {
+    if (moduloUpper === 'CNPJ') {
+        const limpo = alvo.replace(/\D/g, '');
+        const r = await axios.get(`https://receitaws.com.br/v1/cnpj/${limpo}`);
+        return r.data;
+    }
+    if (moduloUpper === 'CEP') {
+        const limpo = alvo.replace(/\D/g, '');
+        const r = await axios.get(`https://brasilapi.com.br/api/cep/v1/${limpo}`);
+        return r.data;
+    }
+    if (moduloUpper === 'FIPE') {
+        const r = await axios.get(`https://brasilapi.com.br/api/fipe/preco/v1/${encodeURIComponent(alvo.trim())}`);
+        return r.data;
+    }
+    if (moduloUpper === 'CNAE') {
+        const limpo = alvo.replace(/\D/g, '');
+        const r = await axios.get(`https://brasilapi.com.br/api/cnae/v1/${limpo}`);
+        return r.data;
+    }
+    if (moduloUpper === 'BANCO') {
+        const limpo = alvo.replace(/\D/g, '');
+        const r = await axios.get(`https://brasilapi.com.br/api/banks/v1/${limpo}`);
+        return r.data;
+    }
+    if (moduloUpper === 'FERIADOS') {
+        const r = await axios.get(`https://brasilapi.com.br/api/feriados/v1/${alvo.trim()}`);
+        return r.data;
+    }
+    throw new Error("Módulo inválido");
+}
+
 app.post('/api/login', (req, res) => {
     const { usuario, senha } = req.body;
     if (!ADMIN_USER || !ADMIN_PASS) {
@@ -105,7 +182,6 @@ app.post('/api/logout', (req, res) => {
     req.session.destroy(() => res.json({ sucesso: true }));
 });
 
-// ROTA DO PIX
 app.post('/api/pagamento/pix', async (req, res) => {
     try {
         const { modulo, alvo } = req.body;
@@ -114,28 +190,9 @@ app.post('/api/pagamento/pix', async (req, res) => {
         }
         const moduloUpper = modulo.toUpperCase();
 
-        if (moduloUpper === 'CNPJ') {
-            const cnpjLimpo = alvo.replace(/\D/g, '');
-            if (cnpjLimpo.length !== 14) {
-                return res.status(400).json({ sucesso: false, erro: "CNPJ inválido. Digite os 14 números." });
-            }
-            try {
-                await axios.get(`https://receitaws.com.br/v1/cnpj/${cnpjLimpo}`);
-            } catch (e) {
-                return res.status(400).json({ sucesso: false, erro: "CNPJ não encontrado. Confira o número digitado." });
-            }
-        } else if (moduloUpper === 'CEP') {
-            const cepLimpo = alvo.replace(/\D/g, '');
-            if (cepLimpo.length !== 8) {
-                return res.status(400).json({ sucesso: false, erro: "CEP inválido. Digite os 8 números." });
-            }
-            try {
-                await axios.get(`https://brasilapi.com.br/api/cep/v1/${cepLimpo}`);
-            } catch (e) {
-                return res.status(400).json({ sucesso: false, erro: "CEP não encontrado. Confira o número digitado." });
-            }
-        } else {
-            return res.status(400).json({ sucesso: false, erro: "Módulo inválido" });
+        const validacao = await validarAlvo(moduloUpper, alvo);
+        if (!validacao.ok) {
+            return res.status(400).json({ sucesso: false, erro: validacao.erro });
         }
 
         const externalRef = 'pedido_' + Math.random().toString(36).substring(2, 12);
@@ -167,7 +224,6 @@ app.post('/api/pagamento/pix', async (req, res) => {
     }
 });
 
-// WEBHOOK
 app.post('/api/webhook/goatpay', (req, res) => {
     const signatureHeader = req.headers['x-goatpay-signature'];
     const eventType = req.headers['x-goatpay-event'];
@@ -206,7 +262,6 @@ app.post('/api/webhook/goatpay', (req, res) => {
     res.status(200).send('OK');
 });
 
-// STATUS
 app.get('/api/pagamento/status/:txid', (req, res) => {
     let status = 'pendente';
     if (db) {
@@ -218,7 +273,6 @@ app.get('/api/pagamento/status/:txid', (req, res) => {
     res.json({ pago: statusAprovado(status), liberadoAdmin: statusAprovado(status) });
 });
 
-// CONSULTA
 app.get('/api/consulta/:txid', async (req, res) => {
     const { txid } = req.params;
     if (!db) return res.status(500).json({ sucesso: false, erro: "Banco indisponível" });
@@ -237,18 +291,7 @@ app.get('/api/consulta/:txid', async (req, res) => {
     }
 
     try {
-        let dados;
-        if (modulo.toUpperCase() === 'CNPJ') {
-            const cnpjLimpo = alvo.replace(/\D/g, '');
-            const r = await axios.get(`https://receitaws.com.br/v1/cnpj/${cnpjLimpo}`);
-            dados = r.data;
-        } else if (modulo.toUpperCase() === 'CEP') {
-            const cepLimpo = alvo.replace(/\D/g, '');
-            const r = await axios.get(`https://brasilapi.com.br/api/cep/v1/${cepLimpo}`);
-            dados = r.data;
-        } else {
-            return res.status(400).json({ sucesso: false, erro: "Módulo inválido" });
-        }
+        const dados = await buscarDados(modulo.toUpperCase(), alvo);
         res.json({ sucesso: true, dados });
     } catch (e) {
         console.error("Erro na consulta:", e.response?.data || e.message);
@@ -256,7 +299,6 @@ app.get('/api/consulta/:txid', async (req, res) => {
     }
 });
 
-// ADMIN
 app.get('/api/admin/pedidos', exigirLogin, (req, res) => {
     if (!db) return res.status(500).json({ sucesso: false, erro: "Banco indisponível" });
     let resultado = [];

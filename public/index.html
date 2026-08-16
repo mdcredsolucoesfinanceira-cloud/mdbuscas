@@ -63,8 +63,12 @@
     @keyframes carregando { 0% { width: 0%; } 100% { width: 100%; } }
 
     .header { text-align: center; margin-bottom: 30px; }
-    .header h1 { color: #00ffcc; font-size: 1.8rem; letter-spacing: 2px; }
     .header p { color: #94a3b5; font-size: 0.85rem; }
+    .logo-topo {
+      width: 120px;
+      display: block;
+      margin: 0 auto 12px auto;
+    }
 
     #secaoModulos { scroll-margin-top: 20px; }
 
@@ -115,6 +119,10 @@
     .icon-cnh { background: #4a5d78; }
     .icon-placa { background: #4a5d78; }
     .icon-renavam { background: #4a5d78; }
+    .icon-fipe { background: #1f9e6a; }
+    .icon-cnae { background: #7c4fd6; }
+    .icon-banco { background: #c9932a; }
+    .icon-feriados { background: #d1477a; }
 
     footer {
       text-align: center; margin-top: 40px; color: #4a5568; font-size: 0.72rem;
@@ -154,7 +162,7 @@
   </div>
 
   <div class="header">
-    <h1>MD BUSCAS</h1>
+    <img src="logo1.png" alt="MD BUSCAS" class="logo-topo">
     <p>Central de Inteligência e Consultas Automatizadas</p>
   </div>
 
@@ -206,6 +214,38 @@
       <div class="card-nome">CONSULTA RENAVAM</div>
       <div class="card-preco preco-manutencao">Em manutenção</div>
       <button class="btn-bloqueado">EM BREVE</button>
+    </div>
+
+    <div class="card-module">
+      <span class="card-badge badge-ativo"></span>
+      <div class="card-icon-wrap icon-fipe">🚙</div>
+      <div class="card-nome">TABELA FIPE</div>
+      <div class="card-preco preco-ativo">R$ 10,00</div>
+      <button class="btn-consultar" onclick="abrirModal('FIPE')">ACESSAR</button>
+    </div>
+
+    <div class="card-module">
+      <span class="card-badge badge-ativo"></span>
+      <div class="card-icon-wrap icon-cnae">🏷️</div>
+      <div class="card-nome">CONSULTA CNAE</div>
+      <div class="card-preco preco-ativo">R$ 10,00</div>
+      <button class="btn-consultar" onclick="abrirModal('CNAE')">ACESSAR</button>
+    </div>
+
+    <div class="card-module">
+      <span class="card-badge badge-ativo"></span>
+      <div class="card-icon-wrap icon-banco">🏦</div>
+      <div class="card-nome">CONSULTA BANCO</div>
+      <div class="card-preco preco-ativo">R$ 10,00</div>
+      <button class="btn-consultar" onclick="abrirModal('BANCO')">ACESSAR</button>
+    </div>
+
+    <div class="card-module">
+      <span class="card-badge badge-ativo"></span>
+      <div class="card-icon-wrap icon-feriados">📅</div>
+      <div class="card-nome">FERIADOS NACIONAIS</div>
+      <div class="card-preco preco-ativo">R$ 10,00</div>
+      <button class="btn-consultar" onclick="abrirModal('FERIADOS')">ACESSAR</button>
     </div>
 
   </div>
@@ -283,6 +323,15 @@
       digitar();
     }
 
+    const placeholders = {
+      CNPJ: "Digite o CNPJ...",
+      CEP: "Digite o CEP...",
+      FIPE: "Digite o código FIPE (ex: 001004-9)",
+      CNAE: "Digite o código CNAE (ex: 4711302)",
+      BANCO: "Digite o código do banco (ex: 001)",
+      FERIADOS: "Digite o ano (ex: 2026)"
+    };
+
     window.addEventListener('DOMContentLoaded', () => {
       iniciarTerminal();
       setTimeout(() => {
@@ -300,6 +349,7 @@
     function abrirModal(m) {
       moduloAtual = m;
       document.getElementById('modalTitulo').innerText = 'CONSULTA ' + m;
+      document.getElementById('inputAlvo').placeholder = placeholders[m] || "Digite o dado...";
       document.getElementById('modalConsulta').style.display = 'flex';
     }
 
