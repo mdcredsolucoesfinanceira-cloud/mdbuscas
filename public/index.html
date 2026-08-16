@@ -15,7 +15,6 @@
       z-index: 9999; transition: opacity 0.8s ease;
       overflow: hidden;
     }
-
     #terminalFundo {
       position: absolute; inset: 0;
       padding: 24px;
@@ -28,7 +27,6 @@
       opacity: 0.6;
       pointer-events: none;
     }
-
     #telaIntro img {
       width: 150px;
       max-width: 55%;
@@ -42,16 +40,10 @@
       100% { opacity: 1; transform: scale(1) translateY(0); }
     }
     #telaIntro .intro-tagline {
-      margin-top: 16px;
-      color: #94a3b5;
-      font-size: 0.78rem;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      font-weight: 600;
-      opacity: 0;
-      position: relative; z-index: 2;
-      animation: taglineEntra 0.9s ease forwards;
-      animation-delay: 1s;
+      margin-top: 16px; color: #94a3b5; font-size: 0.78rem;
+      letter-spacing: 3px; text-transform: uppercase; font-weight: 600;
+      opacity: 0; position: relative; z-index: 2;
+      animation: taglineEntra 0.9s ease forwards; animation-delay: 1s;
     }
     @keyframes taglineEntra {
       0%   { opacity: 0; transform: translateY(4px); }
@@ -60,35 +52,73 @@
     #telaIntro .intro-barra {
       width: 140px; height: 2px; margin-top: 26px;
       background: rgba(255,255,255,0.08);
-      border-radius: 2px; overflow: hidden;
-      position: relative; z-index: 2;
+      border-radius: 2px; overflow: hidden; position: relative; z-index: 2;
     }
     #telaIntro .intro-barra-fill {
       height: 100%; width: 0%;
       background: linear-gradient(90deg, #00ffcc, #00b38f);
       border-radius: 2px;
-      animation: carregando 3.4s ease forwards;
-      animation-delay: 0.5s;
+      animation: carregando 3.4s ease forwards; animation-delay: 0.5s;
     }
-    @keyframes carregando {
-      0%   { width: 0%; }
-      100% { width: 100%; }
-    }
+    @keyframes carregando { 0% { width: 0%; } 100% { width: 100%; } }
 
     .header { text-align: center; margin-bottom: 30px; }
     .header h1 { color: #00ffcc; font-size: 1.8rem; letter-spacing: 2px; }
     .header p { color: #94a3b5; font-size: 0.85rem; }
 
-    .grid-modules { display: flex; flex-direction: column; gap: 12px; max-width: 600px; margin: 0 auto; }
-    .card-module {
-      background: #101c2e; border-radius: 12px; padding: 16px;
-      display: flex; align-items: center; justify-content: space-between;
-      border: 1px solid rgba(0,255,204,0.2);
+    #secaoModulos { scroll-margin-top: 20px; }
+
+    .grid-modules {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      max-width: 700px;
+      margin: 0 auto;
     }
-    .card-info { display: flex; align-items: center; gap: 12px; }
-    .card-icon { font-size: 1.6rem; }
-    .btn-consultar { background: #00ffcc; color: #000; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; }
-    .btn-bloqueado { background: #284b7a; color: #94a3b5; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: not-allowed; }
+    .card-module {
+      background: #0d1b33;
+      border-radius: 14px;
+      padding: 16px 12px;
+      display: flex; flex-direction: column; align-items: center; text-align: center;
+      border: 1px solid rgba(255,255,255,0.06);
+      position: relative;
+      min-height: 150px;
+      justify-content: space-between;
+    }
+    .card-badge {
+      position: absolute; top: 8px; right: 8px;
+      width: 10px; height: 10px; border-radius: 50%;
+    }
+    .badge-ativo { background: #2ecc71; box-shadow: 0 0 6px #2ecc71; }
+    .badge-manutencao { background: #e74c3c; box-shadow: 0 0 6px #e74c3c; }
+    .card-icon-wrap {
+      width: 48px; height: 48px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.6rem; margin-bottom: 10px;
+    }
+    .card-nome { font-weight: bold; font-size: 0.82rem; letter-spacing: 0.5px; }
+    .card-preco { font-size: 0.72rem; margin-top: 4px; }
+    .preco-ativo { color: #2ecc71; }
+    .preco-manutencao { color: #94a3b5; }
+    .btn-consultar {
+      background: #00ffcc; color: #000; border: none; padding: 7px 14px;
+      border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.75rem; margin-top: 10px;
+    }
+    .btn-bloqueado {
+      background: #23324a; color: #6b7c93; border: none; padding: 7px 14px;
+      border-radius: 6px; font-weight: bold; cursor: not-allowed; font-size: 0.75rem; margin-top: 10px;
+    }
+
+    .icon-cnpj { background: #2a63c9; }
+    .icon-cep { background: #e0762b; }
+    .icon-cpf { background: #4a5d78; }
+    .icon-cnh { background: #4a5d78; }
+    .icon-placa { background: #4a5d78; }
+    .icon-renavam { background: #4a5d78; }
+
+    footer {
+      text-align: center; margin-top: 40px; color: #4a5568; font-size: 0.72rem;
+    }
 
     .modalConsultas { display: none; position: fixed; z-index: 10; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; padding: 20px; }
     .modal-conteudo { background: #0b1626; padding: 20px; border-radius: 12px; width: 100%; max-width: 400px; border: 1px solid #00ffcc; text-align: center; }
@@ -98,30 +128,18 @@
     #resultadosDados { display: none; background: #03070c; padding: 15px; border-radius: 8px; color: #00ffcc; margin-top: 15px; text-align: left; font-size: 0.8rem; overflow-x: auto; }
 
     #telaResultado {
-      display: none;
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: #000; z-index: 20;
-      flex-direction: column;
-      padding: 20px;
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: #000; z-index: 20; flex-direction: column; padding: 20px;
     }
-    #telaResultado .resultado-header {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 15px; flex-shrink: 0;
-    }
+    #telaResultado .resultado-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-shrink: 0; }
     #telaResultado .resultado-header h3 { color: #00ffcc; font-size: 1.1rem; }
     #telaResultado .resultado-conteudo {
-      flex: 1; overflow-y: auto;
-      background: #03070c; border: 1px solid rgba(0,255,204,0.3);
-      border-radius: 8px; padding: 15px;
-      color: #00ffcc; font-size: 0.85rem;
+      flex: 1; overflow-y: auto; background: #03070c; border: 1px solid rgba(0,255,204,0.3);
+      border-radius: 8px; padding: 15px; color: #00ffcc; font-size: 0.85rem;
       white-space: pre-wrap; word-break: break-word;
     }
-    #telaResultado .resultado-botoes {
-      display: flex; gap: 10px; margin-top: 15px; flex-shrink: 0;
-    }
-    #telaResultado .resultado-botoes button {
-      flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;
-    }
+    #telaResultado .resultado-botoes { display: flex; gap: 10px; margin-top: 15px; flex-shrink: 0; }
+    #telaResultado .resultado-botoes button { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
     #btnCopiarTudo { background: #f39c12; color: #000; }
     #btnFecharResultado { background: #e74c3c; color: #fff; }
   </style>
@@ -140,32 +158,59 @@
     <p>Central de Inteligência e Consultas Automatizadas</p>
   </div>
 
-  <div class="grid-modules">
+  <div id="secaoModulos" class="grid-modules">
+
     <div class="card-module">
-      <div class="card-info"><span class="card-icon">🪪</span><div>CPF <br><small style="color:red">EM MANUTENÇÃO</small></div></div>
+      <span class="card-badge badge-manutencao"></span>
+      <div class="card-icon-wrap icon-cpf">🪪</div>
+      <div class="card-nome">CONSULTA CPF</div>
+      <div class="card-preco preco-manutencao">Em manutenção</div>
       <button class="btn-bloqueado">EM BREVE</button>
     </div>
+
     <div class="card-module">
-      <div class="card-info"><span class="card-icon">🏢</span><div>CNPJ <br><small style="color:green">R$ 10,00</small></div></div>
+      <span class="card-badge badge-ativo"></span>
+      <div class="card-icon-wrap icon-cnpj">🏢</div>
+      <div class="card-nome">CONSULTA CNPJ</div>
+      <div class="card-preco preco-ativo">R$ 10,00</div>
       <button class="btn-consultar" onclick="abrirModal('CNPJ')">ACESSAR</button>
     </div>
+
     <div class="card-module">
-      <div class="card-info"><span class="card-icon">📍</span><div>CEP <br><small style="color:green">R$ 10,00</small></div></div>
+      <span class="card-badge badge-ativo"></span>
+      <div class="card-icon-wrap icon-cep">📍</div>
+      <div class="card-nome">CONSULTA CEP</div>
+      <div class="card-preco preco-ativo">R$ 10,00</div>
       <button class="btn-consultar" onclick="abrirModal('CEP')">ACESSAR</button>
     </div>
+
     <div class="card-module">
-      <div class="card-info"><span class="card-icon">🚗</span><div>CNH <br><small style="color:red">EM MANUTENÇÃO</small></div></div>
+      <span class="card-badge badge-manutencao"></span>
+      <div class="card-icon-wrap icon-cnh">🚗</div>
+      <div class="card-nome">CONSULTA CNH</div>
+      <div class="card-preco preco-manutencao">Em manutenção</div>
       <button class="btn-bloqueado">EM BREVE</button>
     </div>
+
     <div class="card-module">
-      <div class="card-info"><span class="card-icon">🚘</span><div>PLACA <br><small style="color:red">EM MANUTENÇÃO</small></div></div>
+      <span class="card-badge badge-manutencao"></span>
+      <div class="card-icon-wrap icon-placa">🚘</div>
+      <div class="card-nome">CONSULTA PLACA</div>
+      <div class="card-preco preco-manutencao">Em manutenção</div>
       <button class="btn-bloqueado">EM BREVE</button>
     </div>
+
     <div class="card-module">
-      <div class="card-info"><span class="card-icon">📄</span><div>RENAVAM <br><small style="color:red">EM MANUTENÇÃO</small></div></div>
+      <span class="card-badge badge-manutencao"></span>
+      <div class="card-icon-wrap icon-renavam">📄</div>
+      <div class="card-nome">CONSULTA RENAVAM</div>
+      <div class="card-preco preco-manutencao">Em manutenção</div>
       <button class="btn-bloqueado">EM BREVE</button>
     </div>
+
   </div>
+
+  <footer>Desde 2024 ©</footer>
 
   <div id="modalConsulta" class="modalConsultas">
     <div class="modal-conteudo">
@@ -198,24 +243,19 @@
   </div>
 
   <script>
-    // Efeito de terminal digitando código por trás da logo
     const linhasCodigo = [
-      "import requests",
-      "",
+      "import requests", "",
       "def consultar_cnpj(cnpj):",
       "    url = f'https://api.receita.gov/{cnpj}'",
       "    resp = requests.get(url)",
-      "    return resp.json()",
-      "",
+      "    return resp.json()", "",
       "class ConsultaSeguranca:",
       "    def __init__(self, token):",
       "        self.token = token",
-      "        self.status = 'conectando...'",
-      "",
+      "        self.status = 'conectando...'", "",
       "    def autenticar(self):",
       "        print('Validando credenciais...')",
-      "        return True",
-      "",
+      "        return True", "",
       "sistema = ConsultaSeguranca(token='***')",
       "sistema.autenticar()",
       ">>> Conexão estabelecida com sucesso",
@@ -226,24 +266,17 @@
 
     function iniciarTerminal() {
       const el = document.getElementById('terminalFundo');
-      let textoAtual = '';
-      let linha = 0;
-      let coluna = 0;
-
+      let linha = 0, coluna = 0;
       function digitar() {
         if (linha >= linhasCodigo.length) return;
         const linhaTexto = linhasCodigo[linha];
-
         if (coluna <= linhaTexto.length) {
-          textoAtual = linhasCodigo.slice(0, linha).join('\n') +
-                       (linha > 0 ? '\n' : '') +
-                       linhaTexto.slice(0, coluna);
-          el.textContent = textoAtual;
+          el.textContent = linhasCodigo.slice(0, linha).join('\n') +
+                            (linha > 0 ? '\n' : '') + linhaTexto.slice(0, coluna);
           coluna++;
           setTimeout(digitar, 18);
         } else {
-          linha++;
-          coluna = 0;
+          linha++; coluna = 0;
           setTimeout(digitar, 40);
         }
       }
@@ -255,7 +288,10 @@
       setTimeout(() => {
         let intro = document.getElementById('telaIntro');
         intro.style.opacity = '0';
-        setTimeout(() => intro.style.display = 'none', 800);
+        setTimeout(() => {
+          intro.style.display = 'none';
+          document.getElementById('secaoModulos').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 800);
       }, 5000);
     });
 
