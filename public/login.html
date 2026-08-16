@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login Admin - MD BUSCAS</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+    body { background: #000; color: #fff; display: flex; align-items: center; justify-content: center; height: 100vh; padding: 20px; }
+    .box { width: 100%; max-width: 320px; text-align: center; }
+    h1 { color: #00ffcc; margin-bottom: 20px; font-size: 1.3rem; }
+    input {
+      width: 100%; padding: 12px; margin: 8px 0; border-radius: 6px; border: none; font-size: 1rem;
+    }
+    button {
+      width: 100%; padding: 12px; background: #00ffcc; color: #000; border: none;
+      border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px;
+    }
+    #erro { color: #e74c3c; margin-top: 10px; font-size: 0.85rem; min-height: 1em; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>MD BUSCAS — Acesso Admin</h1>
+    <input type="text" id="usuario" placeholder="Usuário" autocomplete="username">
+    <input type="password" id="senha" placeholder="Senha" autocomplete="current-password">
+    <button onclick="entrar()">Entrar</button>
+    <p id="erro"></p>
+  </div>
+  <script>
+    async function entrar() {
+      const usuario = document.getElementById('usuario').value;
+      const senha = document.getElementById('senha').value;
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ usuario, senha })
+      });
+      const data = await res.json();
+      if (data.sucesso) {
+        window.location.href = '/dashboard.html';
+      } else {
+        document.getElementById('erro').innerText = data.erro || 'Erro ao entrar';
+      }
+    }
+    document.getElementById('senha').addEventListener('keydown', e => {
+      if (e.key === 'Enter') entrar();
+    });
+  </script>
+</body>
+</html>

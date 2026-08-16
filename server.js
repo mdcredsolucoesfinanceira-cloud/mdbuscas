@@ -3,6 +3,7 @@ const path = require('path');
 const axios = require('axios');
 const fs = require('fs');
 const crypto = require('crypto');
+const session = require('express-session');
 const initSqlJs = require('sql.js');
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -12,9 +13,30 @@ const GOATPAY_WEBHOOK_SECRET = process.env.GOATPAY_WEBHOOK_SECRET;
 const GOATPAY_ENDPOINT = "https://api.goatpay.com.br/v1/payment-pix/create";
 const VALOR_CONSULTA = 10.00;
 
+const ADMIN_USER = process.env.ADMIN_USER;
+const ADMIN_PASS = process.env.ADMIN_PASS;
+const SESSION_SECRET = process.env.SESSION_SECRET || 'mude_essa_chave_no_render';
+
 app.use('/api/webhook/goatpay', express.raw({ type: '*/*' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.use(session({
+    secret: SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: { maxAge: 1000 * 60 * 60 * 8 } // 8 horas
+}));
+
+// Protege as páginas HTML de admin ANTES do static servir os arquivos
+app.use((req, res, next) => {
+    const protegidas = ['/admin.html', '/dashboard.html'];
+    if (protegidas.includes(req.path) && !(req.session && req.session.autenticado)) {
+        return res.redirect('/login.html');
+    }
+    next();
+});
+
 app.use(express.static('public'));
 
 let db = null;
@@ -22,7 +44,7 @@ let db = null;
 async function iniciarBanco() {
     try {
         const SQL = await initSqlJs();
-        const dbfile = './banco.sqlite';
+        const dbfile = process.env.DB_PATH || './banco.sqlite';
         if (fs.existsSync(dbfile)) {
             db = new SQL.Database(fs.readFileSync(dbfile));
         } else {
@@ -41,21 +63,18 @@ async function iniciarBanco() {
             db.run(`ALTER TABLE pedidos ADD COLUMN goatpay_id TEXT;`);
         } catch (e) { /* já existe */ }
         salvarBanco();
-        console.log("Banco SQLite carregado.");
+        console.log("Banco SQLite carregado de:", dbfile);
     } catch (e) { console.log("Erro banco:", e); }
 }
 
 function salvarBanco() {
-    if (db) fs.writeFileSync('./banco.sqlite', Buffer.from(db.export()));
+    if (db) fs.writeFileSync(process.env.DB_PATH || './banco.sqlite', Buffer.from(db.export()));
 }
 
 function verificarAssinaturaGoatPay(rawBody, signatureHeader, secret) {
     if (!signatureHeader || !signatureHeader.startsWith("sha256=")) return false;
     const received = signatureHeader.slice("sha256=".length);
-    const expected = crypto
-        .createHmac("sha256", secret)
-        .update(rawBody)
-        .digest("hex");
+    const expected = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
     const a = Buffer.from(expected, "hex");
     const b = Buffer.from(received, "hex");
     return a.length === b.length && crypto.timingSafeEqual(a, b);
@@ -65,14 +84,35 @@ function statusAprovado(status) {
     return ['aprovado', 'paid', 'approved', 'completed', 'sucesso'].includes(status);
 }
 
-// ROTA DO PIX — valida o dado ANTES de cobrar
+function exigirLogin(req, res, next) {
+    if (req.session && req.session.autenticado) return next();
+    return res.status(401).json({ sucesso: false, erro: "Não autenticado" });
+}
+
+// LOGIN
+app.post('/api/login', (req, res) => {
+    const { usuario, senha } = req.body;
+    if (!ADMIN_USER || !ADMIN_PASS) {
+        return res.status(500).json({ sucesso: false, erro: "Login não configurado no servidor" });
+    }
+    if (usuario === ADMIN_USER && senha === ADMIN_PASS) {
+        req.session.autenticado = true;
+        return res.json({ sucesso: true });
+    }
+    res.status(401).json({ sucesso: false, erro: "Usuário ou senha incorretos" });
+});
+
+app.post('/api/logout', (req, res) => {
+    req.session.destroy(() => res.json({ sucesso: true }));
+});
+
+// ROTA DO PIX
 app.post('/api/pagamento/pix', async (req, res) => {
     try {
         const { modulo, alvo } = req.body;
         if (!modulo || !alvo) {
             return res.status(400).json({ sucesso: false, erro: "Módulo e alvo são obrigatórios" });
         }
-
         const moduloUpper = modulo.toUpperCase();
 
         if (moduloUpper === 'CNPJ') {
@@ -121,12 +161,7 @@ app.post('/api/pagamento/pix', async (req, res) => {
             salvarBanco();
         }
 
-        res.json({
-            sucesso: true,
-            txid: externalRef,
-            qrcode: copyPaste,
-            qrcode_image: qrcodeImage
-        });
+        res.json({ sucesso: true, txid: externalRef, qrcode: copyPaste, qrcode_image: qrcodeImage });
     } catch (e) {
         console.error("Erro na API da Goatpay:", e.response?.data || e.message);
         res.status(500).json({ sucesso: false, erro: "Erro na API da Goatpay" });
@@ -222,11 +257,11 @@ app.get('/api/consulta/:txid', async (req, res) => {
     }
 });
 
-// ADMIN — lista todos os pedidos
-app.get('/api/admin/pedidos', (req, res) => {
+// ADMIN — agora exige login
+app.get('/api/admin/pedidos', exigirLogin, (req, res) => {
     if (!db) return res.status(500).json({ sucesso: false, erro: "Banco indisponível" });
     let resultado = [];
-    let stmt = db.prepare("SELECT txid, modulo, alvo, status, data FROM pedidos ORDER BY id DESC LIMIT 200");
+    let stmt = db.prepare("SELECT txid, modulo, alvo, status, data FROM pedidos ORDER BY id DESC LIMIT 500");
     while (stmt.step()) {
         const [txid, modulo, alvo, status, data] = stmt.get();
         resultado.push({ txid, modulo, alvo, status, data });
@@ -235,8 +270,7 @@ app.get('/api/admin/pedidos', (req, res) => {
     res.json(resultado);
 });
 
-// ADMIN — aprovação manual
-app.post('/api/admin/aprovar/:txid', (req, res) => {
+app.post('/api/admin/aprovar/:txid', exigirLogin, (req, res) => {
     if (db) {
         db.run("UPDATE pedidos SET status = 'aprovado' WHERE txid = ?", [req.params.txid]);
         salvarBanco();
@@ -244,8 +278,7 @@ app.post('/api/admin/aprovar/:txid', (req, res) => {
     res.json({ sucesso: true });
 });
 
-// ADMIN — estatísticas / dashboard
-app.get('/api/admin/estatisticas', (req, res) => {
+app.get('/api/admin/estatisticas', exigirLogin, (req, res) => {
     if (!db) return res.status(500).json({ sucesso: false, erro: "Banco indisponível" });
 
     let stmt = db.prepare("SELECT modulo, status, data FROM pedidos");
@@ -265,21 +298,18 @@ app.get('/api/admin/estatisticas', (req, res) => {
         porModulo[m] = (porModulo[m] || 0) + 1;
     });
 
-    // Agrupa por dia (extrai a parte da data antes da vírgula do toLocaleString)
     const porDiaMap = {};
     aprovados.forEach(p => {
         const diaStr = (p.data || '').split(',')[0].trim() || 'Data desconhecida';
-        if (!porDiaMap[diaStr]) porDiaMap[diaStr] = 0;
-        porDiaMap[diaStr] += 1;
+        porDiaMap[diaStr] = (porDiaMap[diaStr] || 0) + 1;
     });
     const porDia = Object.entries(porDiaMap)
         .map(([dia, quantidade]) => ({ dia, quantidade, receita: quantidade * VALOR_CONSULTA }))
         .sort((a, b) => {
-            // ordena por data (formato dd/mm/aaaa)
             const [da, ma, aa] = a.dia.split('/');
-            const [db_, mb, ab] = b.dia.split('/');
-            if (!da || !db_) return 0;
-            return new Date(`${ab}-${mb}-${db_}`) - new Date(`${aa}-${ma}-${da}`);
+            const [dB, mb, ab] = b.dia.split('/');
+            if (!da || !dB) return 0;
+            return new Date(`${ab}-${mb}-${dB}`) - new Date(`${aa}-${ma}-${da}`);
         });
 
     res.json({

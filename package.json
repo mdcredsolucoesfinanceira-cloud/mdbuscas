@@ -15,6 +15,7 @@
     "axios": "^1.19.0",
     "cors": "^2.8.6",
     "express": "^5.2.1",
+    "express-session": "^1.19.0",
     "sql.js": "^1.14.1",
     "sqlite": "^5.1.1"
   }
