@@ -1,10 +1,9 @@
 const express = require('express');
 const path = require('path');
 const axios = require('axios');
-const fs = require('fs');
 const crypto = require('crypto');
 const session = require('express-session');
-const initSqlJs = require('sql.js');
+const { createClient } = require('@libsql/client');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -16,6 +15,14 @@ const VALOR_CONSULTA = 10.00;
 const ADMIN_USER = process.env.ADMIN_USER;
 const ADMIN_PASS = process.env.ADMIN_PASS;
 const SESSION_SECRET = process.env.SESSION_SECRET || 'mude_essa_chave_no_render';
+
+const TURSO_DATABASE_URL = process.env.TURSO_DATABASE_URL;
+const TURSO_AUTH_TOKEN = process.env.TURSO_AUTH_TOKEN;
+
+const db = createClient({
+    url: TURSO_DATABASE_URL,
+    authToken: TURSO_AUTH_TOKEN
+});
 
 app.use('/api/webhook/goatpay', express.raw({ type: '*/*' }));
 app.use(express.json());
@@ -38,18 +45,9 @@ app.use((req, res, next) => {
 
 app.use(express.static('public'));
 
-let db = null;
-
 async function iniciarBanco() {
     try {
-        const SQL = await initSqlJs();
-        const dbfile = process.env.DB_PATH || './banco.sqlite';
-        if (fs.existsSync(dbfile)) {
-            db = new SQL.Database(fs.readFileSync(dbfile));
-        } else {
-            db = new SQL.Database();
-        }
-        db.run(`CREATE TABLE IF NOT EXISTS pedidos (
+        await db.execute(`CREATE TABLE IF NOT EXISTS pedidos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             txid TEXT,
             goatpay_id TEXT,
@@ -59,15 +57,12 @@ async function iniciarBanco() {
             data TEXT
         );`);
         try {
-            db.run(`ALTER TABLE pedidos ADD COLUMN goatpay_id TEXT;`);
+            await db.execute(`ALTER TABLE pedidos ADD COLUMN goatpay_id TEXT;`);
         } catch (e) { /* já existe */ }
-        salvarBanco();
-        console.log("Banco SQLite carregado de:", dbfile);
-    } catch (e) { console.log("Erro banco:", e); }
-}
-
-function salvarBanco() {
-    if (db) fs.writeFileSync(process.env.DB_PATH || './banco.sqlite', Buffer.from(db.export()));
+        console.log("Banco Turso conectado e pronto.");
+    } catch (e) {
+        console.error("Erro ao conectar no banco Turso:", e.message);
+    }
 }
 
 function verificarAssinaturaGoatPay(rawBody, signatureHeader, secret) {
@@ -211,11 +206,10 @@ app.post('/api/pagamento/pix', async (req, res) => {
             ? data.qrCodeImage
             : `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(copyPaste)}`;
 
-        if (db) {
-            db.run("INSERT INTO pedidos (txid, goatpay_id, modulo, alvo, status, data) VALUES (?, ?, ?, ?, ?, ?)",
-                [externalRef, goatpayId, modulo, alvo, 'pendente', new Date().toLocaleString()]);
-            salvarBanco();
-        }
+        await db.execute({
+            sql: "INSERT INTO pedidos (txid, goatpay_id, modulo, alvo, status, data) VALUES (?, ?, ?, ?, ?, ?)",
+            args: [externalRef, goatpayId, modulo, alvo, 'pendente', new Date().toLocaleString()]
+        });
 
         res.json({ sucesso: true, txid: externalRef, qrcode: copyPaste, qrcode_image: qrcodeImage });
     } catch (e) {
@@ -224,7 +218,7 @@ app.post('/api/pagamento/pix', async (req, res) => {
     }
 });
 
-app.post('/api/webhook/goatpay', (req, res) => {
+app.post('/api/webhook/goatpay', async (req, res) => {
     const signatureHeader = req.headers['x-goatpay-signature'];
     const eventType = req.headers['x-goatpay-event'];
     const rawBody = req.body;
@@ -253,44 +247,53 @@ app.post('/api/webhook/goatpay', (req, res) => {
     const eventData = payload.data || {};
     const goatpayId = eventData.id || eventData.referenceId;
 
-    if (db && goatpayId && (evento === 'payment.paid' || eventData.status === 'PAID')) {
-        db.run("UPDATE pedidos SET status = 'aprovado' WHERE goatpay_id = ?", [goatpayId]);
-        salvarBanco();
-        console.log(`Pedido com goatpay_id ${goatpayId} aprovado via webhook!`);
+    try {
+        if (goatpayId && (evento === 'payment.paid' || eventData.status === 'PAID')) {
+            await db.execute({
+                sql: "UPDATE pedidos SET status = 'aprovado' WHERE goatpay_id = ?",
+                args: [goatpayId]
+            });
+            console.log(`Pedido com goatpay_id ${goatpayId} aprovado via webhook!`);
+        }
+    } catch (e) {
+        console.error("Erro ao atualizar pedido via webhook:", e.message);
     }
 
     res.status(200).send('OK');
 });
 
-app.get('/api/pagamento/status/:txid', (req, res) => {
-    let status = 'pendente';
-    if (db) {
-        let stmt = db.prepare("SELECT status FROM pedidos WHERE txid = ?");
-        stmt.bind([req.params.txid]);
-        if (stmt.step()) status = stmt.get()[0];
-        stmt.free();
+app.get('/api/pagamento/status/:txid', async (req, res) => {
+    try {
+        const result = await db.execute({
+            sql: "SELECT status FROM pedidos WHERE txid = ?",
+            args: [req.params.txid]
+        });
+        const status = result.rows.length > 0 ? result.rows[0].status : 'pendente';
+        res.json({ pago: statusAprovado(status), liberadoAdmin: statusAprovado(status) });
+    } catch (e) {
+        console.error("Erro ao consultar status:", e.message);
+        res.status(500).json({ pago: false, liberadoAdmin: false });
     }
-    res.json({ pago: statusAprovado(status), liberadoAdmin: statusAprovado(status) });
 });
 
 app.get('/api/consulta/:txid', async (req, res) => {
     const { txid } = req.params;
-    if (!db) return res.status(500).json({ sucesso: false, erro: "Banco indisponível" });
-
-    let stmt = db.prepare("SELECT modulo, alvo, status FROM pedidos WHERE txid = ?");
-    stmt.bind([txid]);
-    if (!stmt.step()) {
-        stmt.free();
-        return res.status(404).json({ sucesso: false, erro: "Pedido não encontrado" });
-    }
-    const [modulo, alvo, status] = stmt.get();
-    stmt.free();
-
-    if (!statusAprovado(status)) {
-        return res.status(403).json({ sucesso: false, erro: "Pagamento ainda não confirmado" });
-    }
-
     try {
+        const result = await db.execute({
+            sql: "SELECT modulo, alvo, status FROM pedidos WHERE txid = ?",
+            args: [txid]
+        });
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ sucesso: false, erro: "Pedido não encontrado" });
+        }
+
+        const { modulo, alvo, status } = result.rows[0];
+
+        if (!statusAprovado(status)) {
+            return res.status(403).json({ sucesso: false, erro: "Pagamento ainda não confirmado" });
+        }
+
         const dados = await buscarDados(modulo.toUpperCase(), alvo);
         res.json({ sucesso: true, dados });
     } catch (e) {
@@ -299,70 +302,73 @@ app.get('/api/consulta/:txid', async (req, res) => {
     }
 });
 
-app.get('/api/admin/pedidos', exigirLogin, (req, res) => {
-    if (!db) return res.status(500).json({ sucesso: false, erro: "Banco indisponível" });
-    let resultado = [];
-    let stmt = db.prepare("SELECT txid, modulo, alvo, status, data FROM pedidos ORDER BY id DESC LIMIT 500");
-    while (stmt.step()) {
-        const [txid, modulo, alvo, status, data] = stmt.get();
-        resultado.push({ txid, modulo, alvo, status, data });
+app.get('/api/admin/pedidos', exigirLogin, async (req, res) => {
+    try {
+        const result = await db.execute(
+            "SELECT txid, modulo, alvo, status, data FROM pedidos ORDER BY id DESC LIMIT 500"
+        );
+        res.json(result.rows);
+    } catch (e) {
+        console.error("Erro ao listar pedidos:", e.message);
+        res.status(500).json({ sucesso: false, erro: "Banco indisponível" });
     }
-    stmt.free();
-    res.json(resultado);
 });
 
-app.post('/api/admin/aprovar/:txid', exigirLogin, (req, res) => {
-    if (db) {
-        db.run("UPDATE pedidos SET status = 'aprovado' WHERE txid = ?", [req.params.txid]);
-        salvarBanco();
+app.post('/api/admin/aprovar/:txid', exigirLogin, async (req, res) => {
+    try {
+        await db.execute({
+            sql: "UPDATE pedidos SET status = 'aprovado' WHERE txid = ?",
+            args: [req.params.txid]
+        });
+        res.json({ sucesso: true });
+    } catch (e) {
+        console.error("Erro ao aprovar pedido:", e.message);
+        res.status(500).json({ sucesso: false, erro: "Erro ao aprovar" });
     }
-    res.json({ sucesso: true });
 });
 
-app.get('/api/admin/estatisticas', exigirLogin, (req, res) => {
-    if (!db) return res.status(500).json({ sucesso: false, erro: "Banco indisponível" });
+app.get('/api/admin/estatisticas', exigirLogin, async (req, res) => {
+    try {
+        const result = await db.execute("SELECT modulo, status, data FROM pedidos");
+        const todos = result.rows;
 
-    let stmt = db.prepare("SELECT modulo, status, data FROM pedidos");
-    const todos = [];
-    while (stmt.step()) {
-        const [modulo, status, data] = stmt.get();
-        todos.push({ modulo, status, data });
-    }
-    stmt.free();
+        const aprovados = todos.filter(p => statusAprovado(p.status));
+        const pendentes = todos.filter(p => !statusAprovado(p.status));
 
-    const aprovados = todos.filter(p => statusAprovado(p.status));
-    const pendentes = todos.filter(p => !statusAprovado(p.status));
-
-    const porModulo = {};
-    aprovados.forEach(p => {
-        const m = (p.modulo || 'OUTRO').toUpperCase();
-        porModulo[m] = (porModulo[m] || 0) + 1;
-    });
-
-    const porDiaMap = {};
-    aprovados.forEach(p => {
-        const diaStr = (p.data || '').split(',')[0].trim() || 'Data desconhecida';
-        porDiaMap[diaStr] = (porDiaMap[diaStr] || 0) + 1;
-    });
-    const porDia = Object.entries(porDiaMap)
-        .map(([dia, quantidade]) => ({ dia, quantidade, receita: quantidade * VALOR_CONSULTA }))
-        .sort((a, b) => {
-            const [da, ma, aa] = a.dia.split('/');
-            const [dB, mb, ab] = b.dia.split('/');
-            if (!da || !dB) return 0;
-            return new Date(`${ab}-${mb}-${dB}`) - new Date(`${aa}-${ma}-${da}`);
+        const porModulo = {};
+        aprovados.forEach(p => {
+            const m = (p.modulo || 'OUTRO').toUpperCase();
+            porModulo[m] = (porModulo[m] || 0) + 1;
         });
 
-    res.json({
-        sucesso: true,
-        totalPedidos: todos.length,
-        totalAprovados: aprovados.length,
-        totalPendentes: pendentes.length,
-        receitaTotal: aprovados.length * VALOR_CONSULTA,
-        valorConsulta: VALOR_CONSULTA,
-        porModulo,
-        porDia
-    });
+        const porDiaMap = {};
+        aprovados.forEach(p => {
+            const diaStr = (p.data || '').split(',')[0].trim() || 'Data desconhecida';
+            porDiaMap[diaStr] = (porDiaMap[diaStr] || 0) + 1;
+        });
+        const porDia = Object.entries(porDiaMap)
+            .map(([dia, quantidade]) => ({ dia, quantidade, receita: quantidade * VALOR_CONSULTA }))
+            .sort((a, b) => {
+                const [da, ma, aa] = a.dia.split('/');
+                const [dB, mb, ab] = b.dia.split('/');
+                if (!da || !dB) return 0;
+                return new Date(`${ab}-${mb}-${dB}`) - new Date(`${aa}-${ma}-${da}`);
+            });
+
+        res.json({
+            sucesso: true,
+            totalPedidos: todos.length,
+            totalAprovados: aprovados.length,
+            totalPendentes: pendentes.length,
+            receitaTotal: aprovados.length * VALOR_CONSULTA,
+            valorConsulta: VALOR_CONSULTA,
+            porModulo,
+            porDia
+        });
+    } catch (e) {
+        console.error("Erro nas estatísticas:", e.message);
+        res.status(500).json({ sucesso: false, erro: "Banco indisponível" });
+    }
 });
 
 iniciarBanco().then(() => {
