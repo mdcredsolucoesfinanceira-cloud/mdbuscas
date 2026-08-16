@@ -17,6 +17,9 @@ const ADMIN_USER = process.env.ADMIN_USER;
 const ADMIN_PASS = process.env.ADMIN_PASS;
 const SESSION_SECRET = process.env.SESSION_SECRET || 'mude_essa_chave_no_render';
 
+console.log("DEBUG - ADMIN_USER definido?", !!ADMIN_USER, "| valor:", JSON.stringify(ADMIN_USER));
+console.log("DEBUG - ADMIN_PASS definido?", !!ADMIN_PASS, "| tamanho:", ADMIN_PASS ? ADMIN_PASS.length : 0);
+
 app.use('/api/webhook/goatpay', express.raw({ type: '*/*' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -25,10 +28,9 @@ app.use(session({
     secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 1000 * 60 * 60 * 8 } // 8 horas
+    cookie: { maxAge: 1000 * 60 * 60 * 8 }
 }));
 
-// Protege as páginas HTML de admin ANTES do static servir os arquivos
 app.use((req, res, next) => {
     const protegidas = ['/admin.html', '/dashboard.html'];
     if (protegidas.includes(req.path) && !(req.session && req.session.autenticado)) {
@@ -92,6 +94,7 @@ function exigirLogin(req, res, next) {
 // LOGIN
 app.post('/api/login', (req, res) => {
     const { usuario, senha } = req.body;
+    console.log("DEBUG - tentativa de login. usuario recebido:", JSON.stringify(usuario), "| senha recebida (tamanho):", senha ? senha.length : 0);
     if (!ADMIN_USER || !ADMIN_PASS) {
         return res.status(500).json({ sucesso: false, erro: "Login não configurado no servidor" });
     }
@@ -257,7 +260,7 @@ app.get('/api/consulta/:txid', async (req, res) => {
     }
 });
 
-// ADMIN — agora exige login
+// ADMIN
 app.get('/api/admin/pedidos', exigirLogin, (req, res) => {
     if (!db) return res.status(500).json({ sucesso: false, erro: "Banco indisponível" });
     let resultado = [];
