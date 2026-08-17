@@ -218,16 +218,15 @@
     #btnInstalarApp {
       display: none;
       position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
+      top: 12px;
+      right: 12px;
       background: #00ffcc;
       color: #000;
       border: none;
-      padding: 12px 24px;
-      border-radius: 30px;
+      padding: 8px 14px;
+      border-radius: 20px;
       font-weight: bold;
-      font-size: 0.85rem;
+      font-size: 0.72rem;
       cursor: pointer;
       z-index: 50;
       box-shadow: 0 4px 14px rgba(0,255,204,0.35);
@@ -519,58 +518,142 @@
     }
 
     function formatarResultado(modulo, dados) {
-      const linha = (label, valor) => valor ? `${label}: ${valor}\n` : '';
+      const linha = (label, valor) => (valor !== undefined && valor !== null && valor !== '') ? `${label}: ${valor}\n` : '';
       let saida = '';
 
       if (modulo === 'CNPJ') {
-        saida += `🏢 DADOS DA EMPRESA\n\n`;
-        saida += linha('📌 Nome', dados.nome);
-        saida += linha('🏷️ Fantasia', dados.fantasia);
-        saida += linha('✅ Situação', dados.situacao);
-        saida += linha('📅 Abertura', dados.abertura);
-        saida += linha('🏗️ Porte', dados.porte);
-        saida += linha('📍 Endereço', `${dados.logradouro}, ${dados.numero} - ${dados.bairro}`);
-        saida += linha('🏙️ Cidade/UF', `${dados.municipio}/${dados.uf}`);
-        saida += linha('📮 CEP', dados.cep);
-        saida += linha('☎️ Telefone', dados.telefone);
-        saida += linha('📧 Email', dados.email);
+        const rw = dados.fonte_receitaws || {};
+        const ba = dados.fonte_brasilapi || {};
+
+        saida += `DADOS DA EMPRESA (ReceitaWS)\n\n`;
+        saida += linha('Nome', rw.nome);
+        saida += linha('Fantasia', rw.fantasia);
+        saida += linha('Situação', rw.situacao);
+        saida += linha('Data situação', rw.data_situacao);
+        saida += linha('Motivo situação', rw.motivo_situacao);
+        saida += linha('Tipo', rw.tipo);
+        saida += linha('Abertura', rw.abertura);
+        saida += linha('Natureza jurídica', rw.natureza_juridica);
+        saida += linha('Porte', rw.porte);
+        saida += linha('CNPJ', rw.cnpj);
+        saida += linha('Capital social', rw.capital_social);
+        saida += linha('Última atualização', rw.ultima_atualizacao);
+        saida += linha('Endereço', rw.logradouro ? `${rw.logradouro}, ${rw.numero || 's/n'} ${rw.complemento || ''}` : null);
+        saida += linha('Bairro', rw.bairro);
+        saida += linha('Cidade/UF', rw.municipio ? `${rw.municipio}/${rw.uf}` : null);
+        saida += linha('CEP', rw.cep);
+        saida += linha('Telefone', rw.telefone);
+        saida += linha('Email', rw.email);
+        saida += linha('EFR', rw.efr);
+
+        if (rw.atividade_principal && rw.atividade_principal.length) {
+          saida += `\nAtividade principal:\n`;
+          rw.atividade_principal.forEach(a => { saida += `  ${a.code} - ${a.text}\n`; });
+        }
+        if (rw.atividades_secundarias && rw.atividades_secundarias.length) {
+          saida += `\nAtividades secundárias:\n`;
+          rw.atividades_secundarias.forEach(a => { saida += `  ${a.code} - ${a.text}\n`; });
+        }
+        if (rw.qsa && rw.qsa.length) {
+          saida += `\nQuadro societário:\n`;
+          rw.qsa.forEach(s => { saida += `  ${s.nome} — ${s.qual}\n`; });
+        }
+        if (rw.simples) {
+          saida += `\nSimples Nacional:\n`;
+          saida += linha('  Optante', rw.simples.optante ? 'Sim' : 'Não');
+          saida += linha('  Data opção', rw.simples.data_opcao);
+          saida += linha('  Data exclusão', rw.simples.data_exclusao);
+        }
+        if (rw.simei) {
+          saida += `\nSIMEI:\n`;
+          saida += linha('  Optante', rw.simei.optante ? 'Sim' : 'Não');
+        }
+
+        if (ba && Object.keys(ba).length) {
+          saida += `\n\nDADOS DA EMPRESA (BrasilAPI)\n\n`;
+          saida += linha('Razão social', ba.razao_social);
+          saida += linha('Nome fantasia', ba.nome_fantasia);
+          saida += linha('Situação cadastral', ba.descricao_situacao_cadastral);
+          saida += linha('Data situação cadastral', ba.data_situacao_cadastral);
+          saida += linha('Motivo situação cadastral', ba.descricao_motivo_situacao_cadastral);
+          saida += linha('Matriz/Filial', ba.descricao_identificador_matriz_filial);
+          saida += linha('Data início atividade', ba.data_inicio_atividade);
+          saida += linha('Natureza jurídica', ba.natureza_juridica);
+          saida += linha('Porte', ba.descricao_porte);
+          saida += linha('Capital social', ba.capital_social);
+          saida += linha('CNAE fiscal', ba.cnae_fiscal_descricao);
+          saida += linha('Endereço', ba.logradouro ? `${ba.descricao_tipo_de_logradouro || ''} ${ba.logradouro}, ${ba.numero || 's/n'} ${ba.complemento || ''}` : null);
+          saida += linha('Bairro', ba.bairro);
+          saida += linha('Cidade/UF', ba.municipio ? `${ba.municipio}/${ba.uf}` : null);
+          saida += linha('CEP', ba.cep);
+          saida += linha('DDD/Telefone 1', ba.ddd_telefone_1);
+          saida += linha('DDD/Telefone 2', ba.ddd_telefone_2);
+          saida += linha('Email', ba.email);
+          saida += linha('Opção MEI', ba.opcao_pelo_mei ? 'Sim' : 'Não');
+          saida += linha('Opção Simples', ba.opcao_pelo_simples ? 'Sim' : 'Não');
+
+          if (ba.cnaes_secundarios && ba.cnaes_secundarios.length) {
+            saida += `\nCNAEs secundários (BrasilAPI):\n`;
+            ba.cnaes_secundarios.forEach(c => { saida += `  ${c.codigo} - ${c.descricao}\n`; });
+          }
+          if (ba.qsa && ba.qsa.length) {
+            saida += `\nSócios (BrasilAPI):\n`;
+            ba.qsa.forEach(s => { saida += `  ${s.nome_socio} — ${s.qualificacao_socio}\n`; });
+          }
+        }
+
       } else if (modulo === 'CEP') {
-        saida += `📍 DADOS DO ENDEREÇO\n\n`;
-        saida += linha('🛣️ Rua', dados.street);
-        saida += linha('🏘️ Bairro', dados.neighborhood);
-        saida += linha('🏙️ Cidade', dados.city);
-        saida += linha('🗺️ Estado', dados.state);
-        saida += linha('📮 CEP', dados.cep);
+        saida += `DADOS DO ENDEREÇO\n\n`;
+        saida += linha('CEP', dados.cep);
+        saida += linha('Rua', dados.street);
+        saida += linha('Bairro', dados.neighborhood);
+        saida += linha('Cidade', dados.city);
+        saida += linha('Estado', dados.state);
+        saida += linha('Serviço', dados.service);
+        if (dados.location && dados.location.coordinates) {
+          saida += linha('Latitude', dados.location.coordinates.latitude);
+          saida += linha('Longitude', dados.location.coordinates.longitude);
+        }
       } else if (modulo === 'FIPE') {
-        saida += `🚙 TABELA FIPE\n\n`;
+        saida += `TABELA FIPE\n\n`;
         (Array.isArray(dados) ? dados : [dados]).forEach(d => {
-          saida += linha('🚗 Modelo', d.modelo);
-          saida += linha('🏭 Marca', d.marca);
-          saida += linha('📅 Ano', d.anoModelo);
-          saida += linha('💰 Valor', d.valor);
+          saida += linha('Modelo', d.modelo);
+          saida += linha('Marca', d.marca);
+          saida += linha('Ano modelo', d.anoModelo);
+          saida += linha('Combustível', d.combustivel);
+          saida += linha('Código FIPE', d.codigoFipe);
+          saida += linha('Mês referência', d.mesReferencia);
+          saida += linha('Tipo veículo', d.tipoVeiculo);
+          saida += linha('Valor', d.valor);
+          saida += '\n';
         });
       } else if (modulo === 'CNAE') {
-        saida += `🏷️ DADOS DO CNAE\n\n`;
-        saida += linha('🔢 Código', dados.id);
-        saida += linha('📋 Descrição', dados.descricao);
+        saida += `DADOS DO CNAE\n\n`;
+        saida += linha('Código', dados.id);
+        saida += linha('Descrição', dados.descricao);
       } else if (modulo === 'BANCO') {
-        saida += `🏦 DADOS DO BANCO\n\n`;
-        saida += linha('🔢 Código', dados.code);
-        saida += linha('🏛️ Nome', dados.name || dados.fullName);
-        saida += linha('🌍 ISPB', dados.ispb);
+        saida += `DADOS DO BANCO\n\n`;
+        saida += linha('Código', dados.code);
+        saida += linha('Nome', dados.name);
+        saida += linha('Nome completo', dados.fullName);
+        saida += linha('ISPB', dados.ispb);
       } else if (modulo === 'FERIADOS') {
-        saida += `📅 FERIADOS NACIONAIS\n\n`;
+        saida += `FERIADOS NACIONAIS\n\n`;
         (Array.isArray(dados) ? dados : []).forEach(f => {
-          saida += `🎉 ${f.date} — ${f.name}\n`;
+          saida += `${f.date} — ${f.name} (${f.type})\n`;
         });
       } else {
         saida = JSON.stringify(dados, null, 2);
       }
 
-      return saida;
+      return saida.trim();
     }
 
     async function liberarDados() {
+      const btnInstalar = document.getElementById('btnInstalarApp');
+      if (btnInstalar.style.display === 'block') btnInstalar.dataset.eraVisivel = 'true';
+      btnInstalar.style.display = 'none';
+
       document.getElementById('msgStatus').innerText = '✅ Pagamento confirmado! Buscando dados...';
 
       fecharModal();
@@ -595,6 +678,10 @@
 
     function fecharTelaResultado() {
       document.getElementById('telaResultado').style.display = 'none';
+      const btnInstalar = document.getElementById('btnInstalarApp');
+      if (btnInstalar.dataset.eraVisivel === 'true') {
+        btnInstalar.style.display = 'block';
+      }
     }
 
     function copiarResultadoCompleto() {

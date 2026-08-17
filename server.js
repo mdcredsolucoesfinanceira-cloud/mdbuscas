@@ -143,8 +143,16 @@ async function validarAlvo(moduloUpper, alvo) {
 async function buscarDados(moduloUpper, alvo) {
     if (moduloUpper === 'CNPJ') {
         const limpo = alvo.replace(/\D/g, '');
-        const r = await axios.get(`https://receitaws.com.br/v1/cnpj/${limpo}`);
-        return r.data;
+        const resultado = { fonte_receitaws: null, fonte_brasilapi: null };
+        try {
+            const r1 = await axios.get(`https://receitaws.com.br/v1/cnpj/${limpo}`);
+            resultado.fonte_receitaws = r1.data;
+        } catch (e) { /* segue com o que tiver */ }
+        try {
+            const r2 = await axios.get(`https://brasilapi.com.br/api/cnpj/v1/${limpo}`);
+            resultado.fonte_brasilapi = r2.data;
+        } catch (e) { /* segue com o que tiver */ }
+        return resultado;
     }
     if (moduloUpper === 'CEP') {
         const limpo = alvo.replace(/\D/g, '');
