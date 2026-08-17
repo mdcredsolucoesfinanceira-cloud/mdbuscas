@@ -96,6 +96,10 @@
       opacity: 0;
       transform: translateY(14px);
       animation: cardEntra 0.5s ease forwards;
+      animation-play-state: paused;
+    }
+    .grid-modules.animar .card-module {
+      animation-play-state: running;
     }
     @keyframes cardEntra {
       to { opacity: 1; transform: translateY(0); }
@@ -170,7 +174,6 @@
     .btn-fechar { background: #e74c3c; border: none; color: #fff; padding: 10px; border-radius: 6px; width: 100%; margin-top: 10px; }
     #resultadosDados { display: none; background: #03070c; padding: 15px; border-radius: 8px; color: #00ffcc; margin-top: 15px; text-align: left; font-size: 0.8rem; overflow-x: auto; }
 
-    /* Skeleton loading */
     .skeleton {
       background: linear-gradient(90deg, #142238 25%, #1c3050 37%, #142238 63%);
       background-size: 400% 100%;
@@ -443,6 +446,7 @@
         setTimeout(() => {
           intro.style.display = 'none';
           document.getElementById('secaoModulos').scrollIntoView({ behavior: 'smooth', block: 'start' });
+          document.getElementById('secaoModulos').classList.add('animar');
         }, 800);
       }, 5000);
     });
@@ -456,7 +460,6 @@
       const preco = precosModulo[m] || "10,00";
       document.getElementById('btnGerar').innerText = `Gerar PIX R$ ${preco}`;
 
-      // reset de estado visual toda vez que abre
       document.getElementById('inputAlvo').style.display = 'block';
       document.getElementById('inputAlvo').value = '';
       document.getElementById('btnGerar').style.display = 'block';
@@ -475,7 +478,6 @@
       let alvo = document.getElementById('inputAlvo').value;
       if(!alvo) return alert('Digite o dado!');
 
-      // mostra skeleton enquanto aguarda a GoatPay responder
       document.getElementById('inputAlvo').style.display = 'none';
       document.getElementById('btnGerar').style.display = 'none';
       document.getElementById('skeletonPix').style.display = 'block';
@@ -516,6 +518,58 @@
       }
     }
 
+    function formatarResultado(modulo, dados) {
+      const linha = (label, valor) => valor ? `${label}: ${valor}\n` : '';
+      let saida = '';
+
+      if (modulo === 'CNPJ') {
+        saida += `🏢 DADOS DA EMPRESA\n\n`;
+        saida += linha('📌 Nome', dados.nome);
+        saida += linha('🏷️ Fantasia', dados.fantasia);
+        saida += linha('✅ Situação', dados.situacao);
+        saida += linha('📅 Abertura', dados.abertura);
+        saida += linha('🏗️ Porte', dados.porte);
+        saida += linha('📍 Endereço', `${dados.logradouro}, ${dados.numero} - ${dados.bairro}`);
+        saida += linha('🏙️ Cidade/UF', `${dados.municipio}/${dados.uf}`);
+        saida += linha('📮 CEP', dados.cep);
+        saida += linha('☎️ Telefone', dados.telefone);
+        saida += linha('📧 Email', dados.email);
+      } else if (modulo === 'CEP') {
+        saida += `📍 DADOS DO ENDEREÇO\n\n`;
+        saida += linha('🛣️ Rua', dados.street);
+        saida += linha('🏘️ Bairro', dados.neighborhood);
+        saida += linha('🏙️ Cidade', dados.city);
+        saida += linha('🗺️ Estado', dados.state);
+        saida += linha('📮 CEP', dados.cep);
+      } else if (modulo === 'FIPE') {
+        saida += `🚙 TABELA FIPE\n\n`;
+        (Array.isArray(dados) ? dados : [dados]).forEach(d => {
+          saida += linha('🚗 Modelo', d.modelo);
+          saida += linha('🏭 Marca', d.marca);
+          saida += linha('📅 Ano', d.anoModelo);
+          saida += linha('💰 Valor', d.valor);
+        });
+      } else if (modulo === 'CNAE') {
+        saida += `🏷️ DADOS DO CNAE\n\n`;
+        saida += linha('🔢 Código', dados.id);
+        saida += linha('📋 Descrição', dados.descricao);
+      } else if (modulo === 'BANCO') {
+        saida += `🏦 DADOS DO BANCO\n\n`;
+        saida += linha('🔢 Código', dados.code);
+        saida += linha('🏛️ Nome', dados.name || dados.fullName);
+        saida += linha('🌍 ISPB', dados.ispb);
+      } else if (modulo === 'FERIADOS') {
+        saida += `📅 FERIADOS NACIONAIS\n\n`;
+        (Array.isArray(dados) ? dados : []).forEach(f => {
+          saida += `🎉 ${f.date} — ${f.name}\n`;
+        });
+      } else {
+        saida = JSON.stringify(dados, null, 2);
+      }
+
+      return saida;
+    }
+
     async function liberarDados() {
       document.getElementById('msgStatus').innerText = '✅ Pagamento confirmado! Buscando dados...';
 
@@ -531,7 +585,7 @@
       document.getElementById('resultadoConteudoFull').style.display = 'block';
 
       if (dataBusca.sucesso) {
-        ultimoResultadoTexto = JSON.stringify(dataBusca.dados, null, 2);
+        ultimoResultadoTexto = formatarResultado(moduloAtual, dataBusca.dados);
         document.getElementById('resultadoConteudoFull').innerText = ultimoResultadoTexto;
       } else {
         document.getElementById('resultadoConteudoFull').innerText =
