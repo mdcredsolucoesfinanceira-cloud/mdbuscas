@@ -93,7 +93,24 @@
       position: relative;
       min-height: 150px;
       justify-content: space-between;
+      opacity: 0;
+      transform: translateY(14px);
+      animation: cardEntra 0.5s ease forwards;
     }
+    @keyframes cardEntra {
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .card-module:nth-child(1)  { animation-delay: 0.05s; }
+    .card-module:nth-child(2)  { animation-delay: 0.10s; }
+    .card-module:nth-child(3)  { animation-delay: 0.15s; }
+    .card-module:nth-child(4)  { animation-delay: 0.20s; }
+    .card-module:nth-child(5)  { animation-delay: 0.25s; }
+    .card-module:nth-child(6)  { animation-delay: 0.30s; }
+    .card-module:nth-child(7)  { animation-delay: 0.35s; }
+    .card-module:nth-child(8)  { animation-delay: 0.40s; }
+    .card-module:nth-child(9)  { animation-delay: 0.45s; }
+    .card-module:nth-child(10) { animation-delay: 0.50s; }
+
     .card-badge {
       position: absolute; top: 8px; right: 8px;
       width: 10px; height: 10px; border-radius: 50%;
@@ -112,7 +129,9 @@
     .btn-consultar {
       background: #00ffcc; color: #000; border: none; padding: 7px 14px;
       border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.75rem; margin-top: 10px;
+      transition: transform 0.15s ease, background 0.15s ease;
     }
+    .btn-consultar:active { transform: scale(0.96); }
     .btn-bloqueado {
       background: #23324a; color: #6b7c93; border: none; padding: 7px 14px;
       border-radius: 6px; font-weight: bold; cursor: not-allowed; font-size: 0.75rem; margin-top: 10px;
@@ -133,17 +152,54 @@
       text-align: center; margin-top: 40px; color: #4a5568; font-size: 0.72rem;
     }
 
-    .modalConsultas { display: none; position: fixed; z-index: 10; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; padding: 20px; }
-    .modal-conteudo { background: #0b1626; padding: 20px; border-radius: 12px; width: 100%; max-width: 400px; border: 1px solid #00ffcc; text-align: center; }
+    .modalConsultas {
+      display: none; position: fixed; z-index: 10; left: 0; top: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.9); justify-content: center; align-items: center; padding: 20px;
+    }
+    .modal-conteudo {
+      background: #0b1626; padding: 20px; border-radius: 12px; width: 100%; max-width: 400px;
+      border: 1px solid #00ffcc; text-align: center;
+      animation: modalEntra 0.25s ease forwards;
+    }
+    @keyframes modalEntra {
+      from { opacity: 0; transform: scale(0.95) translateY(8px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
     .btn-copiar { background: #f39c12; color: #000; border: none; padding: 10px; border-radius: 6px; width: 100%; margin-top: 10px; font-weight: bold; }
     .btn-whatsapp { display: block; background: #25d366; color: white; padding: 10px; border-radius: 6px; text-decoration: none; font-weight: bold; margin-top: 10px; }
     .btn-fechar { background: #e74c3c; border: none; color: #fff; padding: 10px; border-radius: 6px; width: 100%; margin-top: 10px; }
     #resultadosDados { display: none; background: #03070c; padding: 15px; border-radius: 8px; color: #00ffcc; margin-top: 15px; text-align: left; font-size: 0.8rem; overflow-x: auto; }
 
+    /* Skeleton loading */
+    .skeleton {
+      background: linear-gradient(90deg, #142238 25%, #1c3050 37%, #142238 63%);
+      background-size: 400% 100%;
+      animation: skeletonPulse 1.4s ease infinite;
+      border-radius: 8px;
+    }
+    @keyframes skeletonPulse {
+      0% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    #skeletonPix { display: none; }
+    #skeletonPix .sk-img { width: 160px; height: 160px; margin: 0 auto; border-radius: 5px; }
+    #skeletonPix .sk-line { height: 12px; margin-top: 12px; }
+    #skeletonPix .sk-line.short { width: 60%; margin: 12px auto 0 auto; }
+
+    #skeletonResultado { display: none; padding: 15px; }
+    #skeletonResultado .sk-line { height: 12px; margin-bottom: 10px; }
+    #skeletonResultado .sk-line:nth-child(1) { width: 90%; }
+    #skeletonResultado .sk-line:nth-child(2) { width: 75%; }
+    #skeletonResultado .sk-line:nth-child(3) { width: 85%; }
+    #skeletonResultado .sk-line:nth-child(4) { width: 60%; }
+    #skeletonResultado .sk-line:nth-child(5) { width: 80%; }
+
     #telaResultado {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: #000; z-index: 20; flex-direction: column; padding: 20px;
+      animation: fadeIn 0.3s ease forwards;
     }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     #telaResultado .resultado-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-shrink: 0; }
     #telaResultado .resultado-header h3 { color: #00ffcc; font-size: 1.1rem; }
     #telaResultado .resultado-conteudo {
@@ -155,6 +211,24 @@
     #telaResultado .resultado-botoes button { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
     #btnCopiarTudo { background: #f39c12; color: #000; }
     #btnFecharResultado { background: #e74c3c; color: #fff; }
+
+    #btnInstalarApp {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #00ffcc;
+      color: #000;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-weight: bold;
+      font-size: 0.85rem;
+      cursor: pointer;
+      z-index: 50;
+      box-shadow: 0 4px 14px rgba(0,255,204,0.35);
+    }
   </style>
 </head>
 <body>
@@ -262,8 +336,14 @@
       <h3 id="modalTitulo" style="color:#00ffcc">CONSULTA</h3>
       <input type="text" id="inputAlvo" placeholder="Digite o dado..." style="width:100%; padding:10px; margin:10px 0; border-radius:5px; border:none;">
 
+      <div id="skeletonPix">
+        <div class="skeleton sk-img"></div>
+        <div class="skeleton sk-line"></div>
+        <div class="skeleton sk-line short"></div>
+      </div>
+
       <div id="areaPix" style="display:none;">
-        <img id="imgQrCode" style="width:160px; background:#fff; border:2px solid #00ffcc; border-radius:5px;">
+        <img id="imgQrCode" style="width:160px; background:#fff; border:2px solid #00ffcc; border-radius:5px;" loading="lazy">
         <input type="text" id="copiaCola" readonly style="width:100%; margin-top:10px; font-size:10px; padding:5px;">
         <button class="btn-copiar" onclick="copiarPix()">Copiar Código Pix</button>
         <a id="linkWpp" class="btn-whatsapp">Suporte via WhatsApp</a>
@@ -280,12 +360,21 @@
     <div class="resultado-header">
       <h3>✅ Resultado da Consulta</h3>
     </div>
-    <div class="resultado-conteudo" id="resultadoConteudoFull"></div>
+    <div id="skeletonResultado">
+      <div class="skeleton sk-line"></div>
+      <div class="skeleton sk-line"></div>
+      <div class="skeleton sk-line"></div>
+      <div class="skeleton sk-line"></div>
+      <div class="skeleton sk-line"></div>
+    </div>
+    <div class="resultado-conteudo" id="resultadoConteudoFull" style="display:none;"></div>
     <div class="resultado-botoes">
       <button id="btnCopiarTudo" onclick="copiarResultadoCompleto()">📋 Copiar Tudo</button>
       <button id="btnFecharResultado" onclick="fecharTelaResultado()">Fechar</button>
     </div>
   </div>
+
+  <button id="btnInstalarApp">📲 Instalar App</button>
 
   <script>
     const linhasCodigo = [
@@ -366,6 +455,14 @@
       document.getElementById('inputAlvo').placeholder = placeholders[m] || "Digite o dado...";
       const preco = precosModulo[m] || "10,00";
       document.getElementById('btnGerar').innerText = `Gerar PIX R$ ${preco}`;
+
+      // reset de estado visual toda vez que abre
+      document.getElementById('inputAlvo').style.display = 'block';
+      document.getElementById('inputAlvo').value = '';
+      document.getElementById('btnGerar').style.display = 'block';
+      document.getElementById('areaPix').style.display = 'none';
+      document.getElementById('skeletonPix').style.display = 'none';
+
       document.getElementById('modalConsulta').style.display = 'flex';
     }
 
@@ -378,6 +475,11 @@
       let alvo = document.getElementById('inputAlvo').value;
       if(!alvo) return alert('Digite o dado!');
 
+      // mostra skeleton enquanto aguarda a GoatPay responder
+      document.getElementById('inputAlvo').style.display = 'none';
+      document.getElementById('btnGerar').style.display = 'none';
+      document.getElementById('skeletonPix').style.display = 'block';
+
       let res = await fetch('/api/pagamento/pix', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -385,15 +487,17 @@
       });
       let data = await res.json();
 
+      document.getElementById('skeletonPix').style.display = 'none';
+
       if (!data.sucesso) {
         alert(data.erro || 'Erro ao gerar pagamento. Tente novamente.');
+        document.getElementById('inputAlvo').style.display = 'block';
+        document.getElementById('btnGerar').style.display = 'block';
         return;
       }
 
       txidAtual = data.txid;
 
-      document.getElementById('inputAlvo').style.display = 'none';
-      document.getElementById('btnGerar').style.display = 'none';
       document.getElementById('areaPix').style.display = 'block';
       document.getElementById('imgQrCode').src = data.qrcode_image;
       document.getElementById('copiaCola').value = data.qrcode;
@@ -414,16 +518,24 @@
 
     async function liberarDados() {
       document.getElementById('msgStatus').innerText = '✅ Pagamento confirmado! Buscando dados...';
+
+      fecharModal();
+      document.getElementById('skeletonResultado').style.display = 'block';
+      document.getElementById('resultadoConteudoFull').style.display = 'none';
+      document.getElementById('telaResultado').style.display = 'flex';
+
       let resBusca = await fetch(`/api/consulta/${txidAtual}`);
       let dataBusca = await resBusca.json();
+
+      document.getElementById('skeletonResultado').style.display = 'none';
+      document.getElementById('resultadoConteudoFull').style.display = 'block';
 
       if (dataBusca.sucesso) {
         ultimoResultadoTexto = JSON.stringify(dataBusca.dados, null, 2);
         document.getElementById('resultadoConteudoFull').innerText = ultimoResultadoTexto;
-        fecharModal();
-        document.getElementById('telaResultado').style.display = 'flex';
       } else {
-        document.getElementById('msgStatus').innerText = '❌ Erro: ' + (dataBusca.erro || 'não foi possível buscar os dados.');
+        document.getElementById('resultadoConteudoFull').innerText =
+          '❌ Erro: ' + (dataBusca.erro || 'não foi possível buscar os dados.');
       }
     }
 
@@ -443,6 +555,28 @@
         navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW erro:', err));
       });
     }
+
+    let promptInstalacao = null;
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      promptInstalacao = e;
+      document.getElementById('btnInstalarApp').style.display = 'block';
+    });
+
+    document.getElementById('btnInstalarApp').addEventListener('click', async () => {
+      if (!promptInstalacao) return;
+      promptInstalacao.prompt();
+      const resultado = await promptInstalacao.userChoice;
+      if (resultado.outcome === 'accepted') {
+        document.getElementById('btnInstalarApp').style.display = 'none';
+      }
+      promptInstalacao = null;
+    });
+
+    window.addEventListener('appinstalled', () => {
+      document.getElementById('btnInstalarApp').style.display = 'none';
+    });
   </script>
 </body>
 </html>
