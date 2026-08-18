@@ -5,17 +5,34 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MD BUSCAS - Central de Inteligência</title>
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#00ffcc">
+  <meta name="theme-color" content="#0d1420">
   <link rel="apple-touch-icon" href="/logo1.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-    body { background-color: #000; color: #fff; padding: 20px; }
+    :root {
+      --cor-fundo: #05070a;
+      --cor-painel: #0d1420;
+      --cor-painel-alt: #101b2c;
+      --cor-borda: rgba(255,255,255,0.07);
+      --cor-primaria: #16e0b4;
+      --cor-primaria-escura: #0fae8c;
+      --cor-texto: #f4f6f9;
+      --cor-texto-suave: #93a0b4;
+      --cor-perigo: #ef4444;
+      --cor-sucesso: #22c55e;
+      --sombra-card: 0 8px 24px rgba(0,0,0,0.35);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', 'Segoe UI', sans-serif; }
+    body { background-color: var(--cor-fundo); color: var(--cor-texto); padding-bottom: 60px; }
 
+    /* ===== INTRO ===== */
     #telaIntro {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: #000;
+      background: var(--cor-fundo);
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       z-index: 9999; transition: opacity 0.8s ease;
       overflow: hidden;
@@ -26,7 +43,7 @@
       font-family: 'Courier New', monospace;
       font-size: 0.72rem;
       line-height: 1.5;
-      color: rgba(0,255,204,0.28);
+      color: rgba(22,224,180,0.22);
       white-space: pre-wrap;
       word-break: break-all;
       opacity: 0.6;
@@ -45,14 +62,14 @@
       100% { opacity: 1; transform: scale(1) translateY(0); }
     }
     #telaIntro .intro-tagline {
-      margin-top: 16px; color: #94a3b5; font-size: 0.78rem;
+      margin-top: 16px; color: var(--cor-texto-suave); font-size: 0.78rem;
       letter-spacing: 3px; text-transform: uppercase; font-weight: 600;
       opacity: 0; position: relative; z-index: 2;
       animation: taglineEntra 0.9s ease forwards; animation-delay: 1s;
     }
     @keyframes taglineEntra {
       0%   { opacity: 0; transform: translateY(4px); }
-      100% { opacity: 0.85; transform: translateY(0); }
+      100% { opacity: 0.9; transform: translateY(0); }
     }
     #telaIntro .intro-barra {
       width: 140px; height: 2px; margin-top: 26px;
@@ -61,42 +78,137 @@
     }
     #telaIntro .intro-barra-fill {
       height: 100%; width: 0%;
-      background: linear-gradient(90deg, #00ffcc, #00b38f);
+      background: linear-gradient(90deg, var(--cor-primaria), var(--cor-primaria-escura));
       border-radius: 2px;
       animation: carregando 3.4s ease forwards; animation-delay: 0.5s;
     }
     @keyframes carregando { 0% { width: 0%; } 100% { width: 100%; } }
 
-    .header { text-align: center; margin-bottom: 30px; }
-    .header p { color: #94a3b5; font-size: 0.85rem; }
-    .logo-topo {
-      width: 120px;
+    /* ===== HEADER FIXO ===== */
+    header.topo {
+      position: sticky; top: 0; z-index: 30;
+      background: rgba(5,7,10,0.85);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--cor-borda);
+      padding: 12px 18px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    header.topo .marca { display: flex; align-items: center; gap: 10px; }
+    header.topo .marca img { width: 34px; height: 34px; border-radius: 8px; }
+    header.topo .marca span { font-weight: 700; font-size: 1rem; letter-spacing: 0.5px; }
+    .btn-suporte-topo {
+      display: flex; align-items: center; gap: 6px;
+      background: var(--cor-painel-alt);
+      border: 1px solid var(--cor-borda);
+      color: var(--cor-texto);
+      padding: 7px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .btn-suporte-topo svg { width: 15px; height: 15px; stroke: var(--cor-sucesso); }
+
+    /* ===== HERO ===== */
+    .hero {
+      text-align: center;
+      padding: 46px 20px 30px 20px;
+      max-width: 640px;
+      margin: 0 auto;
+    }
+    .hero img.logo-hero {
+      width: 96px;
       display: block;
-      margin: 0 auto 12px auto;
+      margin: 0 auto 18px auto;
+    }
+    .hero h1 {
+      font-size: 1.55rem;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+      margin-bottom: 10px;
+    }
+    .hero p {
+      color: var(--cor-texto-suave);
+      font-size: 0.9rem;
+      line-height: 1.5;
+      max-width: 460px;
+      margin: 0 auto 22px auto;
+    }
+    .hero .btn-cta {
+      display: inline-block;
+      background: linear-gradient(135deg, var(--cor-primaria), var(--cor-primaria-escura));
+      color: #04120e;
+      font-weight: 700;
+      font-size: 0.85rem;
+      padding: 12px 28px;
+      border-radius: 30px;
+      text-decoration: none;
+      box-shadow: 0 6px 20px rgba(22,224,180,0.25);
     }
 
-    #secaoModulos { scroll-margin-top: 20px; }
+    /* ===== COMO FUNCIONA ===== */
+    .como-funciona {
+      max-width: 900px;
+      margin: 10px auto 50px auto;
+      padding: 0 20px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    .passo {
+      background: var(--cor-painel);
+      border: 1px solid var(--cor-borda);
+      border-radius: 14px;
+      padding: 18px 14px;
+      text-align: center;
+    }
+    .passo .numero {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      background: rgba(22,224,180,0.12);
+      color: var(--cor-primaria);
+      font-weight: 700;
+      font-size: 0.85rem;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 10px auto;
+    }
+    .passo h3 { font-size: 0.82rem; font-weight: 600; margin-bottom: 6px; }
+    .passo p { font-size: 0.72rem; color: var(--cor-texto-suave); line-height: 1.4; }
+
+    /* ===== MÓDULOS ===== */
+    #secaoModulos {
+      scroll-margin-top: 70px;
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 0 20px 10px 20px;
+    }
+    .titulo-secao {
+      text-align: center;
+      margin-bottom: 22px;
+    }
+    .titulo-secao h2 { font-size: 1.15rem; font-weight: 700; margin-bottom: 6px; }
+    .titulo-secao p { font-size: 0.8rem; color: var(--cor-texto-suave); }
 
     .grid-modules {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-      max-width: 700px;
-      margin: 0 auto;
+      gap: 14px;
     }
     .card-module {
-      background: #0d1b33;
-      border-radius: 14px;
-      padding: 16px 12px;
+      background: var(--cor-painel);
+      border-radius: 16px;
+      padding: 18px 14px;
       display: flex; flex-direction: column; align-items: center; text-align: center;
-      border: 1px solid rgba(255,255,255,0.06);
+      border: 1px solid var(--cor-borda);
+      box-shadow: var(--sombra-card);
       position: relative;
-      min-height: 150px;
+      min-height: 160px;
       justify-content: space-between;
       opacity: 0;
       transform: translateY(14px);
       animation: cardEntra 0.5s ease forwards;
       animation-play-state: paused;
+      transition: transform 0.2s ease, border-color 0.2s ease;
     }
     .grid-modules.animar .card-module {
       animation-play-state: running;
@@ -116,64 +228,99 @@
     .card-module:nth-child(10) { animation-delay: 0.50s; }
 
     .card-badge {
-      position: absolute; top: 8px; right: 8px;
-      width: 10px; height: 10px; border-radius: 50%;
+      position: absolute; top: 10px; right: 10px;
+      width: 8px; height: 8px; border-radius: 50%;
     }
-    .badge-ativo { background: #2ecc71; box-shadow: 0 0 6px #2ecc71; }
-    .badge-manutencao { background: #e74c3c; box-shadow: 0 0 6px #e74c3c; }
+    .badge-ativo { background: var(--cor-sucesso); box-shadow: 0 0 6px var(--cor-sucesso); }
+    .badge-manutencao { background: var(--cor-perigo); box-shadow: 0 0 6px var(--cor-perigo); }
+
     .card-icon-wrap {
-      width: 48px; height: 48px; border-radius: 12px;
+      width: 50px; height: 50px; border-radius: 14px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 1.6rem; margin-bottom: 10px;
+      margin-bottom: 12px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--cor-borda);
     }
-    .card-nome { font-weight: bold; font-size: 0.82rem; letter-spacing: 0.5px; }
-    .card-preco { font-size: 0.72rem; margin-top: 4px; }
-    .preco-ativo { color: #2ecc71; }
-    .preco-manutencao { color: #94a3b5; }
+    .card-icon-wrap svg { width: 24px; height: 24px; }
+    .card-module.ativo .card-icon-wrap svg { stroke: var(--cor-primaria); }
+    .card-module.manutencao .card-icon-wrap svg { stroke: var(--cor-texto-suave); }
+
+    .card-nome { font-weight: 600; font-size: 0.8rem; letter-spacing: 0.3px; }
+    .card-preco { font-size: 0.7rem; margin-top: 5px; }
+    .preco-ativo { color: var(--cor-sucesso); font-weight: 600; }
+    .preco-manutencao { color: var(--cor-texto-suave); }
+
     .btn-consultar {
-      background: #00ffcc; color: #000; border: none; padding: 7px 14px;
-      border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.75rem; margin-top: 10px;
+      background: var(--cor-primaria);
+      color: #04120e;
+      border: none; padding: 8px 16px;
+      border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.72rem; margin-top: 12px;
       transition: transform 0.15s ease, background 0.15s ease;
+      width: 100%;
     }
     .btn-consultar:active { transform: scale(0.96); }
     .btn-bloqueado {
-      background: #23324a; color: #6b7c93; border: none; padding: 7px 14px;
-      border-radius: 6px; font-weight: bold; cursor: not-allowed; font-size: 0.75rem; margin-top: 10px;
+      background: rgba(255,255,255,0.05); color: var(--cor-texto-suave); border: 1px solid var(--cor-borda);
+      padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: not-allowed; font-size: 0.72rem; margin-top: 12px;
+      width: 100%;
     }
 
-    .icon-cnpj { background: #2a63c9; }
-    .icon-cep { background: #e0762b; }
-    .icon-cpf { background: #4a5d78; }
-    .icon-cnh { background: #4a5d78; }
-    .icon-placa { background: #4a5d78; }
-    .icon-renavam { background: #4a5d78; }
-    .icon-fipe { background: #1f9e6a; }
-    .icon-cnae { background: #7c4fd6; }
-    .icon-banco { background: #c9932a; }
-    .icon-feriados { background: #d1477a; }
-
-    footer {
-      text-align: center; margin-top: 40px; color: #4a5568; font-size: 0.72rem;
+    /* ===== RODAPÉ ===== */
+    footer.rodape {
+      max-width: 760px;
+      margin: 50px auto 0 auto;
+      padding: 26px 20px;
+      border-top: 1px solid var(--cor-borda);
+      text-align: center;
     }
+    footer.rodape .marca-rodape {
+      display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px;
+    }
+    footer.rodape .marca-rodape img { width: 26px; height: 26px; border-radius: 6px; }
+    footer.rodape .marca-rodape span { font-weight: 700; font-size: 0.9rem; }
+    footer.rodape p { color: var(--cor-texto-suave); font-size: 0.72rem; line-height: 1.6; }
+    footer.rodape .links-rodape { margin-top: 10px; display: flex; justify-content: center; gap: 16px; }
+    footer.rodape .links-rodape a { color: var(--cor-texto-suave); font-size: 0.72rem; text-decoration: none; }
 
+    /* ===== MODAL DE CONSULTA ===== */
     .modalConsultas {
-      display: none; position: fixed; z-index: 10; left: 0; top: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.9); justify-content: center; align-items: center; padding: 20px;
+      display: none; position: fixed; z-index: 40; left: 0; top: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85); justify-content: center; align-items: center; padding: 20px;
     }
     .modal-conteudo {
-      background: #0b1626; padding: 20px; border-radius: 12px; width: 100%; max-width: 400px;
-      border: 1px solid #00ffcc; text-align: center;
+      background: var(--cor-painel); padding: 24px; border-radius: 18px; width: 100%; max-width: 400px;
+      border: 1px solid var(--cor-borda); text-align: center;
+      box-shadow: var(--sombra-card);
       animation: modalEntra 0.25s ease forwards;
     }
     @keyframes modalEntra {
       from { opacity: 0; transform: scale(0.95) translateY(8px); }
       to   { opacity: 1; transform: scale(1) translateY(0); }
     }
-    .btn-copiar { background: #f39c12; color: #000; border: none; padding: 10px; border-radius: 6px; width: 100%; margin-top: 10px; font-weight: bold; }
-    .btn-whatsapp { display: block; background: #25d366; color: white; padding: 10px; border-radius: 6px; text-decoration: none; font-weight: bold; margin-top: 10px; }
-    .btn-fechar { background: #e74c3c; border: none; color: #fff; padding: 10px; border-radius: 6px; width: 100%; margin-top: 10px; }
-    #resultadosDados { display: none; background: #03070c; padding: 15px; border-radius: 8px; color: #00ffcc; margin-top: 15px; text-align: left; font-size: 0.8rem; overflow-x: auto; }
+    .modal-conteudo h3 { color: var(--cor-primaria); font-size: 1rem; margin-bottom: 14px; font-weight: 700; }
+    .modal-conteudo input[type="text"] {
+      width: 100%; padding: 12px; margin: 6px 0; border-radius: 10px; border: 1px solid var(--cor-borda);
+      background: var(--cor-painel-alt); color: var(--cor-texto); font-size: 0.85rem;
+    }
+    .btn-copiar {
+      background: #f5a623; color: #1a1200; border: none; padding: 11px; border-radius: 10px; width: 100%;
+      margin-top: 10px; font-weight: 700; font-size: 0.82rem; cursor: pointer;
+    }
+    .btn-whatsapp {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      background: #25d366; color: white; padding: 11px; border-radius: 10px;
+      text-decoration: none; font-weight: 700; margin-top: 10px; font-size: 0.82rem;
+    }
+    .btn-fechar {
+      background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.4); color: #ef4444;
+      padding: 11px; border-radius: 10px; width: 100%; margin-top: 10px; font-weight: 700; font-size: 0.82rem; cursor: pointer;
+    }
+    .btn-acao {
+      background: var(--cor-primaria); border: none; padding: 12px; width: 100%; margin-top: 12px;
+      font-weight: 700; border-radius: 10px; color: #04120e; font-size: 0.85rem; cursor: pointer;
+    }
 
+    /* Skeleton loading */
     .skeleton {
       background: linear-gradient(90deg, #142238 25%, #1c3050 37%, #142238 63%);
       background-size: 400% 100%;
@@ -185,7 +332,7 @@
       100% { background-position: 0% 50%; }
     }
     #skeletonPix { display: none; }
-    #skeletonPix .sk-img { width: 160px; height: 160px; margin: 0 auto; border-radius: 5px; }
+    #skeletonPix .sk-img { width: 160px; height: 160px; margin: 0 auto; border-radius: 10px; }
     #skeletonPix .sk-line { height: 12px; margin-top: 12px; }
     #skeletonPix .sk-line.short { width: 60%; margin: 12px auto 0 auto; }
 
@@ -197,39 +344,58 @@
     #skeletonResultado .sk-line:nth-child(4) { width: 60%; }
     #skeletonResultado .sk-line:nth-child(5) { width: 80%; }
 
+    /* ===== TELA DE RESULTADO ===== */
     #telaResultado {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: #000; z-index: 20; flex-direction: column; padding: 20px;
+      background: var(--cor-fundo); z-index: 45; flex-direction: column; padding: 20px;
       animation: fadeIn 0.3s ease forwards;
     }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     #telaResultado .resultado-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-shrink: 0; }
-    #telaResultado .resultado-header h3 { color: #00ffcc; font-size: 1.1rem; }
+    #telaResultado .resultado-header h3 { color: var(--cor-primaria); font-size: 1.05rem; font-weight: 700; }
     #telaResultado .resultado-conteudo {
-      flex: 1; overflow-y: auto; background: #03070c; border: 1px solid rgba(0,255,204,0.3);
-      border-radius: 8px; padding: 15px; color: #00ffcc; font-size: 0.85rem;
-      white-space: pre-wrap; word-break: break-word;
+      flex: 1; overflow-y: auto; background: var(--cor-painel); border: 1px solid var(--cor-borda);
+      border-radius: 14px; padding: 16px; color: var(--cor-texto); font-size: 0.82rem;
+      white-space: pre-wrap; word-break: break-word; line-height: 1.5;
     }
     #telaResultado .resultado-botoes { display: flex; gap: 10px; margin-top: 15px; flex-shrink: 0; }
-    #telaResultado .resultado-botoes button { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
-    #btnCopiarTudo { background: #f39c12; color: #000; }
-    #btnFecharResultado { background: #e74c3c; color: #fff; }
+    #telaResultado .resultado-botoes button {
+      flex: 1; padding: 13px; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 0.82rem;
+    }
+    #btnCopiarTudo { background: #f5a623; color: #1a1200; }
+    #btnFecharResultado { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.4); color: #ef4444; }
 
+    /* ===== BOTÃO FLUTUANTE DE SUPORTE ===== */
+    #btnSuporteFlutuante {
+      position: fixed;
+      bottom: 20px;
+      right: 16px;
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      background: #25d366;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 6px 18px rgba(37,211,102,0.4);
+      z-index: 35;
+      text-decoration: none;
+    }
+    #btnSuporteFlutuante svg { width: 26px; height: 26px; stroke: #fff; fill: #fff; }
+
+    /* ===== BOTÃO INSTALAR APP ===== */
     #btnInstalarApp {
       display: none;
       position: fixed;
-      top: 12px;
-      right: 12px;
-      background: #00ffcc;
-      color: #000;
+      bottom: 20px;
+      left: 16px;
+      background: var(--cor-primaria);
+      color: #04120e;
       border: none;
-      padding: 8px 14px;
-      border-radius: 20px;
-      font-weight: bold;
+      padding: 10px 16px;
+      border-radius: 24px;
+      font-weight: 700;
       font-size: 0.72rem;
       cursor: pointer;
-      z-index: 50;
-      box-shadow: 0 4px 14px rgba(0,255,204,0.35);
+      z-index: 35;
+      box-shadow: 0 6px 18px rgba(22,224,180,0.3);
     }
   </style>
 </head>
@@ -242,101 +408,174 @@
     <div class="intro-barra"><div class="intro-barra-fill"></div></div>
   </div>
 
-  <div class="header">
-    <img src="logo1.png" alt="MD BUSCAS" class="logo-topo">
-    <p>Central de Inteligência e Consultas Automatizadas</p>
+  <header class="topo">
+    <div class="marca">
+      <img src="logo1.png" alt="MD BUSCAS">
+      <span>MD BUSCAS</span>
+    </div>
+    <a class="btn-suporte-topo" href="https://wa.me/5585998021364?text=Ol%C3%A1%2C%20preciso%20de%20suporte" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+      Suporte
+    </a>
+  </header>
+
+  <section class="hero">
+    <img src="logo1.png" alt="MD BUSCAS" class="logo-hero">
+    <h1>Central de Inteligência e Consultas Automatizadas</h1>
+    <p>Consultas de dados públicos com liberação automática após pagamento via Pix. Rápido, seguro e disponível 24 horas por dia.</p>
+    <a href="#secaoModulos" class="btn-cta">Ver módulos disponíveis</a>
+  </section>
+
+  <div class="como-funciona">
+    <div class="passo">
+      <div class="numero">1</div>
+      <h3>Escolha o módulo</h3>
+      <p>Selecione a consulta que deseja realizar entre os módulos disponíveis.</p>
+    </div>
+    <div class="passo">
+      <div class="numero">2</div>
+      <h3>Pague via Pix</h3>
+      <p>Gere o QR Code e efetue o pagamento em segundos.</p>
+    </div>
+    <div class="passo">
+      <div class="numero">3</div>
+      <h3>Receba os dados</h3>
+      <p>Liberação automática assim que o pagamento é confirmado.</p>
+    </div>
   </div>
 
-  <div id="secaoModulos" class="grid-modules">
-
-    <div class="card-module">
-      <span class="card-badge badge-manutencao"></span>
-      <div class="card-icon-wrap icon-cpf">&#128179;</div>
-      <div class="card-nome">CONSULTA CPF</div>
-      <div class="card-preco preco-manutencao">Em manutenção</div>
-      <button class="btn-bloqueado">EM BREVE</button>
+  <section id="secaoModulos">
+    <div class="titulo-secao">
+      <h2>Módulos disponíveis</h2>
+      <p>Consultas de dados públicos com resultado imediato</p>
     </div>
 
-    <div class="card-module">
-      <span class="card-badge badge-ativo"></span>
-      <div class="card-icon-wrap icon-cnpj">🏢</div>
-      <div class="card-nome">CONSULTA CNPJ</div>
-      <div class="card-preco preco-ativo">R$ 10,00</div>
-      <button class="btn-consultar" onclick="abrirModal('CNPJ')">ACESSAR</button>
+    <div class="grid-modules">
+
+      <div class="card-module manutencao">
+        <span class="card-badge badge-manutencao"></span>
+        <div class="card-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="12" r="2"/><path d="M14 10h4M14 14h4"/></svg>
+        </div>
+        <div class="card-nome">CONSULTA CPF</div>
+        <div class="card-preco preco-manutencao">Em manutenção</div>
+        <button class="btn-bloqueado">EM BREVE</button>
+      </div>
+
+      <div class="card-module ativo">
+        <span class="card-badge badge-ativo"></span>
+        <div class="card-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M6 21V7l6-4 6 4v14"/><path d="M10 21v-4h4v4"/><path d="M9 9h1M14 9h1M9 13h1M14 13h1"/></svg>
+        </div>
+        <div class="card-nome">CONSULTA CNPJ</div>
+        <div class="card-preco preco-ativo">R$ 10,00</div>
+        <button class="btn-consultar" onclick="abrirModal('CNPJ')">ACESSAR</button>
+      </div>
+
+      <div class="card-module ativo">
+        <span class="card-badge badge-ativo"></span>
+        <div class="card-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        </div>
+        <div class="card-nome">CONSULTA CEP</div>
+        <div class="card-preco preco-ativo">R$ 3,00</div>
+        <button class="btn-consultar" onclick="abrirModal('CEP')">ACESSAR</button>
+      </div>
+
+      <div class="card-module manutencao">
+        <span class="card-badge badge-manutencao"></span>
+        <div class="card-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="8" cy="12" r="2"/><path d="M14 10h4M14 14h3"/></svg>
+        </div>
+        <div class="card-nome">CONSULTA CNH</div>
+        <div class="card-preco preco-manutencao">Em manutenção</div>
+        <button class="btn-bloqueado">EM BREVE</button>
+      </div>
+
+      <div class="card-module manutencao">
+        <span class="card-badge badge-manutencao"></span>
+        <div class="card-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14M5 17a2 2 0 0 1-2-2v-2l2-5h14l2 5v2a2 2 0 0 1-2 2M7 17v2M17 17v2"/><circle cx="7.5" cy="14.5" r="1.2"/><circle cx="16.5" cy="14.5" r="1.2"/></svg>
+        </div>
+        <div class="card-nome">CONSULTA PLACA</div>
+        <div class="card-preco preco-manutencao">Em manutenção</div>
+        <button class="btn-bloqueado">EM BREVE</button>
+      </div>
+
+      <div class="card-module manutencao">
+        <span class="card-badge badge-manutencao"></span>
+        <div class="card-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/></svg>
+        </div>
+        <div class="card-nome">CONSULTA RENAVAM</div>
+        <div class="card-preco preco-manutencao">Em manutenção</div>
+        <button class="btn-bloqueado">EM BREVE</button>
+      </div>
+
+      <div class="card-module ativo">
+        <span class="card-badge badge-ativo"></span>
+        <div class="card-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14M5 17a2 2 0 0 1-2-2v-2l2-5h14l2 5v2a2 2 0 0 1-2 2M7 17v2M17 17v2"/><circle cx="7.5" cy="14.5" r="1.2"/><circle cx="16.5" cy="14.5" r="1.2"/></svg>
+        </div>
+        <div class="card-nome">TABELA FIPE</div>
+        <div class="card-preco preco-ativo">R$ 3,00</div>
+        <button class="btn-consultar" onclick="abrirModal('FIPE')">ACESSAR</button>
+      </div>
+
+      <div class="card-module ativo">
+        <span class="card-badge badge-ativo"></span>
+        <div class="card-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 12.6L12.4 20.8a2 2 0 0 1-2.8 0l-8-8a2 2 0 0 1 0-2.8L9.8 1.8H16a4 4 0 0 1 4 4v6.4z"/><circle cx="13" cy="7" r="1.4"/></svg>
+        </div>
+        <div class="card-nome">CONSULTA CNAE</div>
+        <div class="card-preco preco-ativo">R$ 3,00</div>
+        <button class="btn-consultar" onclick="abrirModal('CNAE')">ACESSAR</button>
+      </div>
+
+      <div class="card-module ativo">
+        <span class="card-badge badge-ativo"></span>
+        <div class="card-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M4 21V10l8-6 8 6v11"/><path d="M8 21v-6h8v6"/><path d="M4 10h16"/></svg>
+        </div>
+        <div class="card-nome">CONSULTA BANCO</div>
+        <div class="card-preco preco-ativo">R$ 3,00</div>
+        <button class="btn-consultar" onclick="abrirModal('BANCO')">ACESSAR</button>
+      </div>
+
+      <div class="card-module ativo">
+        <span class="card-badge badge-ativo"></span>
+        <div class="card-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
+        </div>
+        <div class="card-nome">FERIADOS NACIONAIS</div>
+        <div class="card-preco preco-ativo">R$ 3,00</div>
+        <button class="btn-consultar" onclick="abrirModal('FERIADOS')">ACESSAR</button>
+      </div>
+
     </div>
+  </section>
 
-    <div class="card-module">
-      <span class="card-badge badge-ativo"></span>
-      <div class="card-icon-wrap icon-cep">📍</div>
-      <div class="card-nome">CONSULTA CEP</div>
-      <div class="card-preco preco-ativo">R$ 3,00</div>
-      <button class="btn-consultar" onclick="abrirModal('CEP')">ACESSAR</button>
+  <footer class="rodape">
+    <div class="marca-rodape">
+      <img src="logo1.png" alt="MD BUSCAS">
+      <span>MD BUSCAS</span>
     </div>
-
-    <div class="card-module">
-      <span class="card-badge badge-manutencao"></span>
-      <div class="card-icon-wrap icon-cnh">🚗</div>
-      <div class="card-nome">CONSULTA CNH</div>
-      <div class="card-preco preco-manutencao">Em manutenção</div>
-      <button class="btn-bloqueado">EM BREVE</button>
+    <p>Consultas automatizadas de dados públicos.<br>Pagamento via Pix com liberação automática.</p>
+    <div class="links-rodape">
+      <a href="https://wa.me/5585998021364?text=Ol%C3%A1%2C%20preciso%20de%20suporte" target="_blank" rel="noopener">Suporte via WhatsApp</a>
+      <a href="#secaoModulos">Módulos</a>
     </div>
+    <p style="margin-top:14px;">Desde 2024 ©</p>
+  </footer>
 
-    <div class="card-module">
-      <span class="card-badge badge-manutencao"></span>
-      <div class="card-icon-wrap icon-placa">🚘</div>
-      <div class="card-nome">CONSULTA PLACA</div>
-      <div class="card-preco preco-manutencao">Em manutenção</div>
-      <button class="btn-bloqueado">EM BREVE</button>
-    </div>
-
-    <div class="card-module">
-      <span class="card-badge badge-manutencao"></span>
-      <div class="card-icon-wrap icon-renavam">📄</div>
-      <div class="card-nome">CONSULTA RENAVAM</div>
-      <div class="card-preco preco-manutencao">Em manutenção</div>
-      <button class="btn-bloqueado">EM BREVE</button>
-    </div>
-
-    <div class="card-module">
-      <span class="card-badge badge-ativo"></span>
-      <div class="card-icon-wrap icon-fipe">🚙</div>
-      <div class="card-nome">TABELA FIPE</div>
-      <div class="card-preco preco-ativo">R$ 3,00</div>
-      <button class="btn-consultar" onclick="abrirModal('FIPE')">ACESSAR</button>
-    </div>
-
-    <div class="card-module">
-      <span class="card-badge badge-ativo"></span>
-      <div class="card-icon-wrap icon-cnae">🏷️</div>
-      <div class="card-nome">CONSULTA CNAE</div>
-      <div class="card-preco preco-ativo">R$ 3,00</div>
-      <button class="btn-consultar" onclick="abrirModal('CNAE')">ACESSAR</button>
-    </div>
-
-    <div class="card-module">
-      <span class="card-badge badge-ativo"></span>
-      <div class="card-icon-wrap icon-banco">🏦</div>
-      <div class="card-nome">CONSULTA BANCO</div>
-      <div class="card-preco preco-ativo">R$ 3,00</div>
-      <button class="btn-consultar" onclick="abrirModal('BANCO')">ACESSAR</button>
-    </div>
-
-    <div class="card-module">
-      <span class="card-badge badge-ativo"></span>
-      <div class="card-icon-wrap icon-feriados">📅</div>
-      <div class="card-nome">FERIADOS NACIONAIS</div>
-      <div class="card-preco preco-ativo">R$ 3,00</div>
-      <button class="btn-consultar" onclick="abrirModal('FERIADOS')">ACESSAR</button>
-    </div>
-
-  </div>
-
-  <footer>Desde 2024 ©</footer>
+  <a id="btnSuporteFlutuante" href="https://wa.me/5585998021364?text=Ol%C3%A1%2C%20preciso%20de%20suporte" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24"><path d="M20.5 3.5A11 11 0 0 0 3.9 17.4L2 22l4.7-1.9a11 11 0 1 0 13.8-16.6zM12 20.2a8.2 8.2 0 0 1-4.2-1.1l-.3-.2-3.1 1 1-3-.2-.3A8.2 8.2 0 1 1 12 20.2z"/></svg>
+  </a>
 
   <div id="modalConsulta" class="modalConsultas">
     <div class="modal-conteudo">
-      <h3 id="modalTitulo" style="color:#00ffcc">CONSULTA</h3>
-      <input type="text" id="inputAlvo" placeholder="Digite o dado..." style="width:100%; padding:10px; margin:10px 0; border-radius:5px; border:none;">
+      <h3 id="modalTitulo">CONSULTA</h3>
+      <input type="text" id="inputAlvo" placeholder="Digite o dado...">
 
       <div id="skeletonPix">
         <div class="skeleton sk-img"></div>
@@ -345,15 +584,14 @@
       </div>
 
       <div id="areaPix" style="display:none;">
-        <img id="imgQrCode" style="width:160px; background:#fff; border:2px solid #00ffcc; border-radius:5px;" loading="lazy">
-        <input type="text" id="copiaCola" readonly style="width:100%; margin-top:10px; font-size:10px; padding:5px;">
+        <img id="imgQrCode" style="width:170px; background:#fff; border:2px solid var(--cor-primaria); border-radius:10px;" loading="lazy">
+        <input type="text" id="copiaCola" readonly style="width:100%; margin-top:10px; font-size:10px; padding:8px;">
         <button class="btn-copiar" onclick="copiarPix()">Copiar Código Pix</button>
-        <a id="linkWpp" class="btn-whatsapp">Suporte via WhatsApp</a>
-        <p id="msgStatus" style="margin-top:10px; font-size:0.8rem; color:#00ffcc; font-weight:bold;">⏳ Aguardando liberação automática...</p>
+        <a id="linkWpp" class="btn-whatsapp" target="_blank" rel="noopener">Suporte via WhatsApp</a>
+        <p id="msgStatus" style="margin-top:12px; font-size:0.78rem; color:var(--cor-primaria); font-weight:600;">⏳ Aguardando liberação automática...</p>
       </div>
 
-      <pre id="resultadosDados"></pre>
-      <button class="btn-acao" id="btnGerar" onclick="solicitarPagamento()" style="background:#00ffcc; border:none; padding:10px; width:100%; margin-top:10px; font-weight:bold; border-radius:5px;">Gerar PIX</button>
+      <button class="btn-acao" id="btnGerar" onclick="solicitarPagamento()">Gerar PIX</button>
       <button class="btn-fechar" onclick="fecharModal()">Fechar</button>
     </div>
   </div>
@@ -444,7 +682,6 @@
         intro.style.opacity = '0';
         setTimeout(() => {
           intro.style.display = 'none';
-          document.getElementById('secaoModulos').scrollIntoView({ behavior: 'smooth', block: 'start' });
           document.getElementById('secaoModulos').classList.add('animar');
         }, 800);
       }, 5000);
