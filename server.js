@@ -3,6 +3,7 @@ const path = require('path');
 const axios = require('axios');
 const crypto = require('crypto');
 const session = require('express-session');
+const webpush = require('web-push');
 const { createClient } = require('@libsql/client');
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -17,6 +18,14 @@ const SESSION_SECRET = process.env.SESSION_SECRET || 'mude_essa_chave_no_render'
 
 const TURSO_DATABASE_URL = process.env.TURSO_DATABASE_URL;
 const TURSO_AUTH_TOKEN = process.env.TURSO_AUTH_TOKEN;
+
+const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY;
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
+const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:contato@mdbuscas.com';
+
+if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
+    webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+}
 
 const db = createClient({
     url: TURSO_DATABASE_URL,
@@ -70,6 +79,13 @@ async function iniciarBanco() {
         try {
             await db.execute(`ALTER TABLE pedidos ADD COLUMN goatpay_id TEXT;`);
         } catch (e) { /* já existe */ }
+
+        await db.execute(`CREATE TABLE IF NOT EXISTS push_subscriptions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            endpoint TEXT UNIQUE,
+            subscription_json TEXT
+        );`);
+
         console.log("Banco Turso conectado e pronto.");
     } catch (e) {
         console.error("Erro ao conectar no banco Turso:", e.message);
@@ -92,6 +108,31 @@ function statusAprovado(status) {
 function exigirLogin(req, res, next) {
     if (req.session && req.session.autenticado) return next();
     return res.status(401).json({ sucesso: false, erro: "Não autenticado" });
+}
+
+async function notificarNovaConsulta(modulo, alvo, valor) {
+    if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) return;
+    try {
+        const result = await db.execute("SELECT endpoint, subscription_json FROM push_subscriptions");
+        const payload = JSON.stringify({
+            title: '💰 Nova consulta paga!',
+            body: `${modulo} — ${alvo} — R$ ${valor.toFixed(2).replace('.', ',')}`
+        });
+        for (const row of result.rows) {
+            try {
+                const sub = JSON.parse(row.subscription_json);
+                await webpush.sendNotification(sub, payload);
+            } catch (e) {
+                if (e.statusCode === 410 || e.statusCode === 404) {
+                    await db.execute({ sql: "DELETE FROM push_subscriptions WHERE endpoint = ?", args: [row.endpoint] });
+                } else {
+                    console.error("Erro ao enviar push:", e.message);
+                }
+            }
+        }
+    } catch (e) {
+        console.error("Erro ao notificar:", e.message);
+    }
 }
 
 async function validarAlvo(moduloUpper, alvo) {
@@ -147,11 +188,11 @@ async function buscarDados(moduloUpper, alvo) {
         try {
             const r1 = await axios.get(`https://receitaws.com.br/v1/cnpj/${limpo}`);
             resultado.fonte_receitaws = r1.data;
-        } catch (e) { /* segue com o que tiver */ }
+        } catch (e) { }
         try {
             const r2 = await axios.get(`https://brasilapi.com.br/api/cnpj/v1/${limpo}`);
             resultado.fonte_brasilapi = r2.data;
-        } catch (e) { /* segue com o que tiver */ }
+        } catch (e) { }
         return resultado;
     }
     if (moduloUpper === 'CEP') {
@@ -194,6 +235,27 @@ app.post('/api/login', (req, res) => {
 
 app.post('/api/logout', (req, res) => {
     req.session.destroy(() => res.json({ sucesso: true }));
+});
+
+app.get('/api/push/public-key', exigirLogin, (req, res) => {
+    res.json({ publicKey: VAPID_PUBLIC_KEY || null });
+});
+
+app.post('/api/push/subscribe', exigirLogin, async (req, res) => {
+    try {
+        const sub = req.body;
+        if (!sub || !sub.endpoint) {
+            return res.status(400).json({ sucesso: false, erro: "Assinatura inválida" });
+        }
+        await db.execute({
+            sql: "INSERT OR REPLACE INTO push_subscriptions (endpoint, subscription_json) VALUES (?, ?)",
+            args: [sub.endpoint, JSON.stringify(sub)]
+        });
+        res.json({ sucesso: true });
+    } catch (e) {
+        console.error("Erro ao salvar subscription:", e.message);
+        res.status(500).json({ sucesso: false, erro: "Erro ao salvar" });
+    }
 });
 
 app.post('/api/pagamento/pix', async (req, res) => {
@@ -274,6 +336,16 @@ app.post('/api/webhook/goatpay', async (req, res) => {
                 args: [goatpayId]
             });
             console.log(`Pedido com goatpay_id ${goatpayId} aprovado via webhook!`);
+
+            const result = await db.execute({
+                sql: "SELECT modulo, alvo FROM pedidos WHERE goatpay_id = ?",
+                args: [goatpayId]
+            });
+            if (result.rows.length > 0) {
+                const { modulo, alvo } = result.rows[0];
+                const valor = valorPorModulo((modulo || '').toUpperCase());
+                await notificarNovaConsulta(modulo, alvo, valor);
+            }
         }
     } catch (e) {
         console.error("Erro ao atualizar pedido via webhook:", e.message);
@@ -340,6 +412,17 @@ app.post('/api/admin/aprovar/:txid', exigirLogin, async (req, res) => {
             sql: "UPDATE pedidos SET status = 'aprovado' WHERE txid = ?",
             args: [req.params.txid]
         });
+
+        const result = await db.execute({
+            sql: "SELECT modulo, alvo FROM pedidos WHERE txid = ?",
+            args: [req.params.txid]
+        });
+        if (result.rows.length > 0) {
+            const { modulo, alvo } = result.rows[0];
+            const valor = valorPorModulo((modulo || '').toUpperCase());
+            await notificarNovaConsulta(modulo, alvo, valor);
+        }
+
         res.json({ sucesso: true });
     } catch (e) {
         console.error("Erro ao aprovar pedido:", e.message);

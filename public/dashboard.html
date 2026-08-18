@@ -13,10 +13,12 @@
     .topo { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
     .topo a { color: #94a3b5; font-size: 0.8rem; text-decoration: none; }
 
-    #btnAtualizar {
+    .barra-botoes { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+    #btnAtualizar, #btnNotificacoes {
       background: #284b7a; color: #fff; border: none; padding: 8px 14px;
-      border-radius: 6px; cursor: pointer; margin-bottom: 20px;
+      border-radius: 6px; cursor: pointer; font-size: 0.85rem;
     }
+    #btnNotificacoes.ativado { background: #2ecc71; color: #000; font-weight: bold; }
 
     .cards-resumo {
       display: grid;
@@ -67,7 +69,10 @@
   </div>
   <p class="subtitulo">Aprovação de pedidos e estatísticas</p>
 
-  <button id="btnAtualizar" onclick="carregar()">Atualizar</button>
+  <div class="barra-botoes">
+    <button id="btnAtualizar" onclick="carregar()">Atualizar</button>
+    <button id="btnNotificacoes" onclick="alternarNotificacoes()">🔔 Ativar notificações</button>
+  </div>
 
   <div class="cards-resumo">
     <div class="card-resumo">
@@ -171,6 +176,77 @@
 
     carregar();
     setInterval(carregar, 15000);
+
+    // ===== Notificações Push =====
+    function urlBase64ToUint8Array(base64String) {
+      const padding = '='.repeat((4 - base64String.length % 4) % 4);
+      const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+      const rawData = atob(base64);
+      return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
+    }
+
+    async function verificarStatusNotificacoes() {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+      const registration = await navigator.serviceWorker.ready;
+      const sub = await registration.pushManager.getSubscription();
+      const btn = document.getElementById('btnNotificacoes');
+      if (sub) {
+        btn.innerText = '🔔 Notificações ativadas';
+        btn.classList.add('ativado');
+      } else {
+        btn.innerText = '🔔 Ativar notificações';
+        btn.classList.remove('ativado');
+      }
+    }
+
+    async function alternarNotificacoes() {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        alert('Seu navegador não suporta notificações push.');
+        return;
+      }
+
+      const registration = await navigator.serviceWorker.ready;
+      const subExistente = await registration.pushManager.getSubscription();
+
+      if (subExistente) {
+        await subExistente.unsubscribe();
+        await verificarStatusNotificacoes();
+        return;
+      }
+
+      const permissao = await Notification.requestPermission();
+      if (permissao !== 'granted') {
+        alert('Permissão de notificação negada. Ative nas configurações do navegador.');
+        return;
+      }
+
+      const resKey = await fetch('/api/push/public-key');
+      const { publicKey } = await resKey.json();
+      if (!publicKey) {
+        alert('Notificações não configuradas no servidor ainda.');
+        return;
+      }
+
+      const sub = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey)
+      });
+
+      await fetch('/api/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(sub)
+      });
+
+      await verificarStatusNotificacoes();
+      alert('Notificações ativadas! Você vai receber um aviso a cada consulta paga.');
+    }
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').then(() => {
+        verificarStatusNotificacoes();
+      }).catch(err => console.log('SW erro:', err));
+    }
   </script>
 </body>
 </html>
