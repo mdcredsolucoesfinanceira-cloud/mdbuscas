@@ -28,25 +28,24 @@
 
     #personagem {
       position: absolute;
-      bottom: 34%;
-      left: -140px;
-      width: 100px;
+      bottom: 30%;
+      left: -220px;
+      width: 170px;
       animation: andar 3.6s cubic-bezier(.4,0,.2,1) forwards;
     }
     @keyframes andar {
-      0%   { left: -140px; }
-      80%  { left: calc(50% - 50px); }
-      100% { left: calc(50% - 50px); }
+      0%   { left: -220px; }
+      80%  { left: calc(50% - 85px); }
+      100% { left: calc(50% - 85px); }
     }
 
     #personagem img {
       width: 100%;
       display: block;
       position: relative;
+      border-radius: 12px;
     }
 
-    /* leve balanço vertical simulando passo */
-    #personagem { animation: andar 3.6s cubic-bezier(.4,0,.2,1) forwards; }
     #personagem .sprite-wrap {
       animation: balancoPasso 0.4s ease-in-out infinite alternate;
     }
@@ -74,24 +73,16 @@
     }
     @keyframes glitchTremor {
       0%   { transform: translate(0,0); filter: brightness(1); }
-      20%  { transform: translate(-3px, 1px); filter: brightness(1.6) contrast(1.4); }
-      40%  { transform: translate(3px, -1px); filter: brightness(0.5); }
-      60%  { transform: translate(-2px, -1px); filter: brightness(1.8); }
-      80%  { transform: translate(2px, 1px); filter: brightness(0.7); }
+      20%  { transform: translate(-5px, 2px); filter: brightness(1.6) contrast(1.4); }
+      40%  { transform: translate(5px, -2px); filter: brightness(0.5); }
+      60%  { transform: translate(-3px, -2px); filter: brightness(1.8); }
+      80%  { transform: translate(3px, 2px); filter: brightness(0.7); }
       100% { transform: translate(0,0); filter: brightness(1); }
-    }
-    .sprite-wrap.glitching .fatia {
-      position: absolute;
-      left: 0; width: 100%;
-      overflow: hidden;
-      background-image: var(--imgurl);
-      background-size: 100% auto;
-      background-repeat: no-repeat;
     }
 
     #maleta {
       position: absolute;
-      bottom: 34%;
+      bottom: 30%;
       left: calc(50% - 8px);
       width: 32px;
       opacity: 0;
@@ -106,7 +97,7 @@
 
     .fumaca {
       position: absolute;
-      bottom: calc(34% - 5px);
+      bottom: calc(30% - 5px);
       left: 50%;
       width: 30px; height: 30px;
       border-radius: 50%;
@@ -122,7 +113,7 @@
 
     #flashExplosao {
       position: absolute;
-      bottom: calc(34% - 10px);
+      bottom: calc(30% - 10px);
       left: 50%;
       width: 10px; height: 10px;
       transform: translate(-50%, 50%);
@@ -191,7 +182,7 @@
   <div id="cena">
     <div id="personagem">
       <div class="sprite-wrap" id="spriteWrap">
-        <img src="logo2.png" alt="Personagem">
+        <img src="logo2.jpg" alt="Personagem">
       </div>
     </div>
 
@@ -216,7 +207,7 @@
   </div>
 
   <script>
-    // ativa o glitch de "curto-circuito" na metade do trajeto (a caminhada dura 3.6s, metade = 1.8s)
+    // ativa o glitch de "curto-circuito" na metade do trajeto (caminhada dura 3.6s, metade = 1.8s)
     const spriteWrap = document.getElementById('spriteWrap');
     setTimeout(() => {
       spriteWrap.classList.add('glitching');
