@@ -18,7 +18,7 @@
       position: relative;
     }
 
-    /* ===== CENA DE ANIMAÇÃO ===== */
+    /* ===== CENA DE ANIMAÇÃO (6s no total) ===== */
     #cena {
       position: fixed;
       inset: 0;
@@ -28,22 +28,21 @@
 
     #personagem {
       position: absolute;
-      bottom: 38%;
-      left: -120px;
-      width: 90px;
-      animation: andar 2.2s cubic-bezier(.4,0,.2,1) forwards;
+      bottom: 36%;
+      left: -130px;
+      width: 100px;
+      animation: andar 3.6s cubic-bezier(.4,0,.2,1) forwards;
     }
     @keyframes andar {
-      0%   { left: -120px; }
-      75%  { left: calc(50% - 45px); }
-      100% { left: calc(50% - 45px); }
+      0%   { left: -130px; }
+      80%  { left: calc(50% - 50px); }
+      100% { left: calc(50% - 50px); }
     }
 
     #personagem svg { width: 100%; display: block; }
 
-    /* leve balanço de "andando" nas pernas, só nos primeiros 75% do tempo */
-    #personagem .perna-esq { animation: passo 0.35s ease-in-out infinite alternate; transform-origin: top center; }
-    #personagem .perna-dir { animation: passo 0.35s ease-in-out infinite alternate-reverse; transform-origin: top center; }
+    #personagem .perna-esq { animation: passo 0.4s ease-in-out infinite alternate; transform-origin: top center; }
+    #personagem .perna-dir { animation: passo 0.4s ease-in-out infinite alternate-reverse; transform-origin: top center; }
     @keyframes passo {
       0%   { transform: rotate(-12deg); }
       100% { transform: rotate(12deg); }
@@ -51,57 +50,57 @@
 
     #maleta {
       position: absolute;
-      bottom: 38%;
+      bottom: 36%;
       left: calc(50% - 8px);
-      width: 30px;
+      width: 32px;
       opacity: 0;
-      animation: soltarMaleta 0.4s ease forwards;
-      animation-delay: 1.75s;
+      animation: soltarMaleta 0.5s ease forwards;
+      animation-delay: 3.3s;
     }
     @keyframes soltarMaleta {
       0%   { opacity: 0; transform: translateY(0) scale(1); }
-      40%  { opacity: 1; transform: translateY(-4px) scale(1); }
-      100% { opacity: 1; transform: translateY(6px) scale(1); }
+      40%  { opacity: 1; transform: translateY(-5px) scale(1); }
+      100% { opacity: 1; transform: translateY(8px) scale(1); }
+    }
+
+    /* fumaça branca/roxa em vez de faísca verde */
+    .fumaca {
+      position: absolute;
+      bottom: calc(36% - 5px);
+      left: 50%;
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      filter: blur(6px);
+      opacity: 0;
+      animation: subirFumaca 2.2s ease-out forwards;
+    }
+    @keyframes subirFumaca {
+      0%   { opacity: 0; transform: translate(-50%, 0) scale(0.6); }
+      12%  { opacity: 0.85; }
+      100% { opacity: 0; transform: translate(var(--dx), -180px) scale(var(--esc)); }
     }
 
     #flashExplosao {
       position: absolute;
-      bottom: calc(38% - 10px);
+      bottom: calc(36% - 10px);
       left: 50%;
       width: 10px; height: 10px;
       transform: translate(-50%, 50%);
       border-radius: 50%;
-      background: radial-gradient(circle, #fff 0%, #16e0b4 35%, rgba(22,224,180,0) 70%);
+      background: radial-gradient(circle, #ffffff 0%, #c9a6ff 35%, rgba(160,90,255,0) 70%);
       opacity: 0;
-      animation: explodir 0.55s ease-out forwards;
-      animation-delay: 2.15s;
+      animation: explodir 0.6s ease-out forwards;
+      animation-delay: 3.95s;
     }
     @keyframes explodir {
       0%   { opacity: 0; width: 10px; height: 10px; }
       15%  { opacity: 1; }
-      100% { opacity: 0; width: 500px; height: 500px; }
-    }
-
-    .particula {
-      position: absolute;
-      bottom: calc(38% - 5px);
-      left: 50%;
-      width: 5px; height: 5px;
-      background: #16e0b4;
-      border-radius: 50%;
-      opacity: 0;
-      animation: voar 0.7s ease-out forwards;
-      animation-delay: 2.15s;
-    }
-    @keyframes voar {
-      0%   { opacity: 1; transform: translate(-50%, 50%) scale(1); }
-      100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0.3); }
+      100% { opacity: 0; width: 480px; height: 480px; }
     }
 
     #personagem.sumir, #maleta.sumir {
-      animation-play-state: paused;
       opacity: 0;
-      transition: opacity 0.3s ease;
+      transition: opacity 0.4s ease;
     }
 
     /* ===== FORMULÁRIO ===== */
@@ -114,22 +113,22 @@
       padding: 0 20px;
     }
     .box h1 {
-      color: #16e0b4;
+      color: #c9a6ff;
       margin-bottom: 22px;
       font-size: 1.15rem;
       font-weight: 700;
       opacity: 0;
       animation: subirCampo 0.5s ease forwards;
-      animation-delay: 2.3s;
+      animation-delay: 4.1s;
     }
     .campo {
       opacity: 0;
       transform: translateY(24px);
       animation: subirCampo 0.5s cubic-bezier(.2,.8,.2,1) forwards;
     }
-    #campoUsuario { animation-delay: 2.35s; }
-    #campoSenha   { animation-delay: 2.5s; }
-    #botaoEntrar  { animation-delay: 2.65s; }
+    #campoUsuario { animation-delay: 4.2s; }
+    #campoSenha   { animation-delay: 4.4s; }
+    #botaoEntrar  { animation-delay: 4.6s; }
     @keyframes subirCampo {
       0%   { opacity: 0; transform: translateY(24px); }
       100% { opacity: 1; transform: translateY(0); }
@@ -137,11 +136,11 @@
 
     input {
       width: 100%; padding: 13px; margin: 8px 0; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);
-      font-size: 1rem; background: #0d1420; color: #fff;
+      font-size: 1rem; background: #14101c; color: #fff;
     }
-    input::placeholder { color: #93a0b4; }
+    input::placeholder { color: #a08cc0; }
     button {
-      width: 100%; padding: 13px; background: #16e0b4; color: #04120e; border: none;
+      width: 100%; padding: 13px; background: #c9a6ff; color: #1a0f2e; border: none;
       border-radius: 10px; font-weight: 700; cursor: pointer; margin-top: 12px; font-size: 0.9rem;
     }
     #erro { color: #ef4444; margin-top: 10px; font-size: 0.85rem; min-height: 1em; }
@@ -150,43 +149,57 @@
 <body>
 
   <div id="cena">
-    <!-- Personagem estilo Anonymous: capuz preto + máscara branca -->
+    <!-- Personagem: capuz/jaqueta vermelha + máscara branca de Guy Fawkes -->
     <div id="personagem">
-      <svg viewBox="0 0 90 140" xmlns="http://www.w3.org/2000/svg">
-        <!-- capuz/corpo -->
-        <path d="M45 10 C20 10 12 35 14 60 L10 130 L80 130 L76 60 C78 35 70 10 45 10 Z" fill="#0a0a0a"/>
-        <!-- sombra interna do capuz -->
-        <path d="M45 18 C28 18 22 38 24 56 L22 60 L68 60 L66 56 C68 38 62 18 45 18 Z" fill="#050505"/>
+      <svg viewBox="0 0 100 150" xmlns="http://www.w3.org/2000/svg">
+        <!-- jaqueta/capuz vermelho -->
+        <path d="M50 8 C22 8 12 35 15 62 L10 140 L90 140 L85 62 C88 35 78 8 50 8 Z" fill="#c81e2e"/>
+        <!-- sombra do capuz -->
+        <path d="M50 16 C32 16 25 38 27 58 L25 62 L75 62 L73 58 C75 38 68 16 50 16 Z" fill="#8f1420"/>
+        <!-- zíper -->
+        <path d="M50 62 L50 140" stroke="#5c0d15" stroke-width="2"/>
+        <!-- botões da jaqueta -->
+        <circle cx="50" cy="78" r="2" fill="#5c0d15"/>
+        <circle cx="50" cy="94" r="2" fill="#5c0d15"/>
+        <circle cx="50" cy="110" r="2" fill="#5c0d15"/>
         <!-- máscara -->
-        <g transform="translate(45,42)">
-          <ellipse cx="0" cy="0" rx="20" ry="17" fill="#f5f5f5"/>
-          <path d="M-20 -3 C-14 -14 14 -14 20 -3 C14 2 -14 2 -20 -3 Z" fill="#f5f5f5"/>
+        <g transform="translate(50,44)">
+          <ellipse cx="0" cy="0" rx="21" ry="18" fill="#f5f0e8"/>
+          <path d="M-21 -3 C-15 -15 15 -15 21 -3 C15 2 -15 2 -21 -3 Z" fill="#f5f0e8"/>
+          <!-- sobrancelhas -->
+          <path d="M-15 -10 L-4 -8" stroke="#111" stroke-width="1.6" stroke-linecap="round"/>
+          <path d="M15 -10 L4 -8" stroke="#111" stroke-width="1.6" stroke-linecap="round"/>
           <!-- olhos -->
-          <path d="M-13 -3 C-9 -8 -2 -8 0 -3 C-2 0 -9 0 -13 -3 Z" fill="#0a0a0a"/>
-          <path d="M13 -3 C9 -8 2 -8 0 -3 C2 0 9 0 13 -3 Z" fill="#0a0a0a"/>
+          <path d="M-14 -3 C-9 -8 -2 -8 0 -3 C-2 0 -9 0 -14 -3 Z" fill="#0a0a0a"/>
+          <path d="M14 -3 C9 -8 2 -8 0 -3 C2 0 9 0 14 -3 Z" fill="#0a0a0a"/>
+          <!-- rosto -->
+          <ellipse cx="-14" cy="6" rx="2.5" ry="1.5" fill="#e6a0a0" opacity="0.5"/>
+          <ellipse cx="14" cy="6" rx="2.5" ry="1.5" fill="#e6a0a0" opacity="0.5"/>
           <!-- bigode -->
-          <path d="M-16 4 C-10 1 -3 5 0 3 C3 5 10 1 16 4 C10 8 4 6 0 8 C-4 6 -10 8 -16 4 Z" fill="#111"/>
+          <path d="M-17 5 C-11 2 -3 6 0 4 C3 6 11 2 17 5 C11 9 4 7 0 9 C-4 7 -11 9 -17 5 Z" fill="#111"/>
+          <!-- barbicha -->
+          <path d="M-4 11 Q0 19 4 11 Q2 14 0 14 Q-2 14 -4 11 Z" fill="#111"/>
           <!-- sorriso -->
-          <path d="M-8 10 Q0 15 8 10" stroke="#111" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+          <path d="M-8 11 Q0 16 8 11" stroke="#111" stroke-width="1.4" fill="none" stroke-linecap="round"/>
         </g>
-        <!-- braço que segura a maleta -->
-        <path class="braco" d="M60 85 L75 100 L70 108 L58 95 Z" fill="#0a0a0a"/>
+        <!-- braço segurando a maleta -->
+        <path class="braco" d="M68 92 L84 108 L78 116 L64 102 Z" fill="#c81e2e"/>
         <!-- pernas -->
-        <path class="perna-esq" d="M30 118 L26 140 L36 140 L38 118 Z" fill="#0a0a0a"/>
-        <path class="perna-dir" d="M60 118 L64 140 L54 140 L52 118 Z" fill="#0a0a0a"/>
+        <path class="perna-esq" d="M32 126 L27 150 L38 150 L40 126 Z" fill="#1a1a1a"/>
+        <path class="perna-dir" d="M68 126 L73 150 L62 150 L60 126 Z" fill="#1a1a1a"/>
       </svg>
     </div>
 
     <div id="maleta">
       <svg viewBox="0 0 40 30" xmlns="http://www.w3.org/2000/svg">
-        <rect x="2" y="8" width="36" height="20" rx="3" fill="#111" stroke="#16e0b4" stroke-width="1"/>
-        <path d="M14 8 L14 3 C14 1 15 0 17 0 L23 0 C25 0 26 1 26 3 L26 8" fill="none" stroke="#111" stroke-width="3"/>
-        <rect x="17" y="15" width="6" height="4" rx="1" fill="#16e0b4"/>
+        <rect x="2" y="8" width="36" height="20" rx="3" fill="#1a1a1a" stroke="#c9a6ff" stroke-width="1"/>
+        <path d="M14 8 L14 3 C14 1 15 0 17 0 L23 0 C25 0 26 1 26 3 L26 8" fill="none" stroke="#1a1a1a" stroke-width="3"/>
+        <rect x="17" y="15" width="6" height="4" rx="1" fill="#c9a6ff"/>
       </svg>
     </div>
 
     <div id="flashExplosao"></div>
-    <div id="particulas"></div>
+    <div id="fumacaContainer"></div>
   </div>
 
   <div class="box">
@@ -198,27 +211,30 @@
   </div>
 
   <script>
-    // gera partículas da explosão dinamicamente
-    const container = document.getElementById('particulas');
-    const qtdParticulas = 14;
-    for (let i = 0; i < qtdParticulas; i++) {
-      const p = document.createElement('div');
-      p.className = 'particula';
-      const angulo = (Math.PI * 2 * i) / qtdParticulas;
-      const distancia = 90 + Math.random() * 60;
-      const dx = Math.cos(angulo) * distancia;
-      const dy = Math.sin(angulo) * distancia * -1; // sobe mais que desce
-      p.style.setProperty('--dx', `calc(-50% + ${dx}px)`);
-      p.style.setProperty('--dy', `calc(50% + ${dy}px)`);
-      p.style.animationDelay = `${2.15 + Math.random() * 0.1}s`;
-      container.appendChild(p);
+    // gera nuvens de fumaça branca/roxa saindo do ponto da explosão
+    const container = document.getElementById('fumacaContainer');
+    const cores = ['#ffffff', '#c9a6ff', '#8f6fd6', '#e8ddff'];
+    const qtdFumaca = 16;
+    for (let i = 0; i < qtdFumaca; i++) {
+      const f = document.createElement('div');
+      f.className = 'fumaca';
+      const dx = (Math.random() - 0.5) * 260;
+      const escala = 4 + Math.random() * 5;
+      const tamanho = 20 + Math.random() * 25;
+      f.style.width = tamanho + 'px';
+      f.style.height = tamanho + 'px';
+      f.style.background = cores[Math.floor(Math.random() * cores.length)];
+      f.style.setProperty('--dx', `calc(-50% + ${dx}px)`);
+      f.style.setProperty('--esc', escala);
+      f.style.animationDelay = `${3.95 + Math.random() * 0.5}s`;
+      container.appendChild(f);
     }
 
     // esconde personagem e maleta depois da explosão
     setTimeout(() => {
       document.getElementById('personagem').classList.add('sumir');
       document.getElementById('maleta').classList.add('sumir');
-    }, 2200);
+    }, 4050);
 
     async function entrar() {
       const usuario = document.getElementById('campoUsuario').value;
