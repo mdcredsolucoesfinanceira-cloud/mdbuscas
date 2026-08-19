@@ -4,33 +4,225 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login Admin - MD BUSCAS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-    body { background: #000; color: #fff; display: flex; align-items: center; justify-content: center; height: 100vh; padding: 20px; }
-    .box { width: 100%; max-width: 320px; text-align: center; }
-    h1 { color: #00ffcc; margin-bottom: 20px; font-size: 1.3rem; }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', 'Segoe UI', sans-serif; }
+    body {
+      background: #000;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ===== CENA DE ANIMAÇÃO ===== */
+    #cena {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    #personagem {
+      position: absolute;
+      bottom: 38%;
+      left: -120px;
+      width: 90px;
+      animation: andar 2.2s cubic-bezier(.4,0,.2,1) forwards;
+    }
+    @keyframes andar {
+      0%   { left: -120px; }
+      75%  { left: calc(50% - 45px); }
+      100% { left: calc(50% - 45px); }
+    }
+
+    #personagem svg { width: 100%; display: block; }
+
+    /* leve balanço de "andando" nas pernas, só nos primeiros 75% do tempo */
+    #personagem .perna-esq { animation: passo 0.35s ease-in-out infinite alternate; transform-origin: top center; }
+    #personagem .perna-dir { animation: passo 0.35s ease-in-out infinite alternate-reverse; transform-origin: top center; }
+    @keyframes passo {
+      0%   { transform: rotate(-12deg); }
+      100% { transform: rotate(12deg); }
+    }
+
+    #maleta {
+      position: absolute;
+      bottom: 38%;
+      left: calc(50% - 8px);
+      width: 30px;
+      opacity: 0;
+      animation: soltarMaleta 0.4s ease forwards;
+      animation-delay: 1.75s;
+    }
+    @keyframes soltarMaleta {
+      0%   { opacity: 0; transform: translateY(0) scale(1); }
+      40%  { opacity: 1; transform: translateY(-4px) scale(1); }
+      100% { opacity: 1; transform: translateY(6px) scale(1); }
+    }
+
+    #flashExplosao {
+      position: absolute;
+      bottom: calc(38% - 10px);
+      left: 50%;
+      width: 10px; height: 10px;
+      transform: translate(-50%, 50%);
+      border-radius: 50%;
+      background: radial-gradient(circle, #fff 0%, #16e0b4 35%, rgba(22,224,180,0) 70%);
+      opacity: 0;
+      animation: explodir 0.55s ease-out forwards;
+      animation-delay: 2.15s;
+    }
+    @keyframes explodir {
+      0%   { opacity: 0; width: 10px; height: 10px; }
+      15%  { opacity: 1; }
+      100% { opacity: 0; width: 500px; height: 500px; }
+    }
+
+    .particula {
+      position: absolute;
+      bottom: calc(38% - 5px);
+      left: 50%;
+      width: 5px; height: 5px;
+      background: #16e0b4;
+      border-radius: 50%;
+      opacity: 0;
+      animation: voar 0.7s ease-out forwards;
+      animation-delay: 2.15s;
+    }
+    @keyframes voar {
+      0%   { opacity: 1; transform: translate(-50%, 50%) scale(1); }
+      100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0.3); }
+    }
+
+    #personagem.sumir, #maleta.sumir {
+      animation-play-state: paused;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    /* ===== FORMULÁRIO ===== */
+    .box {
+      width: 100%;
+      max-width: 320px;
+      text-align: center;
+      position: relative;
+      z-index: 10;
+      padding: 0 20px;
+    }
+    .box h1 {
+      color: #16e0b4;
+      margin-bottom: 22px;
+      font-size: 1.15rem;
+      font-weight: 700;
+      opacity: 0;
+      animation: subirCampo 0.5s ease forwards;
+      animation-delay: 2.3s;
+    }
+    .campo {
+      opacity: 0;
+      transform: translateY(24px);
+      animation: subirCampo 0.5s cubic-bezier(.2,.8,.2,1) forwards;
+    }
+    #campoUsuario { animation-delay: 2.35s; }
+    #campoSenha   { animation-delay: 2.5s; }
+    #botaoEntrar  { animation-delay: 2.65s; }
+    @keyframes subirCampo {
+      0%   { opacity: 0; transform: translateY(24px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
     input {
-      width: 100%; padding: 12px; margin: 8px 0; border-radius: 6px; border: none; font-size: 1rem;
+      width: 100%; padding: 13px; margin: 8px 0; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);
+      font-size: 1rem; background: #0d1420; color: #fff;
     }
+    input::placeholder { color: #93a0b4; }
     button {
-      width: 100%; padding: 12px; background: #00ffcc; color: #000; border: none;
-      border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px;
+      width: 100%; padding: 13px; background: #16e0b4; color: #04120e; border: none;
+      border-radius: 10px; font-weight: 700; cursor: pointer; margin-top: 12px; font-size: 0.9rem;
     }
-    #erro { color: #e74c3c; margin-top: 10px; font-size: 0.85rem; min-height: 1em; }
+    #erro { color: #ef4444; margin-top: 10px; font-size: 0.85rem; min-height: 1em; }
   </style>
 </head>
 <body>
+
+  <div id="cena">
+    <!-- Personagem estilo Anonymous: capuz preto + máscara branca -->
+    <div id="personagem">
+      <svg viewBox="0 0 90 140" xmlns="http://www.w3.org/2000/svg">
+        <!-- capuz/corpo -->
+        <path d="M45 10 C20 10 12 35 14 60 L10 130 L80 130 L76 60 C78 35 70 10 45 10 Z" fill="#0a0a0a"/>
+        <!-- sombra interna do capuz -->
+        <path d="M45 18 C28 18 22 38 24 56 L22 60 L68 60 L66 56 C68 38 62 18 45 18 Z" fill="#050505"/>
+        <!-- máscara -->
+        <g transform="translate(45,42)">
+          <ellipse cx="0" cy="0" rx="20" ry="17" fill="#f5f5f5"/>
+          <path d="M-20 -3 C-14 -14 14 -14 20 -3 C14 2 -14 2 -20 -3 Z" fill="#f5f5f5"/>
+          <!-- olhos -->
+          <path d="M-13 -3 C-9 -8 -2 -8 0 -3 C-2 0 -9 0 -13 -3 Z" fill="#0a0a0a"/>
+          <path d="M13 -3 C9 -8 2 -8 0 -3 C2 0 9 0 13 -3 Z" fill="#0a0a0a"/>
+          <!-- bigode -->
+          <path d="M-16 4 C-10 1 -3 5 0 3 C3 5 10 1 16 4 C10 8 4 6 0 8 C-4 6 -10 8 -16 4 Z" fill="#111"/>
+          <!-- sorriso -->
+          <path d="M-8 10 Q0 15 8 10" stroke="#111" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+        </g>
+        <!-- braço que segura a maleta -->
+        <path class="braco" d="M60 85 L75 100 L70 108 L58 95 Z" fill="#0a0a0a"/>
+        <!-- pernas -->
+        <path class="perna-esq" d="M30 118 L26 140 L36 140 L38 118 Z" fill="#0a0a0a"/>
+        <path class="perna-dir" d="M60 118 L64 140 L54 140 L52 118 Z" fill="#0a0a0a"/>
+      </svg>
+    </div>
+
+    <div id="maleta">
+      <svg viewBox="0 0 40 30" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="8" width="36" height="20" rx="3" fill="#111" stroke="#16e0b4" stroke-width="1"/>
+        <path d="M14 8 L14 3 C14 1 15 0 17 0 L23 0 C25 0 26 1 26 3 L26 8" fill="none" stroke="#111" stroke-width="3"/>
+        <rect x="17" y="15" width="6" height="4" rx="1" fill="#16e0b4"/>
+      </svg>
+    </div>
+
+    <div id="flashExplosao"></div>
+    <div id="particulas"></div>
+  </div>
+
   <div class="box">
     <h1>MD BUSCAS — Acesso Admin</h1>
-    <input type="text" id="usuario" placeholder="Usuário" autocomplete="username">
-    <input type="password" id="senha" placeholder="Senha" autocomplete="current-password">
-    <button onclick="entrar()">Entrar</button>
+    <input class="campo" type="text" id="campoUsuario" placeholder="Usuário" autocomplete="username">
+    <input class="campo" type="password" id="campoSenha" placeholder="Senha" autocomplete="current-password">
+    <button class="campo" id="botaoEntrar" onclick="entrar()">Entrar</button>
     <p id="erro"></p>
   </div>
+
   <script>
+    // gera partículas da explosão dinamicamente
+    const container = document.getElementById('particulas');
+    const qtdParticulas = 14;
+    for (let i = 0; i < qtdParticulas; i++) {
+      const p = document.createElement('div');
+      p.className = 'particula';
+      const angulo = (Math.PI * 2 * i) / qtdParticulas;
+      const distancia = 90 + Math.random() * 60;
+      const dx = Math.cos(angulo) * distancia;
+      const dy = Math.sin(angulo) * distancia * -1; // sobe mais que desce
+      p.style.setProperty('--dx', `calc(-50% + ${dx}px)`);
+      p.style.setProperty('--dy', `calc(50% + ${dy}px)`);
+      p.style.animationDelay = `${2.15 + Math.random() * 0.1}s`;
+      container.appendChild(p);
+    }
+
+    // esconde personagem e maleta depois da explosão
+    setTimeout(() => {
+      document.getElementById('personagem').classList.add('sumir');
+      document.getElementById('maleta').classList.add('sumir');
+    }, 2200);
+
     async function entrar() {
-      const usuario = document.getElementById('usuario').value;
-      const senha = document.getElementById('senha').value;
+      const usuario = document.getElementById('campoUsuario').value;
+      const senha = document.getElementById('campoSenha').value;
       const res = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -43,7 +235,7 @@
         document.getElementById('erro').innerText = data.erro || 'Erro ao entrar';
       }
     }
-    document.getElementById('senha').addEventListener('keydown', e => {
+    document.getElementById('campoSenha').addEventListener('keydown', e => {
       if (e.key === 'Enter') entrar();
     });
   </script>
