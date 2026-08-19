@@ -39,13 +39,54 @@
       100% { left: calc(50% - 50px); }
     }
 
-    #personagem svg { width: 100%; display: block; }
+    #personagem img {
+      width: 100%;
+      display: block;
+      position: relative;
+    }
 
-    #personagem .perna-esq { animation: passo 0.4s ease-in-out infinite alternate; transform-origin: top center; }
-    #personagem .perna-dir { animation: passo 0.4s ease-in-out infinite alternate-reverse; transform-origin: top center; }
-    @keyframes passo {
-      0%   { transform: rotate(-10deg); }
-      100% { transform: rotate(10deg); }
+    /* leve balanço vertical simulando passo */
+    #personagem { animation: andar 3.6s cubic-bezier(.4,0,.2,1) forwards; }
+    #personagem .sprite-wrap {
+      animation: balancoPasso 0.4s ease-in-out infinite alternate;
+    }
+    @keyframes balancoPasso {
+      0%   { transform: translateY(0); }
+      100% { transform: translateY(-4px); }
+    }
+
+    /* ===== EFEITO GLITCH / CURTO-CIRCUITO (na metade do trajeto) ===== */
+    .sprite-wrap.glitching img {
+      animation: glitchTremor 0.12s steps(2) infinite;
+    }
+    .sprite-wrap.glitching {
+      position: relative;
+    }
+    .sprite-wrap.glitching::before,
+    .sprite-wrap.glitching::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-image: inherit;
+      mix-blend-mode: screen;
+      opacity: 0;
+      animation: glitchRGB 0.15s steps(2) infinite;
+    }
+    @keyframes glitchTremor {
+      0%   { transform: translate(0,0); filter: brightness(1); }
+      20%  { transform: translate(-3px, 1px); filter: brightness(1.6) contrast(1.4); }
+      40%  { transform: translate(3px, -1px); filter: brightness(0.5); }
+      60%  { transform: translate(-2px, -1px); filter: brightness(1.8); }
+      80%  { transform: translate(2px, 1px); filter: brightness(0.7); }
+      100% { transform: translate(0,0); filter: brightness(1); }
+    }
+    .sprite-wrap.glitching .fatia {
+      position: absolute;
+      left: 0; width: 100%;
+      overflow: hidden;
+      background-image: var(--imgurl);
+      background-size: 100% auto;
+      background-repeat: no-repeat;
     }
 
     #maleta {
@@ -63,7 +104,6 @@
       100% { opacity: 1; transform: translateY(8px) scale(1); }
     }
 
-    /* fumaça branca subindo */
     .fumaca {
       position: absolute;
       bottom: calc(34% - 5px);
@@ -149,41 +189,10 @@
 <body>
 
   <div id="cena">
-    <!-- Homem de terno completo -->
     <div id="personagem">
-      <svg viewBox="0 0 100 160" xmlns="http://www.w3.org/2000/svg">
-        <!-- cabeça -->
-        <ellipse cx="50" cy="18" rx="12" ry="14" fill="#e0b088"/>
-        <!-- cabelo -->
-        <path d="M38 12 C38 4 62 4 62 12 C62 8 58 6 50 6 C42 6 38 8 38 12 Z" fill="#2a2018"/>
-        <!-- pescoço -->
-        <rect x="45" y="30" width="10" height="8" fill="#e0b088"/>
-        <!-- torso: blazer -->
-        <path d="M50 36 C30 38 24 55 26 78 L28 100 L72 100 L74 78 C76 55 70 38 50 36 Z" fill="#1c1c26"/>
-        <!-- lapelas -->
-        <path d="M50 38 L38 48 L42 60 L50 50 Z" fill="#14141c"/>
-        <path d="M50 38 L62 48 L58 60 L50 50 Z" fill="#14141c"/>
-        <!-- camisa -->
-        <path d="M46 38 L50 50 L54 38 L52 46 L48 46 Z" fill="#f5f5f5"/>
-        <!-- gravata vermelha -->
-        <path d="M48 44 L52 44 L54 52 L50 90 L46 52 Z" fill="#c81e2e"/>
-        <!-- botão do blazer -->
-        <circle cx="50" cy="80" r="1.6" fill="#0a0a0a"/>
-        <!-- braço esquerdo (parado, ao lado do corpo) -->
-        <path class="braco-esq" d="M30 46 C24 55 22 68 24 82 L30 84 C29 70 30 58 34 48 Z" fill="#1c1c26"/>
-        <!-- punho e mão esquerda -->
-        <ellipse cx="26" cy="86" rx="4" ry="5" fill="#e0b088"/>
-        <!-- braço direito (segurando a maleta) -->
-        <path class="braco" d="M70 46 C78 54 82 66 82 78 L74 82 C74 70 72 58 66 48 Z" fill="#1c1c26"/>
-        <!-- punho e mão direita -->
-        <ellipse cx="80" cy="82" rx="4" ry="5" fill="#e0b088"/>
-        <!-- calça -->
-        <path class="perna-esq" d="M32 100 L28 150 L40 150 L44 106 Z" fill="#14141c"/>
-        <path class="perna-dir" d="M68 100 L72 150 L60 150 L56 106 Z" fill="#14141c"/>
-        <!-- sapatos -->
-        <ellipse cx="30" cy="152" rx="8" ry="4" fill="#0a0a0a"/>
-        <ellipse cx="70" cy="152" rx="8" ry="4" fill="#0a0a0a"/>
-      </svg>
+      <div class="sprite-wrap" id="spriteWrap">
+        <img src="logo2.png" alt="Personagem">
+      </div>
     </div>
 
     <div id="maleta">
@@ -207,7 +216,16 @@
   </div>
 
   <script>
-    // gera nuvens de fumaça toda branca
+    // ativa o glitch de "curto-circuito" na metade do trajeto (a caminhada dura 3.6s, metade = 1.8s)
+    const spriteWrap = document.getElementById('spriteWrap');
+    setTimeout(() => {
+      spriteWrap.classList.add('glitching');
+    }, 1600);
+    setTimeout(() => {
+      spriteWrap.classList.remove('glitching');
+    }, 2100);
+
+    // gera nuvens de fumaça branca
     const container = document.getElementById('fumacaContainer');
     const cores = ['#ffffff', '#f0f0f0', '#e8e8e8', '#fafafa'];
     const qtdFumaca = 16;
