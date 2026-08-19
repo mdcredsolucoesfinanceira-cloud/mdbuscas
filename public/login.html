@@ -28,13 +28,13 @@
 
     #personagem {
       position: absolute;
-      bottom: 36%;
-      left: -130px;
+      bottom: 34%;
+      left: -140px;
       width: 100px;
       animation: andar 3.6s cubic-bezier(.4,0,.2,1) forwards;
     }
     @keyframes andar {
-      0%   { left: -130px; }
+      0%   { left: -140px; }
       80%  { left: calc(50% - 50px); }
       100% { left: calc(50% - 50px); }
     }
@@ -44,13 +44,13 @@
     #personagem .perna-esq { animation: passo 0.4s ease-in-out infinite alternate; transform-origin: top center; }
     #personagem .perna-dir { animation: passo 0.4s ease-in-out infinite alternate-reverse; transform-origin: top center; }
     @keyframes passo {
-      0%   { transform: rotate(-12deg); }
-      100% { transform: rotate(12deg); }
+      0%   { transform: rotate(-10deg); }
+      100% { transform: rotate(10deg); }
     }
 
     #maleta {
       position: absolute;
-      bottom: 36%;
+      bottom: 34%;
       left: calc(50% - 8px);
       width: 32px;
       opacity: 0;
@@ -63,10 +63,10 @@
       100% { opacity: 1; transform: translateY(8px) scale(1); }
     }
 
-    /* fumaça branca/roxa em vez de faísca verde */
+    /* fumaça branca subindo */
     .fumaca {
       position: absolute;
-      bottom: calc(36% - 5px);
+      bottom: calc(34% - 5px);
       left: 50%;
       width: 30px; height: 30px;
       border-radius: 50%;
@@ -82,12 +82,12 @@
 
     #flashExplosao {
       position: absolute;
-      bottom: calc(36% - 10px);
+      bottom: calc(34% - 10px);
       left: 50%;
       width: 10px; height: 10px;
       transform: translate(-50%, 50%);
       border-radius: 50%;
-      background: radial-gradient(circle, #ffffff 0%, #c9a6ff 35%, rgba(160,90,255,0) 70%);
+      background: radial-gradient(circle, #ffffff 0%, #dcdcdc 35%, rgba(255,255,255,0) 70%);
       opacity: 0;
       animation: explodir 0.6s ease-out forwards;
       animation-delay: 3.95s;
@@ -113,7 +113,7 @@
       padding: 0 20px;
     }
     .box h1 {
-      color: #c9a6ff;
+      color: #ffffff;
       margin-bottom: 22px;
       font-size: 1.15rem;
       font-weight: 700;
@@ -135,12 +135,12 @@
     }
 
     input {
-      width: 100%; padding: 13px; margin: 8px 0; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);
-      font-size: 1rem; background: #14101c; color: #fff;
+      width: 100%; padding: 13px; margin: 8px 0; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15);
+      font-size: 1rem; background: #14141c; color: #fff;
     }
-    input::placeholder { color: #a08cc0; }
+    input::placeholder { color: #9aa0ac; }
     button {
-      width: 100%; padding: 13px; background: #c9a6ff; color: #1a0f2e; border: none;
+      width: 100%; padding: 13px; background: #ffffff; color: #0a0a0a; border: none;
       border-radius: 10px; font-weight: 700; cursor: pointer; margin-top: 12px; font-size: 0.9rem;
     }
     #erro { color: #ef4444; margin-top: 10px; font-size: 0.85rem; min-height: 1em; }
@@ -149,52 +149,48 @@
 <body>
 
   <div id="cena">
-    <!-- Personagem: capuz/jaqueta vermelha + máscara branca de Guy Fawkes -->
+    <!-- Homem de terno completo -->
     <div id="personagem">
-      <svg viewBox="0 0 100 150" xmlns="http://www.w3.org/2000/svg">
-        <!-- jaqueta/capuz vermelho -->
-        <path d="M50 8 C22 8 12 35 15 62 L10 140 L90 140 L85 62 C88 35 78 8 50 8 Z" fill="#c81e2e"/>
-        <!-- sombra do capuz -->
-        <path d="M50 16 C32 16 25 38 27 58 L25 62 L75 62 L73 58 C75 38 68 16 50 16 Z" fill="#8f1420"/>
-        <!-- zíper -->
-        <path d="M50 62 L50 140" stroke="#5c0d15" stroke-width="2"/>
-        <!-- botões da jaqueta -->
-        <circle cx="50" cy="78" r="2" fill="#5c0d15"/>
-        <circle cx="50" cy="94" r="2" fill="#5c0d15"/>
-        <circle cx="50" cy="110" r="2" fill="#5c0d15"/>
-        <!-- máscara -->
-        <g transform="translate(50,44)">
-          <ellipse cx="0" cy="0" rx="21" ry="18" fill="#f5f0e8"/>
-          <path d="M-21 -3 C-15 -15 15 -15 21 -3 C15 2 -15 2 -21 -3 Z" fill="#f5f0e8"/>
-          <!-- sobrancelhas -->
-          <path d="M-15 -10 L-4 -8" stroke="#111" stroke-width="1.6" stroke-linecap="round"/>
-          <path d="M15 -10 L4 -8" stroke="#111" stroke-width="1.6" stroke-linecap="round"/>
-          <!-- olhos -->
-          <path d="M-14 -3 C-9 -8 -2 -8 0 -3 C-2 0 -9 0 -14 -3 Z" fill="#0a0a0a"/>
-          <path d="M14 -3 C9 -8 2 -8 0 -3 C2 0 9 0 14 -3 Z" fill="#0a0a0a"/>
-          <!-- rosto -->
-          <ellipse cx="-14" cy="6" rx="2.5" ry="1.5" fill="#e6a0a0" opacity="0.5"/>
-          <ellipse cx="14" cy="6" rx="2.5" ry="1.5" fill="#e6a0a0" opacity="0.5"/>
-          <!-- bigode -->
-          <path d="M-17 5 C-11 2 -3 6 0 4 C3 6 11 2 17 5 C11 9 4 7 0 9 C-4 7 -11 9 -17 5 Z" fill="#111"/>
-          <!-- barbicha -->
-          <path d="M-4 11 Q0 19 4 11 Q2 14 0 14 Q-2 14 -4 11 Z" fill="#111"/>
-          <!-- sorriso -->
-          <path d="M-8 11 Q0 16 8 11" stroke="#111" stroke-width="1.4" fill="none" stroke-linecap="round"/>
-        </g>
-        <!-- braço segurando a maleta -->
-        <path class="braco" d="M68 92 L84 108 L78 116 L64 102 Z" fill="#c81e2e"/>
-        <!-- pernas -->
-        <path class="perna-esq" d="M32 126 L27 150 L38 150 L40 126 Z" fill="#1a1a1a"/>
-        <path class="perna-dir" d="M68 126 L73 150 L62 150 L60 126 Z" fill="#1a1a1a"/>
+      <svg viewBox="0 0 100 160" xmlns="http://www.w3.org/2000/svg">
+        <!-- cabeça -->
+        <ellipse cx="50" cy="18" rx="12" ry="14" fill="#e0b088"/>
+        <!-- cabelo -->
+        <path d="M38 12 C38 4 62 4 62 12 C62 8 58 6 50 6 C42 6 38 8 38 12 Z" fill="#2a2018"/>
+        <!-- pescoço -->
+        <rect x="45" y="30" width="10" height="8" fill="#e0b088"/>
+        <!-- torso: blazer -->
+        <path d="M50 36 C30 38 24 55 26 78 L28 100 L72 100 L74 78 C76 55 70 38 50 36 Z" fill="#1c1c26"/>
+        <!-- lapelas -->
+        <path d="M50 38 L38 48 L42 60 L50 50 Z" fill="#14141c"/>
+        <path d="M50 38 L62 48 L58 60 L50 50 Z" fill="#14141c"/>
+        <!-- camisa -->
+        <path d="M46 38 L50 50 L54 38 L52 46 L48 46 Z" fill="#f5f5f5"/>
+        <!-- gravata vermelha -->
+        <path d="M48 44 L52 44 L54 52 L50 90 L46 52 Z" fill="#c81e2e"/>
+        <!-- botão do blazer -->
+        <circle cx="50" cy="80" r="1.6" fill="#0a0a0a"/>
+        <!-- braço esquerdo (parado, ao lado do corpo) -->
+        <path class="braco-esq" d="M30 46 C24 55 22 68 24 82 L30 84 C29 70 30 58 34 48 Z" fill="#1c1c26"/>
+        <!-- punho e mão esquerda -->
+        <ellipse cx="26" cy="86" rx="4" ry="5" fill="#e0b088"/>
+        <!-- braço direito (segurando a maleta) -->
+        <path class="braco" d="M70 46 C78 54 82 66 82 78 L74 82 C74 70 72 58 66 48 Z" fill="#1c1c26"/>
+        <!-- punho e mão direita -->
+        <ellipse cx="80" cy="82" rx="4" ry="5" fill="#e0b088"/>
+        <!-- calça -->
+        <path class="perna-esq" d="M32 100 L28 150 L40 150 L44 106 Z" fill="#14141c"/>
+        <path class="perna-dir" d="M68 100 L72 150 L60 150 L56 106 Z" fill="#14141c"/>
+        <!-- sapatos -->
+        <ellipse cx="30" cy="152" rx="8" ry="4" fill="#0a0a0a"/>
+        <ellipse cx="70" cy="152" rx="8" ry="4" fill="#0a0a0a"/>
       </svg>
     </div>
 
     <div id="maleta">
       <svg viewBox="0 0 40 30" xmlns="http://www.w3.org/2000/svg">
-        <rect x="2" y="8" width="36" height="20" rx="3" fill="#1a1a1a" stroke="#c9a6ff" stroke-width="1"/>
+        <rect x="2" y="8" width="36" height="20" rx="3" fill="#1a1a1a" stroke="#ffffff" stroke-width="1"/>
         <path d="M14 8 L14 3 C14 1 15 0 17 0 L23 0 C25 0 26 1 26 3 L26 8" fill="none" stroke="#1a1a1a" stroke-width="3"/>
-        <rect x="17" y="15" width="6" height="4" rx="1" fill="#c9a6ff"/>
+        <rect x="17" y="15" width="6" height="4" rx="1" fill="#ffffff"/>
       </svg>
     </div>
 
@@ -211,9 +207,9 @@
   </div>
 
   <script>
-    // gera nuvens de fumaça branca/roxa saindo do ponto da explosão
+    // gera nuvens de fumaça toda branca
     const container = document.getElementById('fumacaContainer');
-    const cores = ['#ffffff', '#c9a6ff', '#8f6fd6', '#e8ddff'];
+    const cores = ['#ffffff', '#f0f0f0', '#e8e8e8', '#fafafa'];
     const qtdFumaca = 16;
     for (let i = 0; i < qtdFumaca; i++) {
       const f = document.createElement('div');
