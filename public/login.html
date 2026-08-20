@@ -4,246 +4,45 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login Admin - MD BUSCAS</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', 'Segoe UI', sans-serif; }
-    body {
-      background: #000;
-      color: #fff;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      position: relative;
-    }
-
-    /* ===== CENA DE ANIMAÇÃO (6s no total) ===== */
-    #cena {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 5;
-    }
-
-    #personagem {
-      position: absolute;
-      bottom: 30%;
-      left: -220px;
-      width: 170px;
-      animation: andar 3.6s cubic-bezier(.4,0,.2,1) forwards;
-    }
-    @keyframes andar {
-      0%   { left: -220px; }
-      80%  { left: calc(50% - 85px); }
-      100% { left: calc(50% - 85px); }
-    }
-
-    #personagem img {
-      width: 100%;
-      display: block;
-      position: relative;
-      border-radius: 12px;
-    }
-
-    #personagem .sprite-wrap {
-      animation: balancoPasso 0.4s ease-in-out infinite alternate;
-    }
-    @keyframes balancoPasso {
-      0%   { transform: translateY(0); }
-      100% { transform: translateY(-4px); }
-    }
-
-    /* ===== EFEITO GLITCH / CURTO-CIRCUITO (na metade do trajeto) ===== */
-    .sprite-wrap.glitching img {
-      animation: glitchTremor 0.12s steps(2) infinite;
-    }
-    .sprite-wrap.glitching {
-      position: relative;
-    }
-    .sprite-wrap.glitching::before,
-    .sprite-wrap.glitching::after {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-image: inherit;
-      mix-blend-mode: screen;
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+    body { background: #000; color: #fff; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+    .box { width: 100%; max-width: 320px; text-align: center; }
+    .box img {
+      width: 240px;
+      max-width: 75%;
       opacity: 0;
-      animation: glitchRGB 0.15s steps(2) infinite;
+      animation: logoEntra 1.4s ease forwards;
+      margin-bottom: 16px;
     }
-    @keyframes glitchTremor {
-      0%   { transform: translate(0,0); filter: brightness(1); }
-      20%  { transform: translate(-5px, 2px); filter: brightness(1.6) contrast(1.4); }
-      40%  { transform: translate(5px, -2px); filter: brightness(0.5); }
-      60%  { transform: translate(-3px, -2px); filter: brightness(1.8); }
-      80%  { transform: translate(3px, 2px); filter: brightness(0.7); }
-      100% { transform: translate(0,0); filter: brightness(1); }
+    @keyframes logoEntra {
+      0%   { opacity: 0; }
+      100% { opacity: 1; }
     }
-
-    #maleta {
-      position: absolute;
-      bottom: 30%;
-      left: calc(50% - 8px);
-      width: 32px;
-      opacity: 0;
-      animation: soltarMaleta 0.5s ease forwards;
-      animation-delay: 3.3s;
-    }
-    @keyframes soltarMaleta {
-      0%   { opacity: 0; transform: translateY(0) scale(1); }
-      40%  { opacity: 1; transform: translateY(-5px) scale(1); }
-      100% { opacity: 1; transform: translateY(8px) scale(1); }
-    }
-
-    .fumaca {
-      position: absolute;
-      bottom: calc(30% - 5px);
-      left: 50%;
-      width: 30px; height: 30px;
-      border-radius: 50%;
-      filter: blur(6px);
-      opacity: 0;
-      animation: subirFumaca 2.2s ease-out forwards;
-    }
-    @keyframes subirFumaca {
-      0%   { opacity: 0; transform: translate(-50%, 0) scale(0.6); }
-      12%  { opacity: 0.85; }
-      100% { opacity: 0; transform: translate(var(--dx), -180px) scale(var(--esc)); }
-    }
-
-    #flashExplosao {
-      position: absolute;
-      bottom: calc(30% - 10px);
-      left: 50%;
-      width: 10px; height: 10px;
-      transform: translate(-50%, 50%);
-      border-radius: 50%;
-      background: radial-gradient(circle, #ffffff 0%, #dcdcdc 35%, rgba(255,255,255,0) 70%);
-      opacity: 0;
-      animation: explodir 0.6s ease-out forwards;
-      animation-delay: 3.95s;
-    }
-    @keyframes explodir {
-      0%   { opacity: 0; width: 10px; height: 10px; }
-      15%  { opacity: 1; }
-      100% { opacity: 0; width: 480px; height: 480px; }
-    }
-
-    #personagem.sumir, #maleta.sumir {
-      opacity: 0;
-      transition: opacity 0.4s ease;
-    }
-
-    /* ===== FORMULÁRIO ===== */
-    .box {
-      width: 100%;
-      max-width: 320px;
-      text-align: center;
-      position: relative;
-      z-index: 10;
-      padding: 0 20px;
-    }
-    .box h1 {
-      color: #ffffff;
-      margin-bottom: 22px;
-      font-size: 1.15rem;
-      font-weight: 700;
-      opacity: 0;
-      animation: subirCampo 0.5s ease forwards;
-      animation-delay: 4.1s;
-    }
-    .campo {
-      opacity: 0;
-      transform: translateY(24px);
-      animation: subirCampo 0.5s cubic-bezier(.2,.8,.2,1) forwards;
-    }
-    #campoUsuario { animation-delay: 4.2s; }
-    #campoSenha   { animation-delay: 4.4s; }
-    #botaoEntrar  { animation-delay: 4.6s; }
-    @keyframes subirCampo {
-      0%   { opacity: 0; transform: translateY(24px); }
-      100% { opacity: 1; transform: translateY(0); }
-    }
-
+    h1 { color: #00ffcc; margin-bottom: 20px; font-size: 1.3rem; }
     input {
-      width: 100%; padding: 13px; margin: 8px 0; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15);
-      font-size: 1rem; background: #14141c; color: #fff;
+      width: 100%; padding: 12px; margin: 8px 0; border-radius: 6px; border: none; font-size: 1rem;
     }
-    input::placeholder { color: #9aa0ac; }
     button {
-      width: 100%; padding: 13px; background: #ffffff; color: #0a0a0a; border: none;
-      border-radius: 10px; font-weight: 700; cursor: pointer; margin-top: 12px; font-size: 0.9rem;
+      width: 100%; padding: 12px; background: #00ffcc; color: #000; border: none;
+      border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px;
     }
-    #erro { color: #ef4444; margin-top: 10px; font-size: 0.85rem; min-height: 1em; }
+    #erro { color: #e74c3c; margin-top: 10px; font-size: 0.85rem; min-height: 1em; }
   </style>
 </head>
 <body>
-
-  <div id="cena">
-    <div id="personagem">
-      <div class="sprite-wrap" id="spriteWrap">
-        <img src="logo2.jpg" alt="Personagem">
-      </div>
-    </div>
-
-    <div id="maleta">
-      <svg viewBox="0 0 40 30" xmlns="http://www.w3.org/2000/svg">
-        <rect x="2" y="8" width="36" height="20" rx="3" fill="#1a1a1a" stroke="#ffffff" stroke-width="1"/>
-        <path d="M14 8 L14 3 C14 1 15 0 17 0 L23 0 C25 0 26 1 26 3 L26 8" fill="none" stroke="#1a1a1a" stroke-width="3"/>
-        <rect x="17" y="15" width="6" height="4" rx="1" fill="#ffffff"/>
-      </svg>
-    </div>
-
-    <div id="flashExplosao"></div>
-    <div id="fumacaContainer"></div>
-  </div>
-
   <div class="box">
+    <img src="logo1.png" alt="MD BUSCAS">
     <h1>MD BUSCAS — Acesso Admin</h1>
-    <input class="campo" type="text" id="campoUsuario" placeholder="Usuário" autocomplete="username">
-    <input class="campo" type="password" id="campoSenha" placeholder="Senha" autocomplete="current-password">
-    <button class="campo" id="botaoEntrar" onclick="entrar()">Entrar</button>
+    <input type="text" id="usuario" placeholder="Usuário" autocomplete="username">
+    <input type="password" id="senha" placeholder="Senha" autocomplete="current-password">
+    <button onclick="entrar()">Entrar</button>
     <p id="erro"></p>
   </div>
-
   <script>
-    // ativa o glitch de "curto-circuito" na metade do trajeto (caminhada dura 3.6s, metade = 1.8s)
-    const spriteWrap = document.getElementById('spriteWrap');
-    setTimeout(() => {
-      spriteWrap.classList.add('glitching');
-    }, 1600);
-    setTimeout(() => {
-      spriteWrap.classList.remove('glitching');
-    }, 2100);
-
-    // gera nuvens de fumaça branca
-    const container = document.getElementById('fumacaContainer');
-    const cores = ['#ffffff', '#f0f0f0', '#e8e8e8', '#fafafa'];
-    const qtdFumaca = 16;
-    for (let i = 0; i < qtdFumaca; i++) {
-      const f = document.createElement('div');
-      f.className = 'fumaca';
-      const dx = (Math.random() - 0.5) * 260;
-      const escala = 4 + Math.random() * 5;
-      const tamanho = 20 + Math.random() * 25;
-      f.style.width = tamanho + 'px';
-      f.style.height = tamanho + 'px';
-      f.style.background = cores[Math.floor(Math.random() * cores.length)];
-      f.style.setProperty('--dx', `calc(-50% + ${dx}px)`);
-      f.style.setProperty('--esc', escala);
-      f.style.animationDelay = `${3.95 + Math.random() * 0.5}s`;
-      container.appendChild(f);
-    }
-
-    // esconde personagem e maleta depois da explosão
-    setTimeout(() => {
-      document.getElementById('personagem').classList.add('sumir');
-      document.getElementById('maleta').classList.add('sumir');
-    }, 4050);
-
     async function entrar() {
-      const usuario = document.getElementById('campoUsuario').value;
-      const senha = document.getElementById('campoSenha').value;
+      const usuario = document.getElementById('usuario').value;
+      const senha = document.getElementById('senha').value;
       const res = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -256,7 +55,7 @@
         document.getElementById('erro').innerText = data.erro || 'Erro ao entrar';
       }
     }
-    document.getElementById('campoSenha').addEventListener('keydown', e => {
+    document.getElementById('senha').addEventListener('keydown', e => {
       if (e.key === 'Enter') entrar();
     });
   </script>
