@@ -242,7 +242,7 @@
       width: 100%;
     }
 
-    /* ===== ANIMAÇÃO DE CATEGORIAS FLUTUANTES ===== */
+    /* ===== ESTEIRA DE CATEGORIAS ===== */
     #sequenciaConsultas {
       max-width: 760px;
       margin: 46px auto 10px auto;
@@ -256,7 +256,7 @@
     }
     .fundo-tech {
       position: relative;
-      height: 220px;
+      height: 120px;
       border-radius: 18px;
       overflow: hidden;
       background: #0b0b10;
@@ -270,44 +270,45 @@
         linear-gradient(90deg, rgba(22,224,180,0.05) 1px, transparent 1px);
       background-size: 36px 36px;
       opacity: 0.5;
+      z-index: 1;
     }
-    .particula {
+    .fundo-tech::after {
+      content: "";
+      position: absolute; inset: 0;
+      background: linear-gradient(90deg, #0b0b10 0%, transparent 8%, transparent 92%, #0b0b10 100%);
+      z-index: 3;
+      pointer-events: none;
+    }
+    .esteira-wrap {
       position: absolute;
-      width: 3px; height: 3px;
-      border-radius: 50%;
-      background: rgba(22,224,180,0.5);
-      animation: flutuar 8s ease-in-out infinite;
+      top: 0; left: 0;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      z-index: 2;
+      animation: deslizar 22s linear infinite;
+      will-change: transform;
     }
-    @keyframes flutuar {
-      0%, 100% { transform: translateY(0); opacity: 0.3; }
-      50% { transform: translateY(-14px); opacity: 0.8; }
+    @keyframes deslizar {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
     }
     .slot-tag {
-      position: absolute;
-      padding: 7px 14px;
+      flex-shrink: 0;
+      padding: 9px 18px;
+      margin: 0 8px;
       border: 1px solid rgba(255,255,255,0.1);
       border-radius: 20px;
       background: rgba(255,255,255,0.03);
       color: var(--cor-texto-suave);
-      font-size: 0.75rem;
+      font-size: 0.78rem;
       font-weight: 500;
       letter-spacing: 0.3px;
-      backdrop-filter: blur(2px);
       box-shadow: 0 0 12px rgba(22,224,180,0.06);
-      opacity: 0;
-      transform: scale(0.96) translateY(6px);
-      filter: blur(2px);
-      transition: opacity 0.55s ease, transform 0.55s ease, filter 0.55s ease;
       white-space: nowrap;
     }
-    .slot-tag.ativo {
-      opacity: 1;
-      transform: scale(1) translateY(0);
-      filter: blur(0);
-    }
     @media (prefers-reduced-motion: reduce) {
-      .slot-tag { transition: opacity 0.3s ease; transform: none !important; filter: none !important; }
-      .particula { animation: none; }
+      .esteira-wrap { animation: none; }
     }
 
     footer.rodape {
@@ -596,12 +597,8 @@
 
   <section id="sequenciaConsultas">
     <h2>Tudo que você precisa consultar</h2>
-    <div class="fundo-tech" id="fundoTech">
-      <div class="particula" style="top:15%; left:10%; animation-delay:0s;"></div>
-      <div class="particula" style="top:70%; left:80%; animation-delay:1.5s;"></div>
-      <div class="particula" style="top:40%; left:50%; animation-delay:3s;"></div>
-      <div class="particula" style="top:85%; left:25%; animation-delay:2s;"></div>
-      <div class="particula" style="top:20%; left:88%; animation-delay:4s;"></div>
+    <div class="fundo-tech">
+      <div class="esteira-wrap" id="esteiraWrap"></div>
     </div>
   </section>
 
@@ -734,49 +731,21 @@
       });
     }
 
-    // ===== Sequência animada de categorias (fundo tech) =====
+    // ===== Esteira de categorias (marquee) =====
     const categoriasConsulta = [
       "CNPJ", "CEP", "Tabela FIPE", "CNAE", "Banco", "Feriados",
       "Placa", "CNH", "RENAVAM", "NCM", "Câmbio", "DDD", "IBGE"
     ];
-    const posicoesSlots = [
-      { top: '12%', left: '8%' },
-      { top: '18%', left: '55%' },
-      { top: '40%', left: '20%' },
-      { top: '35%', left: '68%' },
-      { top: '62%', left: '10%' },
-      { top: '58%', left: '48%' },
-      { top: '78%', left: '30%' },
-      { top: '70%', left: '75%' }
-    ];
 
     function iniciarSequenciaConsultas() {
-      const container = document.getElementById('fundoTech');
-      const reduzMovimento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-      const slots = posicoesSlots.map(pos => {
+      const wrap = document.getElementById('esteiraWrap');
+      const listaDupla = [...categoriasConsulta, ...categoriasConsulta];
+      listaDupla.forEach(nome => {
         const el = document.createElement('div');
         el.className = 'slot-tag';
-        el.style.top = pos.top;
-        el.style.left = pos.left;
-        container.appendChild(el);
-        return el;
+        el.textContent = nome;
+        wrap.appendChild(el);
       });
-
-      let indice = 0;
-      function proximoCiclo() {
-        const slot = slots[indice % slots.length];
-        slot.classList.remove('ativo');
-
-        setTimeout(() => {
-          slot.textContent = categoriasConsulta[Math.floor(Math.random() * categoriasConsulta.length)];
-          slot.classList.add('ativo');
-        }, reduzMovimento ? 0 : 300);
-
-        indice++;
-        setTimeout(proximoCiclo, 900);
-      }
-      proximoCiclo();
     }
 
     window.addEventListener('DOMContentLoaded', () => {
