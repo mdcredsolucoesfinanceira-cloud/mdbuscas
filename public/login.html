@@ -11,41 +11,19 @@
     #telaIntro {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: #000;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      display: flex; align-items: center; justify-content: center;
       z-index: 9999; transition: opacity 0.8s ease;
     }
     #telaIntro img {
       width: 240px;
       max-width: 75%;
       opacity: 0;
-      animation: logoEntra 1.4s ease forwards;
+      animation: logoEntra 5s ease forwards;
     }
     @keyframes logoEntra {
       0%   { opacity: 0; }
       100% { opacity: 1; }
     }
-    #telaIntro .intro-tagline {
-      margin-top: 16px; color: #94a3b5; font-size: 0.78rem;
-      letter-spacing: 3px; text-transform: uppercase; font-weight: 600;
-      opacity: 0;
-      animation: taglineEntra 0.9s ease forwards; animation-delay: 1s;
-    }
-    @keyframes taglineEntra {
-      0%   { opacity: 0; transform: translateY(4px); }
-      100% { opacity: 0.9; transform: translateY(0); }
-    }
-    #telaIntro .intro-barra {
-      width: 140px; height: 2px; margin-top: 26px;
-      background: rgba(255,255,255,0.08);
-      border-radius: 2px; overflow: hidden;
-    }
-    #telaIntro .intro-barra-fill {
-      height: 100%; width: 0%;
-      background: linear-gradient(90deg, #00ffcc, #0fae8c);
-      border-radius: 2px;
-      animation: carregando 3.4s ease forwards; animation-delay: 0.5s;
-    }
-    @keyframes carregando { 0% { width: 0%; } 100% { width: 100%; } }
 
     #telaLogin {
       display: none;
@@ -57,12 +35,12 @@
       width: 90px;
       margin-bottom: 16px;
     }
-    h1 { color: #00ffcc; margin-bottom: 20px; font-size: 1.3rem; }
+    h1 { color: #fff; margin-bottom: 20px; font-size: 1.3rem; }
     input {
       width: 100%; padding: 12px; margin: 8px 0; border-radius: 6px; border: none; font-size: 1rem;
     }
     button {
-      width: 100%; padding: 12px; background: #00ffcc; color: #000; border: none;
+      width: 100%; padding: 12px; background: #d9d9d9; color: #000; border: none;
       border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px;
     }
     #erro { color: #e74c3c; margin-top: 10px; font-size: 0.85rem; min-height: 1em; }
@@ -71,14 +49,12 @@
 <body>
 
   <div id="telaIntro">
-    <img src="logo1.png" alt="MD BUSCAS">
-    <div class="intro-tagline">Informação é Poder</div>
-    <div class="intro-barra"><div class="intro-barra-fill"></div></div>
+    <img src="logo2.jpg" alt="MD BUSCAS">
   </div>
 
   <div id="telaLogin">
     <div class="box">
-      <img src="logo1.png" alt="MD BUSCAS" class="logo-form">
+      <img src="logo2.jpg" alt="MD BUSCAS" class="logo-form">
       <h1>MD BUSCAS — Acesso Admin</h1>
       <input type="text" id="usuario" placeholder="Usuário" autocomplete="username">
       <input type="password" id="senha" placeholder="Senha" autocomplete="current-password">
