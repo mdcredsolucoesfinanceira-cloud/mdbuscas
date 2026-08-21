@@ -3,6 +3,7 @@ const path = require('path');
 const axios = require('axios');
 const crypto = require('crypto');
 const session = require('express-session');
+const rateLimit = require('express-rate-limit');
 const webpush = require('web-push');
 const { createClient } = require('@libsql/client');
 const app = express();
@@ -22,6 +23,8 @@ const TURSO_AUTH_TOKEN = process.env.TURSO_AUTH_TOKEN;
 const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY;
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
 const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:contato@mdbuscas.com';
+
+const TURNSTILE_SECRET_KEY = process.env.TURNSTILE_SECRET_KEY;
 
 if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
     webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
@@ -44,6 +47,8 @@ function valorPorModulo(moduloUpper) {
     return PRECOS[moduloUpper] !== undefined ? PRECOS[moduloUpper] : 10.00;
 }
 
+app.set('trust proxy', 1);
+
 app.use('/api/webhook/goatpay', express.raw({ type: '*/*' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -52,7 +57,12 @@ app.use(session({
     secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 1000 * 60 * 60 * 8 }
+    cookie: {
+        maxAge: 1000 * 60 * 60 * 8,
+        httpOnly: true,
+        secure: true,
+        sameSite: 'lax'
+    }
 }));
 
 app.use((req, res, next) => {
@@ -64,6 +74,57 @@ app.use((req, res, next) => {
 });
 
 app.use(express.static('public'));
+
+// Rate limit: no máximo 8 tentativas de login por IP a cada 15 minutos
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 8,
+    message: { sucesso: false, erro: "Muitas tentativas. Aguarde alguns minutos e tente novamente." },
+    standardHeaders: true,
+    legacyHeaders: false
+});
+
+// Bloqueio progressivo em memória: por usuário, conta falhas consecutivas
+const falhasLogin = new Map(); // usuario -> { tentativas, bloqueadoAte }
+
+function verificarBloqueio(usuario) {
+    const registro = falhasLogin.get(usuario);
+    if (!registro) return { bloqueado: false };
+    if (registro.bloqueadoAte && Date.now() < registro.bloqueadoAte) {
+        const segundosRestantes = Math.ceil((registro.bloqueadoAte - Date.now()) / 1000);
+        return { bloqueado: true, segundosRestantes };
+    }
+    return { bloqueado: false };
+}
+
+function registrarFalha(usuario) {
+    const registro = falhasLogin.get(usuario) || { tentativas: 0, bloqueadoAte: null };
+    registro.tentativas += 1;
+    if (registro.tentativas >= 5) {
+        const minutosBloqueio = Math.min(registro.tentativas - 4, 30); // cresce até 30 min
+        registro.bloqueadoAte = Date.now() + minutosBloqueio * 60 * 1000;
+    }
+    falhasLogin.set(usuario, registro);
+}
+
+function limparFalhas(usuario) {
+    falhasLogin.delete(usuario);
+}
+
+async function verificarTurnstile(token, ip) {
+    if (!TURNSTILE_SECRET_KEY) return true; // se não configurado, não bloqueia (evita travar tudo por engano)
+    if (!token) return false;
+    try {
+        const resp = await axios.post('https://challenges.cloudflare.com/turnstile/v0/siteverify',
+            new URLSearchParams({ secret: TURNSTILE_SECRET_KEY, response: token, remoteip: ip }),
+            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+        );
+        return resp.data.success === true;
+    } catch (e) {
+        console.error("Erro ao verificar Turnstile:", e.message);
+        return false;
+    }
+}
 
 async function iniciarBanco() {
     try {
@@ -221,15 +282,38 @@ async function buscarDados(moduloUpper, alvo) {
     throw new Error("Módulo inválido");
 }
 
-app.post('/api/login', (req, res) => {
-    const { usuario, senha } = req.body;
+// LOGIN — com Turnstile + rate limit + bloqueio progressivo
+app.post('/api/login', loginLimiter, async (req, res) => {
+    const { usuario, senha, turnstileToken } = req.body;
+
     if (!ADMIN_USER || !ADMIN_PASS) {
         return res.status(500).json({ sucesso: false, erro: "Login não configurado no servidor" });
     }
+
+    if (!usuario) {
+        return res.status(400).json({ sucesso: false, erro: "Informe o usuário" });
+    }
+
+    const bloqueio = verificarBloqueio(usuario);
+    if (bloqueio.bloqueado) {
+        return res.status(429).json({
+            sucesso: false,
+            erro: `Muitas tentativas erradas. Tente novamente em ${Math.ceil(bloqueio.segundosRestantes / 60)} minuto(s).`
+        });
+    }
+
+    const turnstileValido = await verificarTurnstile(turnstileToken, req.ip);
+    if (!turnstileValido) {
+        return res.status(400).json({ sucesso: false, erro: "Verificação de segurança falhou. Tente novamente." });
+    }
+
     if (usuario === ADMIN_USER && senha === ADMIN_PASS) {
+        limparFalhas(usuario);
         req.session.autenticado = true;
         return res.json({ sucesso: true });
     }
+
+    registrarFalha(usuario);
     res.status(401).json({ sucesso: false, erro: "Usuário ou senha incorretos" });
 });
 

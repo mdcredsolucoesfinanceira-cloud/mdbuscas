@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login Admin - MD BUSCAS</title>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
     body { background: #000; color: #fff; min-height: 100vh; }
@@ -39,10 +40,12 @@
     input {
       width: 100%; padding: 12px; margin: 8px 0; border-radius: 6px; border: none; font-size: 1rem;
     }
+    .turnstile-wrap { display: flex; justify-content: center; margin: 14px 0; }
     button {
       width: 100%; padding: 12px; background: #d9d9d9; color: #000; border: none;
       border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px;
     }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
     #erro { color: #e74c3c; margin-top: 10px; font-size: 0.85rem; min-height: 1em; }
   </style>
 </head>
@@ -58,12 +61,22 @@
       <h1>MD BUSCAS — Acesso Admin</h1>
       <input type="text" id="usuario" placeholder="Usuário" autocomplete="username">
       <input type="password" id="senha" placeholder="Senha" autocomplete="current-password">
-      <button onclick="entrar()">Entrar</button>
+      <div class="turnstile-wrap">
+        <div class="cf-turnstile" data-sitekey="0x4AAAAAAEXOs2eB3OD5Sv_i" data-callback="onTurnstileOk"></div>
+      </div>
+      <button id="btnEntrar" onclick="entrar()" disabled>Entrar</button>
       <p id="erro"></p>
     </div>
   </div>
 
   <script>
+    let turnstileToken = null;
+
+    function onTurnstileOk(token) {
+      turnstileToken = token;
+      document.getElementById('btnEntrar').disabled = false;
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => {
         let intro = document.getElementById('telaIntro');
@@ -78,20 +91,37 @@
     async function entrar() {
       const usuario = document.getElementById('usuario').value;
       const senha = document.getElementById('senha').value;
+      const erroEl = document.getElementById('erro');
+
+      if (!turnstileToken) {
+        erroEl.innerText = 'Aguarde a verificação de segurança carregar.';
+        return;
+      }
+
+      document.getElementById('btnEntrar').disabled = true;
+
       const res = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ usuario, senha })
+        body: JSON.stringify({ usuario, senha, turnstileToken })
       });
       const data = await res.json();
+
       if (data.sucesso) {
         window.location.href = '/dashboard.html';
       } else {
-        document.getElementById('erro').innerText = data.erro || 'Erro ao entrar';
+        erroEl.innerText = data.erro || 'Erro ao entrar';
+        document.getElementById('btnEntrar').disabled = false;
+        if (window.turnstile) {
+          window.turnstile.reset();
+          turnstileToken = null;
+          document.getElementById('btnEntrar').disabled = true;
+        }
       }
     }
+
     document.getElementById('senha').addEventListener('keydown', e => {
-      if (e.key === 'Enter') entrar();
+      if (e.key === 'Enter' && !document.getElementById('btnEntrar').disabled) entrar();
     });
   </script>
 </body>
