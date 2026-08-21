@@ -562,6 +562,19 @@ app.get('/api/admin/estatisticas', exigirLogin, async (req, res) => {
     }
 });
 
+// Rota pública — só o total de consultas aprovadas, sem exigir login (usada no contador da home)
+app.get('/api/stats-publico', async (req, res) => {
+    try {
+        const result = await db.execute(
+            "SELECT COUNT(*) as total FROM pedidos WHERE status IN ('aprovado','paid','approved','completed','sucesso')"
+        );
+        const total = result.rows[0]?.total || 0;
+        res.json({ total });
+    } catch (e) {
+        res.json({ total: 0 });
+    }
+});
+
 iniciarBanco().then(() => {
     app.listen(PORT, () => console.log(`Rodando na porta ${PORT}`));
 });
