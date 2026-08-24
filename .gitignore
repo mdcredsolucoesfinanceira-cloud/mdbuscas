@@ -1,3 +1,19 @@
-git add .
-git commit -m "remove chave hardcoded, usa variavel de ambiente"
-git push
+# Variáveis de ambiente — NUNCA comitar
+.env
+.env.local
+.env.*.local
+.env.production.local
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
