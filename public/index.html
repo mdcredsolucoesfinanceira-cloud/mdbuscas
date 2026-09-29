@@ -145,51 +145,63 @@
     .passo h3 { font-size: 0.82rem; font-weight: 600; margin-bottom: 6px; }
     .passo p { font-size: 0.72rem; color: var(--cor-texto-suave); line-height: 1.4; }
 
-    #secaoModulos { scroll-margin-top: 70px; max-width: 760px; margin: 10px auto 0 auto; padding: 0 20px 10px 20px; }
-    .titulo-secao { text-align: center; margin-bottom: 22px; }
-    .titulo-secao h2 { font-size: 1.15rem; font-weight: 700; margin-bottom: 6px; }
+    #secaoModulos { scroll-margin-top: 70px; max-width: 1060px; margin: 20px auto 0; padding: 0 18px 20px; }
+    .titulo-secao { text-align: left; margin-bottom: 20px; }
+    .titulo-outros-modulos { margin-top: 38px; }
+    .titulo-secao h2 { font-size: 1.3rem; font-weight: 700; margin-bottom: 4px; }
     .titulo-secao p { font-size: 0.8rem; color: var(--cor-texto-suave); }
 
-    .grid-modules { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    /* Cartões em duas colunas, com a hierarquia do painel de referência e a identidade MD Buscas. */
+    .grid-modules { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
     .card-module {
-      background: var(--cor-painel); border-radius: 16px; padding: 18px 14px;
-      display: flex; flex-direction: column; align-items: center; text-align: center;
-      border: 1px solid var(--cor-borda); box-shadow: var(--sombra-card); position: relative;
-      min-height: 160px; justify-content: space-between;
+      background: linear-gradient(140deg, #15283a 0%, #102430 60%, #0b2929 100%);
+      border: 1px solid rgba(22,224,180,0.26); border-radius: 18px;
+      box-shadow: 0 10px 22px rgba(0,0,0,0.3), inset 0 1px rgba(255,255,255,0.08);
+      display: grid; grid-template-columns: 38% minmax(0, 1fr);
+      grid-template-rows: 1fr auto; align-items: center; column-gap: 8px;
+      padding: 38px 16px 14px; position: relative; min-width: 0; min-height: 174px;
       opacity: 0; transform: translateY(14px);
       transition: opacity 0.5s ease, transform 0.5s ease, border-color 0.2s ease, box-shadow 0.2s ease;
     }
     .card-module.show { opacity: 1; transform: translateY(0); }
-    .card-module.ativo:hover { border-color: rgba(22,224,180,0.4); box-shadow: 0 10px 28px rgba(22,224,180,0.12); }
+    .card-module.ativo:hover { border-color: var(--cor-primaria); box-shadow: 0 12px 28px rgba(22,224,180,0.15); }
+    .card-module.ativo:focus-within { outline: 2px solid var(--cor-primaria); outline-offset: 3px; }
+    .card-module.manutencao { border-color: rgba(255,255,255,0.1); background: linear-gradient(140deg, #15212d, #101a25); }
 
-    .card-badge { position: absolute; top: 10px; right: 10px; width: 8px; height: 8px; border-radius: 50%; }
-    .badge-ativo { background: var(--cor-sucesso); box-shadow: 0 0 6px var(--cor-sucesso); }
-    .badge-manutencao { background: var(--cor-perigo); box-shadow: 0 0 6px var(--cor-perigo); }
+    .card-badge {
+      position: absolute; top: 12px; right: 12px; border-radius: 20px;
+      padding: 4px 9px; font-size: 0.62rem; font-weight: 700; line-height: 1;
+    }
+    .badge-ativo { background: rgba(22,224,180,0.14); color: #7af6d7; }
+    .badge-ativo::after { content: "DISPONÍVEL"; }
+    .badge-manutencao { background: rgba(255,255,255,0.08); color: #aab7c7; }
+    .badge-manutencao::after { content: "EM BREVE"; }
 
     .card-icon-wrap {
-      width: 50px; height: 50px; border-radius: 14px; display: flex; align-items: center; justify-content: center;
-      margin-bottom: 12px; background: rgba(22,224,180,0.1); border: 1px solid rgba(22,224,180,0.25);
+      grid-column: 1; grid-row: 1 / 3; width: clamp(56px, 12vw, 96px); height: clamp(56px, 12vw, 96px);
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(22,224,180,0.12); border: 1px solid rgba(22,224,180,0.3);
+      border-radius: 22px; justify-self: center;
     }
-    .card-icon-wrap svg { width: 24px; height: 24px; stroke: var(--cor-primaria); }
-    .card-module.manutencao .card-icon-wrap { background: rgba(255,255,255,0.04); border: 1px solid var(--cor-borda); }
+    .card-icon-wrap svg { width: 55%; height: 55%; stroke: var(--cor-primaria); }
+    .card-icon-wrap .module-emoji { font-family: 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif; font-size: clamp(2rem, 6vw, 3.3rem); line-height: 1; }
+    .card-module.manutencao .card-icon-wrap { background: rgba(255,255,255,0.04); border-color: var(--cor-borda); }
     .card-module.manutencao .card-icon-wrap svg { stroke: var(--cor-texto-suave); }
 
-    .card-nome { font-weight: 600; font-size: 0.8rem; letter-spacing: 0.3px; }
-    .card-preco { font-size: 0.7rem; margin-top: 5px; }
-    .preco-ativo { color: var(--cor-sucesso); font-weight: 600; }
-    .preco-manutencao { color: var(--cor-texto-suave); }
-
-    .btn-consultar {
-      background: var(--cor-primaria); color: #04120e; border: none; padding: 8px 16px;
-      border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.72rem; margin-top: 12px;
-      transition: transform 0.15s ease; width: 100%;
+    .card-nome { grid-column: 2; grid-row: 1; align-self: center; font-weight: 700; font-size: clamp(0.73rem, 1.7vw, 1.1rem); line-height: 1.3; letter-spacing: 0.1px; overflow-wrap: anywhere; }
+    .card-preco {
+      position: absolute; top: 0; left: 14px; padding: 7px 10px; border-radius: 0 0 8px 8px;
+      font-size: 0.68rem; font-weight: 700; white-space: nowrap;
     }
+    .preco-ativo { background: #08795f; color: #fff; }
+    .preco-manutencao { background: #354657; color: #e4edf5; }
+    .btn-consultar, .btn-bloqueado {
+      grid-column: 2; grid-row: 2; justify-self: start; border-radius: 8px;
+      padding: 8px 12px; font-weight: 700; font-size: 0.66rem; line-height: 1.1;
+    }
+    .btn-consultar { background: var(--cor-primaria); color: #04120e; border: 0; cursor: pointer; transition: transform 0.15s ease; }
     .btn-consultar:active { transform: scale(0.96); }
-    .btn-bloqueado {
-      background: rgba(255,255,255,0.05); color: var(--cor-texto-suave); border: 1px solid var(--cor-borda);
-      padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: not-allowed; font-size: 0.72rem; margin-top: 12px;
-      width: 100%;
-    }
+    .btn-bloqueado { background: rgba(255,255,255,0.06); color: #b2bfcc; border: 1px solid var(--cor-borda); cursor: not-allowed; }
 
     /* ===== ESTEIRA DE CATEGORIAS ===== */
     #sequenciaConsultas { max-width: 760px; margin: 46px auto 10px auto; padding: 0 20px; }
@@ -270,7 +282,14 @@
 
     @media (max-width: 400px) {
       .como-funciona { grid-template-columns: 1fr; }
-      .grid-modules { grid-template-columns: 1fr 1fr; gap: 10px; }
+      .grid-modules { gap: 10px; }
+      .card-module { min-height: 148px; padding: 34px 8px 10px; column-gap: 4px; border-radius: 14px; }
+      .card-icon-wrap { width: 46px; height: 46px; border-radius: 12px; }
+      .card-icon-wrap .module-emoji { font-size: 1.9rem; }
+      .card-badge { top: 8px; right: 7px; font-size: 0.48rem; padding: 4px 5px; }
+      .card-preco { left: 8px; padding: 5px 6px; font-size: 0.55rem; }
+      .card-nome { font-size: 0.66rem; }
+      .btn-consultar, .btn-bloqueado { padding: 7px 8px; font-size: 0.56rem; }
       .hero h1 { font-size: 1.3rem; }
     }
   </style>
@@ -336,32 +355,144 @@
 
   <section id="secaoModulos">
     <div class="titulo-secao">
-      <h2>Módulos disponíveis</h2>
-      <p>Consultas de dados públicos com resultado imediato</p>
+      <h2>Módulos de consulta</h2>
+      <p>Escolha um módulo para começar. Os marcados como “Em breve” aguardam integração.</p>
     </div>
-
     <div class="grid-modules">
+      <div class="card-module manutencao">
+        <span class="card-badge badge-manutencao"></span>
+        <div class="card-icon-wrap"><span class="module-emoji" aria-hidden="true">🌟</span></div>
+        <div class="card-nome">CPF ANALYTICS</div>
+        <div class="card-preco preco-manutencao">Em breve</div>
+        <button class="btn-bloqueado" disabled>EM BREVE</button>
+      </div>
 
       <div class="card-module manutencao">
         <span class="card-badge badge-manutencao"></span>
-        <div class="card-icon-wrap">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="12" r="2"/><path d="M14 10h4M14 14h4"/></svg>
-        </div>
-        <div class="card-nome">CONSULTA CPF</div>
-        <div class="card-preco preco-manutencao">Em manutenção</div>
-        <button class="btn-bloqueado">EM BREVE</button>
+        <div class="card-icon-wrap"><span class="module-emoji" aria-hidden="true">🚘</span></div>
+        <div class="card-nome">DÉBITO + MULTAS + RESTRIÇÕES VEICULAR</div>
+        <div class="card-preco preco-manutencao">Em breve</div>
+        <button class="btn-bloqueado" disabled>EM BREVE</button>
+      </div>
+
+      <div class="card-module manutencao">
+        <span class="card-badge badge-manutencao"></span>
+        <div class="card-icon-wrap"><span class="module-emoji" aria-hidden="true">⚖️</span></div>
+        <div class="card-nome">PROCESSOS</div>
+        <div class="card-preco preco-manutencao">Em breve</div>
+        <button class="btn-bloqueado" disabled>EM BREVE</button>
+      </div>
+
+      <div class="card-module manutencao">
+        <span class="card-badge badge-manutencao"></span>
+        <div class="card-icon-wrap"><span class="module-emoji" aria-hidden="true">📄</span></div>
+        <div class="card-nome">CRLV RJ</div>
+        <div class="card-preco preco-manutencao">Em breve</div>
+        <button class="btn-bloqueado" disabled>EM BREVE</button>
+      </div>
+
+      <div class="card-module manutencao">
+        <span class="card-badge badge-manutencao"></span>
+        <div class="card-icon-wrap"><span class="module-emoji" aria-hidden="true">🔎</span></div>
+        <div class="card-nome">CPF</div>
+        <div class="card-preco preco-manutencao">Em breve</div>
+        <button class="btn-bloqueado" disabled>EM BREVE</button>
       </div>
 
       <div class="card-module ativo">
         <span class="card-badge badge-ativo"></span>
-        <div class="card-icon-wrap">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M6 21V7l6-4 6 4v14"/><path d="M10 21v-4h4v4"/><path d="M9 9h1M14 9h1M9 13h1M14 13h1"/></svg>
-        </div>
-        <div class="card-nome">CONSULTA CNPJ</div>
+        <div class="card-icon-wrap"><span class="module-emoji" aria-hidden="true">🏢</span></div>
+        <div class="card-nome">CNPJ</div>
         <div class="card-preco preco-ativo">R$ 10,00</div>
         <button class="btn-consultar" onclick="abrirModal('CNPJ')">ACESSAR</button>
       </div>
 
+      <div class="card-module manutencao">
+        <span class="card-badge badge-manutencao"></span>
+        <div class="card-icon-wrap"><span class="module-emoji" aria-hidden="true">🚗</span></div>
+        <div class="card-nome">LEILÃO + SCORE VEICULAR</div>
+        <div class="card-preco preco-manutencao">Em breve</div>
+        <button class="btn-bloqueado" disabled>EM BREVE</button>
+      </div>
+
+      <div class="card-module manutencao">
+        <span class="card-badge badge-manutencao"></span>
+        <div class="card-icon-wrap"><span class="module-emoji" aria-hidden="true">📊</span></div>
+        <div class="card-nome">TRACKER</div>
+        <div class="card-preco preco-manutencao">Em breve</div>
+        <button class="btn-bloqueado" disabled>EM BREVE</button>
+      </div>
+
+      <div class="card-module manutencao">
+        <span class="card-badge badge-manutencao"></span>
+        <div class="card-icon-wrap"><span class="module-emoji" aria-hidden="true">👷</span></div>
+        <div class="card-nome">RAIS &amp; CAGED TRABALHADOR</div>
+        <div class="card-preco preco-manutencao">Em breve</div>
+        <button class="btn-bloqueado" disabled>EM BREVE</button>
+      </div>
+
+      <div class="card-module manutencao">
+        <span class="card-badge badge-manutencao"></span>
+        <div class="card-icon-wrap"><span class="module-emoji" aria-hidden="true">🪪</span></div>
+        <div class="card-nome">NOME</div>
+        <div class="card-preco preco-manutencao">Em breve</div>
+        <button class="btn-bloqueado" disabled>EM BREVE</button>
+      </div>
+
+      <div class="card-module manutencao">
+        <span class="card-badge badge-manutencao"></span>
+        <div class="card-icon-wrap"><span class="module-emoji" aria-hidden="true">📋</span></div>
+        <div class="card-nome">DÍVIDAS CNPJ + HISTÓRICO</div>
+        <div class="card-preco preco-manutencao">Em breve</div>
+        <button class="btn-bloqueado" disabled>EM BREVE</button>
+      </div>
+
+      <div class="card-module manutencao">
+        <span class="card-badge badge-manutencao"></span>
+        <div class="card-icon-wrap"><span class="module-emoji" aria-hidden="true">📋</span></div>
+        <div class="card-nome">DÍVIDAS CPF + HISTÓRICO</div>
+        <div class="card-preco preco-manutencao">Em breve</div>
+        <button class="btn-bloqueado" disabled>EM BREVE</button>
+      </div>
+
+      <div class="card-module manutencao">
+        <span class="card-badge badge-manutencao"></span>
+        <div class="card-icon-wrap"><span class="module-emoji" aria-hidden="true">📑</span></div>
+        <div class="card-nome">MANDADO DE PRISÃO</div>
+        <div class="card-preco preco-manutencao">Em breve</div>
+        <button class="btn-bloqueado" disabled>EM BREVE</button>
+      </div>
+
+      <div class="card-module manutencao">
+        <span class="card-badge badge-manutencao"></span>
+        <div class="card-icon-wrap"><span class="module-emoji" aria-hidden="true">⭐</span></div>
+        <div class="card-nome">SCORE CPF</div>
+        <div class="card-preco preco-manutencao">Em breve</div>
+        <button class="btn-bloqueado" disabled>EM BREVE</button>
+      </div>
+
+      <div class="card-module manutencao">
+        <span class="card-badge badge-manutencao"></span>
+        <div class="card-icon-wrap"><span class="module-emoji" aria-hidden="true">🧩</span></div>
+        <div class="card-nome">LEADS CPF</div>
+        <div class="card-preco preco-manutencao">Em breve</div>
+        <button class="btn-bloqueado" disabled>EM BREVE</button>
+      </div>
+
+      <div class="card-module manutencao">
+        <span class="card-badge badge-manutencao"></span>
+        <div class="card-icon-wrap"><span class="module-emoji" aria-hidden="true">🔐</span></div>
+        <div class="card-nome">CHAVE PIX</div>
+        <div class="card-preco preco-manutencao">Em breve</div>
+        <button class="btn-bloqueado" disabled>EM BREVE</button>
+      </div>
+    </div>
+
+    <div class="titulo-secao titulo-outros-modulos">
+      <h2>Outras consultas MD Busca</h2>
+      <p>Serviços que já faziam parte da plataforma.</p>
+    </div>
+    <div class="grid-modules">
       <div class="card-module ativo">
         <span class="card-badge badge-ativo"></span>
         <div class="card-icon-wrap">
