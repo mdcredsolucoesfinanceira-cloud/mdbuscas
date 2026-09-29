@@ -15,6 +15,10 @@
   <link rel="apple-touch-icon" href="/logo1.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <script>
+    try { document.documentElement.dataset.theme = localStorage.getItem('md-buscas-theme') === 'light' ? 'light' : 'dark'; }
+    catch (_) { document.documentElement.dataset.theme = 'dark'; }
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -31,6 +35,27 @@
       --cor-perigo: #ef4444;
       --cor-sucesso: #22c55e;
       --sombra-card: 0 8px 24px rgba(0,0,0,0.35);
+      --cor-topo: rgba(5,7,10,0.94);
+      --cor-cartao: linear-gradient(140deg, #15283a 0%, #102430 60%, #0b2929 100%);
+      --cor-cartao-inativo: linear-gradient(140deg, #15212d, #101a25);
+      --cor-chip: rgba(255,255,255,0.08);
+    }
+    :root[data-theme="light"] {
+      color-scheme: light;
+      --cor-fundo: #f3f7f8;
+      --cor-painel: #ffffff;
+      --cor-painel-alt: #edf4f5;
+      --cor-borda: #dbe6e8;
+      --cor-primaria: #087f6a;
+      --cor-primaria-escura: #076d5b;
+      --cor-texto: #14262c;
+      --cor-texto-suave: #5a6d75;
+      --cor-sucesso: #087f6a;
+      --sombra-card: 0 10px 28px rgba(23,55,65,0.08);
+      --cor-topo: rgba(255,255,255,0.95);
+      --cor-cartao: linear-gradient(140deg, #ffffff, #f2f9f8);
+      --cor-cartao-inativo: linear-gradient(140deg, #ffffff, #f4f7f8);
+      --cor-chip: #e9f1f2;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', 'Segoe UI', sans-serif; }
     body { background-color: var(--cor-fundo); color: var(--cor-texto); padding-bottom: 60px; }
@@ -72,7 +97,7 @@
 
     header.topo {
       position: sticky; top: 0; z-index: 30;
-      background: rgba(5,7,10,0.85);
+      background: var(--cor-topo);
       backdrop-filter: blur(10px);
       border-bottom: 1px solid var(--cor-borda);
       padding: 12px 18px;
@@ -154,9 +179,9 @@
     /* Cartões em duas colunas, com a hierarquia do painel de referência e a identidade MD Buscas. */
     .grid-modules { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
     .card-module {
-      background: linear-gradient(140deg, #15283a 0%, #102430 60%, #0b2929 100%);
-      border: 1px solid rgba(22,224,180,0.26); border-radius: 18px;
-      box-shadow: 0 10px 22px rgba(0,0,0,0.3), inset 0 1px rgba(255,255,255,0.08);
+      background: var(--cor-cartao);
+      border: 1px solid var(--cor-borda); border-radius: 18px;
+      box-shadow: var(--sombra-card);
       display: grid; grid-template-columns: 38% minmax(0, 1fr);
       grid-template-rows: 1fr auto; align-items: center; column-gap: 8px;
       padding: 38px 16px 14px; position: relative; min-width: 0; min-height: 174px;
@@ -166,7 +191,7 @@
     .card-module.show { opacity: 1; transform: translateY(0); }
     .card-module.ativo:hover { border-color: var(--cor-primaria); box-shadow: 0 12px 28px rgba(22,224,180,0.15); }
     .card-module.ativo:focus-within { outline: 2px solid var(--cor-primaria); outline-offset: 3px; }
-    .card-module.manutencao { border-color: rgba(255,255,255,0.1); background: linear-gradient(140deg, #15212d, #101a25); }
+    .card-module.manutencao { background: var(--cor-cartao-inativo); }
 
     .card-badge {
       position: absolute; top: 12px; right: 12px; border-radius: 20px;
@@ -174,7 +199,7 @@
     }
     .badge-ativo { background: rgba(22,224,180,0.14); color: #7af6d7; }
     .badge-ativo::after { content: "DISPONÍVEL"; }
-    .badge-manutencao { background: rgba(255,255,255,0.08); color: #aab7c7; }
+    .badge-manutencao { background: var(--cor-chip); color: var(--cor-texto-suave); }
     .badge-manutencao::after { content: "EM BREVE"; }
 
     .card-icon-wrap {
@@ -194,14 +219,14 @@
       font-size: 0.68rem; font-weight: 700; white-space: nowrap;
     }
     .preco-ativo { background: #08795f; color: #fff; }
-    .preco-manutencao { background: #354657; color: #e4edf5; }
+    .preco-manutencao { background: var(--cor-chip); color: var(--cor-texto-suave); }
     .btn-consultar, .btn-bloqueado {
       grid-column: 2; grid-row: 2; justify-self: start; border-radius: 8px;
       padding: 8px 12px; font-weight: 700; font-size: 0.66rem; line-height: 1.1;
     }
     .btn-consultar { background: var(--cor-primaria); color: #04120e; border: 0; cursor: pointer; transition: transform 0.15s ease; }
     .btn-consultar:active { transform: scale(0.96); }
-    .btn-bloqueado { background: rgba(255,255,255,0.06); color: #b2bfcc; border: 1px solid var(--cor-borda); cursor: not-allowed; }
+    .btn-bloqueado { background: var(--cor-chip); color: var(--cor-texto-suave); border: 1px solid var(--cor-borda); cursor: not-allowed; }
 
     /* ===== ESTEIRA DE CATEGORIAS ===== */
     #sequenciaConsultas { max-width: 760px; margin: 46px auto 10px auto; padding: 0 20px; }
@@ -280,8 +305,58 @@
     #btnSuporteFlutuante svg { width: 26px; height: 26px; stroke: #fff; fill: #fff; }
     #btnInstalarApp { display: none; position: fixed; bottom: 20px; left: 16px; background: var(--cor-primaria); color: #04120e; border: none; padding: 10px 16px; border-radius: 24px; font-weight: 700; font-size: 0.72rem; cursor: pointer; z-index: 35; box-shadow: 0 6px 18px rgba(22,224,180,0.3); }
 
+    /* Painel de consultas */
+    .topo-acoes { display: flex; align-items: center; gap: 10px; }
+    .btn-tema { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 38px; padding: 7px 12px; border: 1px solid var(--cor-borda); border-radius: 20px; background: var(--cor-painel-alt); color: var(--cor-texto); cursor: pointer; font-size: 0.75rem; font-weight: 600; }
+    .btn-tema:focus-visible, .filtro-modulo:focus-visible, .nav-painel a:focus-visible, .busca-modulos input:focus-visible { outline: 2px solid var(--cor-primaria); outline-offset: 2px; }
+    .icone-tema { font-size: 1rem; line-height: 1; }
+    .painel-layout { width: min(1360px, 100%); margin: 0 auto; padding: 24px 24px 0; display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 26px; align-items: start; }
+    .nav-painel { position: sticky; top: 96px; display: flex; flex-direction: column; gap: 8px; padding: 18px 12px; border: 1px solid var(--cor-borda); border-radius: 18px; background: var(--cor-painel); box-shadow: var(--sombra-card); }
+    .nav-painel .nav-titulo { padding: 8px 12px 12px; color: var(--cor-texto-suave); font-size: 0.65rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
+    .nav-painel a { display: flex; align-items: center; gap: 10px; padding: 11px 12px; border-radius: 11px; color: var(--cor-texto-suave); text-decoration: none; font-size: 0.78rem; font-weight: 600; }
+    .nav-painel a:hover, .nav-painel a.nav-ativo { background: var(--cor-painel-alt); color: var(--cor-primaria); }
+    .nav-painel a span { font-size: 1rem; }
+    .painel-conteudo { min-width: 0; }
+    .hero { max-width: none; margin: 0; padding: 36px 38px; text-align: left; border: 1px solid var(--cor-borda); border-radius: 24px; background: radial-gradient(circle at 90% 15%, rgba(22,224,180,0.16), transparent 38%), var(--cor-painel); box-shadow: var(--sombra-card); }
+    .hero img.logo-hero { display: none; }
+    .hero .etiqueta-painel { display: inline-flex; align-items: center; gap: 7px; padding: 6px 10px; margin-bottom: 17px; border-radius: 8px; background: rgba(22,224,180,0.12); color: var(--cor-primaria); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; }
+    .hero h1 { max-width: 650px; font-size: clamp(1.65rem, 3vw, 2.45rem); line-height: 1.18; }
+    .hero p { margin: 0 0 20px; max-width: 620px; }
+    .hero .btn-cta { border-radius: 10px; box-shadow: none; }
+    .faixa-confianca { max-width: none; justify-content: flex-start; padding: 0; margin-top: 24px; }
+    .selo-confianca { background: var(--cor-painel-alt); }
+    .como-funciona { max-width: none; margin: 24px 0; padding: 0; gap: 12px; }
+    .passo { text-align: left; padding: 16px; }
+    .passo .numero { margin: 0 0 10px; }
+    #secaoModulos { max-width: none; margin: 30px 0 0; padding: 0; }
+    .titulo-secao h2 { font-size: 1.4rem; }
+    .controles-modulos { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin: 22px 0; }
+    .busca-modulos { position: relative; flex: 1 1 260px; }
+    .busca-modulos svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; stroke: var(--cor-texto-suave); pointer-events: none; }
+    .busca-modulos input { width: 100%; min-height: 44px; padding: 11px 14px 11px 42px; border: 1px solid var(--cor-borda); border-radius: 11px; background: var(--cor-painel); color: var(--cor-texto); font: inherit; font-size: 0.8rem; }
+    .busca-modulos input::placeholder { color: var(--cor-texto-suave); }
+    .filtros-modulos { display: flex; gap: 7px; flex-wrap: wrap; }
+    .filtro-modulo { padding: 10px 13px; border-radius: 10px; border: 1px solid var(--cor-borda); background: var(--cor-painel); color: var(--cor-texto-suave); font-size: 0.73rem; font-weight: 600; cursor: pointer; }
+    .filtro-modulo.selecionado { background: var(--cor-primaria); color: #fff; border-color: var(--cor-primaria); }
+    .sem-resultados { display: none; padding: 28px; border: 1px dashed var(--cor-borda); border-radius: 14px; color: var(--cor-texto-suave); text-align: center; font-size: 0.83rem; }
+    .card-module[hidden], .titulo-outros-modulos[hidden], .grid-modules[hidden] { display: none !important; }
+    #sequenciaConsultas { max-width: none; margin: 42px 0 0; padding: 0; }
+    footer.rodape { max-width: 1060px; }
+    :root[data-theme="light"] .badge-ativo { background: #d9f4ec; color: #076d5b; }
+    :root[data-theme="light"] .hero .btn-cta, :root[data-theme="light"] .btn-consultar, :root[data-theme="light"] .btn-acao, :root[data-theme="light"] #btnInstalarApp { color: #ffffff; }
+    :root[data-theme="light"] .selo-confianca strong { color: #076d5b; }
+    :root[data-theme="light"] .card-icon-wrap { background: #e8f5f1; border-color: #cbe8df; }
+    :root[data-theme="light"] .card-module.manutencao .card-icon-wrap { background: #f1f5f5; }
+    :root[data-theme="light"] .fundo-tech { background: #eaf3f3; }
+    :root[data-theme="light"] .fundo-tech::after { background: linear-gradient(90deg, #eaf3f3, transparent 8%, transparent 92%, #eaf3f3); }
+    :root[data-theme="light"] .slot-tag { background: #fff; border-color: var(--cor-borda); }
+    :root[data-theme="light"] .modalConsultas { background: rgba(19,39,43,0.6); }
+    :root[data-theme="light"] .skeleton { background: linear-gradient(90deg, #e4eff0 25%, #d4e5e7 37%, #e4eff0 63%); background-size: 400% 100%; }
+    @media (max-width: 900px) { .painel-layout { display: block; padding: 18px; } .nav-painel { display: none; } }
+    @media (max-width: 600px) { header.topo { padding: 10px 14px; } .topo-acoes { gap: 7px; } .btn-tema, .btn-suporte-topo { padding: 8px 10px; } .texto-tema { display: none; } .painel-layout { padding: 12px; } .hero { padding: 26px 20px; border-radius: 18px; } .hero h1 { font-size: 1.6rem; } .faixa-confianca { gap: 7px; } .selo-confianca { font-size: 0.65rem; padding: 7px 10px; } .como-funciona { gap: 8px; } .passo { padding: 12px; } .passo p { display: none; } .passo h3 { font-size: 0.68rem; } .card-module { min-height: 154px; } }
+
     @media (max-width: 400px) {
-      .como-funciona { grid-template-columns: 1fr; }
+      .como-funciona { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .grid-modules { gap: 10px; }
       .card-module { min-height: 148px; padding: 34px 8px 10px; column-gap: 4px; border-radius: 14px; }
       .card-icon-wrap { width: 46px; height: 46px; border-radius: 12px; }
@@ -290,7 +365,7 @@
       .card-preco { left: 8px; padding: 5px 6px; font-size: 0.55rem; }
       .card-nome { font-size: 0.66rem; }
       .btn-consultar, .btn-bloqueado { padding: 7px 8px; font-size: 0.56rem; }
-      .hero h1 { font-size: 1.3rem; }
+      .hero h1 { font-size: 1.4rem; }
     }
   </style>
 </head>
@@ -307,15 +382,29 @@
       <img src="logo1.png" alt="MD BUSCAS">
       <span>MD BUSCAS</span>
     </div>
-    <a class="btn-suporte-topo" href="https://wa.me/5585998021364?text=Ol%C3%A1%2C%20preciso%20de%20suporte" target="_blank" rel="noopener">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-      Suporte
-    </a>
+    <div class="topo-acoes">
+      <button id="btnTema" class="btn-tema" type="button" aria-label="Alternar tema" aria-pressed="false"><span class="icone-tema" aria-hidden="true">☀️</span><span class="texto-tema">Modo claro</span></button>
+      <a class="btn-suporte-topo" href="https://wa.me/5585998021364?text=Ol%C3%A1%2C%20preciso%20de%20suporte" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        Suporte
+      </a>
+    </div>
   </header>
 
+  <div class="painel-layout">
+    <nav class="nav-painel" aria-label="Navegação do painel">
+      <div class="nav-titulo">Painel de buscas</div>
+      <a class="nav-ativo" href="#inicio"><span aria-hidden="true">⌂</span> Visão geral</a>
+      <a href="#secaoModulos"><span aria-hidden="true">▦</span> Módulos de consulta</a>
+      <a href="#outrasConsultas"><span aria-hidden="true">↗</span> Outras consultas</a>
+      <a href="#sequenciaConsultas"><span aria-hidden="true">◈</span> Categorias</a>
+      <a href="https://wa.me/5585998021364?text=Ol%C3%A1%2C%20preciso%20de%20suporte" target="_blank" rel="noopener"><span aria-hidden="true">◌</span> Ajuda e suporte</a>
+    </nav>
+    <main class="painel-conteudo" id="inicio">
   <section class="hero">
     <img src="logo1.png" alt="MD BUSCAS" class="logo-hero">
-    <h1>Consultas rápidas e seguras em segundos</h1>
+    <span class="etiqueta-painel">● PAINEL MD BUSCAS</span>
+    <h1>Encontre a consulta que você precisa</h1>
     <p>Pague via Pix e receba o resultado da sua consulta automaticamente, sem espera e sem burocracia.</p>
     <a href="#secaoModulos" class="btn-cta">Ver módulos disponíveis</a>
 
@@ -358,6 +447,18 @@
       <h2>Módulos de consulta</h2>
       <p>Escolha um módulo para começar. Os marcados como “Em breve” aguardam integração.</p>
     </div>
+    <div class="controles-modulos">
+      <label class="busca-modulos">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/></svg>
+        <input id="buscaModulos" type="search" placeholder="Buscar por CPF, CNPJ, veículo..." aria-label="Buscar módulos">
+      </label>
+      <div class="filtros-modulos" role="group" aria-label="Filtrar módulos">
+        <button class="filtro-modulo selecionado" type="button" data-filtro="todos" aria-pressed="true">Todos</button>
+        <button class="filtro-modulo" type="button" data-filtro="ativo" aria-pressed="false">Disponíveis</button>
+        <button class="filtro-modulo" type="button" data-filtro="manutencao" aria-pressed="false">Em breve</button>
+      </div>
+    </div>
+    <p id="semResultados" class="sem-resultados" role="status">Nenhum módulo encontrado. Tente outro termo ou filtro.</p>
     <div class="grid-modules">
       <div class="card-module manutencao">
         <span class="card-badge badge-manutencao"></span>
@@ -488,7 +589,7 @@
       </div>
     </div>
 
-    <div class="titulo-secao titulo-outros-modulos">
+    <div class="titulo-secao titulo-outros-modulos" id="outrasConsultas">
       <h2>Outras consultas MD Busca</h2>
       <p>Serviços que já faziam parte da plataforma.</p>
     </div>
@@ -582,6 +683,8 @@
       <div class="esteira-wrap" id="esteiraWrap"></div>
     </div>
   </section>
+    </main>
+  </div>
 
   <footer class="rodape">
     <div class="marca-rodape">
@@ -654,6 +757,55 @@
   <button id="btnInstalarApp">📲 Instalar App</button>
 
   <script>
+    const botaoTema = document.getElementById('btnTema');
+    function atualizarBotaoTema() {
+      const claro = document.documentElement.dataset.theme === 'light';
+      botaoTema.querySelector('.icone-tema').textContent = claro ? '🌙' : '☀️';
+      botaoTema.querySelector('.texto-tema').textContent = claro ? 'Modo escuro' : 'Modo claro';
+      botaoTema.setAttribute('aria-label', claro ? 'Ativar modo escuro' : 'Ativar modo claro');
+      botaoTema.setAttribute('aria-pressed', String(claro));
+      document.querySelector('meta[name="theme-color"]').content = claro ? '#f3f7f8' : '#05070a';
+    }
+    botaoTema.addEventListener('click', () => {
+      const proximo = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+      document.documentElement.dataset.theme = proximo;
+      try { localStorage.setItem('md-buscas-theme', proximo); } catch (_) {}
+      atualizarBotaoTema();
+    });
+    atualizarBotaoTema();
+
+    const campoBuscaModulos = document.getElementById('buscaModulos');
+    const botoesFiltro = [...document.querySelectorAll('.filtro-modulo')];
+    const gruposModulos = [...document.querySelectorAll('#secaoModulos > .grid-modules')];
+    let filtroAtual = 'todos';
+    function filtrarModulos() {
+      const termo = campoBuscaModulos.value.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+      let totalVisivel = 0;
+      gruposModulos.forEach((grupo, indice) => {
+        let visiveisNoGrupo = 0;
+        grupo.querySelectorAll('.card-module').forEach(card => {
+          const nome = card.querySelector('.card-nome').textContent.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+          const visivel = nome.includes(termo) && (filtroAtual === 'todos' || card.classList.contains(filtroAtual));
+          card.hidden = !visivel;
+          if (visivel) visiveisNoGrupo++;
+        });
+        grupo.hidden = visiveisNoGrupo === 0;
+        if (indice === 1) document.getElementById('outrasConsultas').hidden = visiveisNoGrupo === 0;
+        totalVisivel += visiveisNoGrupo;
+      });
+      document.getElementById('semResultados').style.display = totalVisivel === 0 ? 'block' : 'none';
+    }
+    campoBuscaModulos.addEventListener('input', filtrarModulos);
+    botoesFiltro.forEach(botao => botao.addEventListener('click', () => {
+      filtroAtual = botao.dataset.filtro;
+      botoesFiltro.forEach(item => {
+        const selecionado = item === botao;
+        item.classList.toggle('selecionado', selecionado);
+        item.setAttribute('aria-pressed', String(selecionado));
+      });
+      filtrarModulos();
+    }));
+
     const placeholders = {
       CNPJ: "Digite o CNPJ...",
       CEP: "Digite o CEP...",
